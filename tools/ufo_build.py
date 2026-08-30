@@ -17,6 +17,8 @@ import pathlib
 import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
+from tools import arch_symmetry as AS
+from tools import counter_shape as CS
 from tools import dots as D
 from tools import params as P
 from tools import quirks as Q
@@ -25,7 +27,7 @@ from tools import round_contrast as RC
 from tools import serifs as S
 from tools import single_story_a as A
 
-ROUND_CONTRAST_CHARS = {"o", "c"}
+ROUND_CONTRAST_CHARS = {"o", "c", "e"}
 
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -191,6 +193,8 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        CS.round_off_waists(glyph)
+        AS.symmetrize(glyph)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
@@ -238,6 +242,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        CS.round_off_waists(glyph)
+        AS.symmetrize(glyph)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
