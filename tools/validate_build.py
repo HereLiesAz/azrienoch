@@ -37,6 +37,7 @@ def check_fvar(errors):
         "wght": tuple(P.WGHT_AXIS[1:]),
         "wdth": tuple(P.WDTH_AXIS[1:]),
         "SERF": tuple(P.SERF_AXIS[1:]),
+        "GRAD": tuple(P.GRAD_AXIS[1:]),
     }
     for tag, exp in expected.items():
         got = axes.get(tag)
@@ -85,8 +86,8 @@ def check_topology_compatible(ufos, errors):
 
 def load_ufos():
     ufos = {}
-    for wght, wdth, serf in P.master_grid():
-        name = P.master_name(wght, wdth, serf)
+    for wght, wdth, serf, grad in P.master_grid():
+        name = P.master_name(wght, wdth, serf, grad)
         path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufos[name] = ufoLib2.Font.open(path)
     return ufos

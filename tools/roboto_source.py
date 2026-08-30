@@ -31,9 +31,16 @@ from fontTools.varLib import instancer
 from tools import params as P
 
 _HERE = pathlib.Path(__file__).resolve().parent.parent
+# Trimmed from Roboto Flex's original 13-axis release: `opsz` and `slnt` are
+# pinned to their defaults (24, 0) and dropped, since Azrienoch never varies
+# them (see params.py's module docstring for why) -- this instances them out
+# with `fontTools.varLib.instancer` rather than leaving unused gvar/avar
+# data sitting in every build. Shrinks the vendored file from ~1.78 MB to
+# ~0.68 MB with no behavior change (Azrienoch's own `roboto_location()`
+# always requested the same fixed opsz/slnt values from the untrimmed font).
 ROBOTO_TTF = str(
     _HERE / "third_party" / "roboto-flex"
-    / "RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf"
+    / "RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,wdth,wght].ttf"
 )
 
 UPM = 2048  # Roboto Flex's unitsPerEm; Azrienoch keeps it to avoid rescaling.
@@ -72,8 +79,8 @@ def _lerp_piecewise(x, xs, ys):
     raise AssertionError("unreachable")  # xs is non-empty by construction
 
 
-def roboto_location(wght: float, wdth: float) -> dict:
-    """The Roboto Flex axis location Azrienoch's (wght, wdth) maps to."""
+def roboto_location(wght: float, wdth: float, grad: float = 0.0) -> dict:
+    """The Roboto Flex axis location Azrienoch's (wght, wdth, GRAD) maps to."""
     wghts = P.WGHT_MASTERS
     height_axes = {}
     for tag in ("XOPQ", "YOPQ", "XTRA", "YTUC", "YTLC", "YTAS", "YTDE", "YTFI"):
@@ -86,7 +93,16 @@ def roboto_location(wght: float, wdth: float) -> dict:
     t_wd = 0.0 if w1 == w0 else (wdth - w0) / (w1 - w0)
     roboto_wdth = 82.0 + (100.0 - 82.0) * t_wd
 
-    loc = dict(wght=float(wght), wdth=roboto_wdth, GRAD=0.0, slnt=0.0, opsz=24.0)
+    # Azrienoch's GRAD passes straight through to Roboto Flex's own GRAD
+    # (same units, degrees of grade) -- it's a narrower slice of Roboto's
+    # full -200..150 range, since Azrienoch only needs a modest, safe
+    # compensation swing rather than the extremes.
+    #
+    # No `slnt`/`opsz` keys here: the vendored font is pre-trimmed to those
+    # two axes' defaults (see `ROBOTO_TTF` above), so they no longer exist
+    # on it at all -- passing a value for an axis the font doesn't have
+    # raises a KeyError in `instancer.instantiateVariableFont`.
+    loc = dict(wght=float(wght), wdth=roboto_wdth, GRAD=float(grad))
     loc.update(height_axes)
     return loc
 
@@ -97,20 +113,20 @@ def _base_font() -> TTFont:
 
 
 @functools.lru_cache(maxsize=None)
-def instantiate(wght: float, wdth: float) -> TTFont:
-    """A fully static TTFont at the Roboto Flex location for (wght, wdth)."""
-    loc = roboto_location(wght, wdth)
+def instantiate(wght: float, wdth: float, grad: float = 0.0) -> TTFont:
+    """A fully static TTFont at the Roboto Flex location for (wght, wdth, GRAD)."""
+    loc = roboto_location(wght, wdth, grad)
     base = _base_font()
     return instancer.instantiateVariableFont(base, loc, inplace=False)
 
 
 @functools.lru_cache(maxsize=None)
-def cmap_for(wght: float, wdth: float) -> dict:
-    return instantiate(wght, wdth).getBestCmap()
+def cmap_for(wght: float, wdth: float, grad: float = 0.0) -> dict:
+    return instantiate(wght, wdth, grad).getBestCmap()
 
 
-def glyph_name_for_char(wght: float, wdth: float, ch: str) -> str | None:
-    return cmap_for(wght, wdth).get(ord(ch))
+def glyph_name_for_char(wght: float, wdth: float, ch: str, grad: float = 0.0) -> str | None:
+    return cmap_for(wght, wdth, grad).get(ord(ch))
 
 
 def extract_kerning(font: TTFont) -> dict[tuple[str, str], float]:

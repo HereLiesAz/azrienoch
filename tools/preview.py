@@ -100,10 +100,11 @@ if __name__ == "__main__":
     wght = float(sys.argv[2]) if len(sys.argv) > 2 else 400
     wdth = float(sys.argv[3]) if len(sys.argv) > 3 else 100
     serf = float(sys.argv[4]) if len(sys.argv) > 4 else 0
-    out = sys.argv[5] if len(sys.argv) > 5 else "/tmp/preview.png"
+    grad = float(sys.argv[5]) if len(sys.argv) > 5 else 0
+    out = sys.argv[6] if len(sys.argv) > 6 else "/tmp/preview.png"
 
     fig, ax = plt.subplots(figsize=(len(text) * 0.9, 2.4))
-    end_x = render_text(ax, text, {"wght": wght, "wdth": wdth, "SERF": serf})
+    end_x = render_text(ax, text, {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad})
     ax.set_xlim(-100, end_x + 100)
     ax.set_ylim(-700, 2300)
     ax.set_aspect("equal")
