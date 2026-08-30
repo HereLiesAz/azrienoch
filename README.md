@@ -23,9 +23,11 @@ is in what it does with that space:
 
 - **Height as a matter of weight.** Roboto Flex deliberately keeps
   weight and height independent -- that's the whole point of exposing
-  `YTUC`/`YTLC`/`YTAS`/`YTDE`/`XOPQ`/`YOPQ` as separate axes. Azrienoch
-  deliberately does the opposite: its `wght` axis is mapped onto a
-  correlated path through that same space (see
+  eight parametric axes (`XOPQ`/`YOPQ` stroke weight, `XTRA` counter
+  width, `YTUC`/`YTLC`/`YTAS`/`YTDE`/`YTFI` cap/x/ascender/descender/
+  figure height) separately from `wght`/`wdth`. Azrienoch deliberately
+  does the opposite: its `wght` axis is mapped onto a correlated path
+  through that same eight-axis space (see
   `tools/roboto_source.py::_HEIGHT_AXES_AT_WGHT`), so cap-height,
   x-height and stroke weight all grow together. A heavier Azrienoch
   instance is a genuinely *taller* one, independent of the type size or
@@ -67,7 +69,7 @@ Helvetica/Akzidenz-Grotesk's rational flat-terminal directness.
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
 sources/*.ufo                     the 12 (wght x wdth x SERF) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
-third_party/roboto-flex/          vendored Roboto Flex source font + its own OFL.txt
+third_party/roboto-flex/          vendored Roboto Flex source font + its own OFL.txt/AUTHORS.txt
 tools/                            the build pipeline (see below)
 specimen/                         specimen renders
 ```
@@ -124,5 +126,6 @@ case-sensitive forms) beyond the kerning that is carried over. See
 ## License
 
 Azrienoch is licensed under the [SIL Open Font License, Version 1.1](./OFL.txt),
-as a Modified Version of Roboto Flex. Roboto Flex's own license and
-authors are in `third_party/roboto-flex/OFL.txt`.
+as a Modified Version of Roboto Flex. Roboto Flex's own license is in
+`third_party/roboto-flex/OFL.txt` and its authors are in
+`third_party/roboto-flex/AUTHORS.txt`.

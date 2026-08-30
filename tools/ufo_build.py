@@ -69,6 +69,19 @@ def _guides(cap_height, x_height, ascender, descender):
     }
 
 
+COPYRIGHT = (
+    "Copyright 2011 The Roboto Flex Project Authors "
+    "(https://github.com/googlefonts/roboto-flex). "
+    "Copyright 2026 The Azrienoch Project Authors."
+)
+LICENSE = (
+    "This Font Software is licensed under the SIL Open Font License, "
+    "Version 1.1. This license is available with a FAQ at: "
+    "http://scripts.sil.org/OFL"
+)
+LICENSE_URL = "http://scripts.sil.org/OFL"
+
+
 def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
     os2 = inst["OS/2"]
     hhea = inst["hhea"]
@@ -81,6 +94,13 @@ def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
     fi.familyName = "Azrienoch"
     fi.styleName = P.master_name(wght, wdth, serf)
     fi.versionMajor, fi.versionMinor = 1, 0
+    # A distributed .ttf carries its own copyright/license -- OFL clause 2
+    # requires each copy to include the license, and a copy of the raw
+    # binary distributed apart from this repo's OFL.txt would otherwise
+    # have nothing machine-readable to point to.
+    fi.copyright = COPYRIGHT
+    fi.openTypeNameLicense = LICENSE
+    fi.openTypeNameLicenseURL = LICENSE_URL
     return fi
 
 

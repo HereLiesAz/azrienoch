@@ -13,10 +13,10 @@ design rationale these build on.
       `%`) decompose cleanly against Roboto Flex's own glyphset via
       `_copy_outline`'s `DecomposingRecordingPen` -- this is mainly a
       matter of widening `CORE_CHARS`, not new plumbing.
-- [ ] Numeral sets: Roboto Flex ships tabular/proportional and
-      lining/oldstyle figure variants (`.tf`/`.pf`/`.lf`/`.osf` suffixes)
-      behind GSUB features that Azrienoch doesn't import (see "OpenType
-      features" below) -- only the default figures come across today.
+- [ ] Numeral sets: Roboto Flex ships one alternate figure style
+      (proportional, glyph suffix `.prop`) behind its `pnum` GSUB feature,
+      which Azrienoch doesn't import (see "No `GSUB` table" below) -- only
+      the default figures come across today.
 
 ## Axis space
 
@@ -33,7 +33,12 @@ design rationale these build on.
 - [ ] Re-derive the `SERF` foot-sizing formulas
       (`tools/serifs.py::apply_feet`) once real serif specimens have been
       eyeballed at more than the two or three weights checked so far --
-      the 0.9/0.42 multipliers are a first pass, not measured.
+      the 0.9/0.42 multipliers are a first pass, not measured. (The more
+      serious bug here -- feet widening symmetrically into the counter on
+      arch letters like 'n'/'m'/'p'/'r'/'h' -- is fixed: `_flat_runs` now
+      checks which side of each flat run borders a real stem versus a
+      counter, and `apply_feet` only grows a foot on the extendable
+      side(s). What's left is tuning, not correctness.)
 
 ## Font engineering completeness
 
@@ -54,6 +59,18 @@ design rationale these build on.
       matters for this project.
 - [ ] Review the auto-generated `STAT` table's axis value records --
       not audited beyond confirming the table exists.
+
+- [ ] Investigate why raw (pre-filter) kerning pair counts from
+      `extract_kerning` vary so much with `wdth` at `wght=100` (e.g.
+      33820 pairs at Roboto Flex wdth=82 vs 15656 at wdth=100, with every
+      wdth=100 pair also present at wdth=82) -- `roboto_location()`'s
+      wdth mapping is arithmetically correct and the values are within
+      Roboto Flex's real fvar bounds, so this isn't a confirmed bug, but
+      it's a bigger swing than expected and hasn't been traced to a root
+      cause (e.g. some values crossing exactly zero under the Thin
+      weight's extreme parametric-axis interpolation, versus a genuine
+      difference in how many kerning classes Roboto Flex actually
+      differentiates at that corner of its own design space).
 
 ## Tooling / process
 

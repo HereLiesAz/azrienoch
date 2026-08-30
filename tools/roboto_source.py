@@ -134,9 +134,18 @@ def extract_kerning(font: TTFont) -> dict[tuple[str, str], float]:
             elif st.Format == 2:
                 c1 = st.ClassDef1.classDefs
                 c2 = st.ClassDef2.classDefs
-                class2_glyphs: dict[int, list[str]] = {}
+                # Per the OpenType spec, class 0 is implicit: every glyph
+                # not explicitly listed in ClassDef2 belongs to it. Building
+                # class2_glyphs only from c2.items() (as an earlier version
+                # of this function did) silently drops kerning for every
+                # implicit-class-0 glyph the moment Class2Record[0] is ever
+                # nonzero -- rebuild class 0 from the full glyph order.
+                class2_glyphs: dict[int, list[str]] = {
+                    0: [name for name in font.getGlyphOrder() if c2.get(name, 0) == 0]
+                }
                 for glyph, cls in c2.items():
-                    class2_glyphs.setdefault(cls, []).append(glyph)
+                    if cls != 0:
+                        class2_glyphs.setdefault(cls, []).append(glyph)
                 for g1 in st.Coverage.glyphs:
                     c1v = c1.get(g1, 0)
                     if c1v >= len(st.Class1Record):
