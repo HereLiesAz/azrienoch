@@ -157,7 +157,13 @@ build on.
       with live `wght`/`wdth`/`SERF` sliders using
       `font-variation-settings`, all named-instance presets, an editable
       hero sample, and a glyph-set showcase.
-- [ ] The specimen page's `NAMED_INSTANCES` preset list and embedded font
-      predate the `GRAD` axis and the Greek/Cyrillic/`pnum` glyph growth
-      -- needs regenerating against the current 48-master build (tracked
-      as part of finishing this round's rebuild).
+- [x] ~~The specimen page's `NAMED_INSTANCES` preset list and embedded
+      font predate the `GRAD` axis and the Greek/Cyrillic/`pnum` glyph
+      growth~~ -- done: regenerated against the current 48-master build
+      (new `GRAD` slider, tabular/proportional figure comparison,
+      Greek/Cyrillic in the glyph grid, updated counts). Also fixed a
+      real bug found in the process -- the page had no
+      `<meta charset="utf-8">` or any doctype/head/body at all, so
+      opening it via `file://` let the browser guess the wrong encoding
+      and mangled every accented/Greek/Cyrillic character into mojibake.
+      Re-verified with a headless-browser render after the fix.
