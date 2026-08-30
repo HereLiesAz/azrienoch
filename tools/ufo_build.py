@@ -28,6 +28,7 @@ from tools import dots as D
 from tools import params as P
 from tools import quirks as Q
 from tools import roboto_source as R
+from tools import rotation_align as RA
 from tools import round_contrast as RC
 from tools import serifs as S
 from tools import single_story_a as A
@@ -256,13 +257,19 @@ def _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, xheight):
     return _extract_glyph(gname, glyphset, hmtx, ord(ch))
 
 
-def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int]]]:
+def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int]], dict[str, list]]:
     """Foot specs (``serifs.py``) and dot-contour indices (``dots.py``) per
     glyph name, both detected once from the (400, 100) instance and
     reapplied identically on every master -- see those modules'
     docstrings for why detecting once and reusing by index/fraction,
     rather than redetecting per master, is what keeps every master of a
-    glyph topologically identical."""
+    glyph topologically identical.
+
+    Also captures each glyph's own RAW (pre-quirks, pre-everything)
+    contours at this same reference instance, for ``rotation_align.py``
+    to align every other master's own raw extraction against -- see that
+    module's docstring for why a symmetric glyph like 'o' needs this and
+    an asymmetric one like 'n' doesn't."""
     inst = R.instantiate(REFERENCE_WGHT, REFERENCE_WDTH)
     glyphset = inst.getGlyphSet()
     hmtx = inst["hmtx"]
@@ -279,11 +286,13 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
 
     feet_by_glyph = {}
     dots_by_glyph = {}
+    reference_contours = {}
     for ch in CORE_CHARS:
         gname = cmap.get(ord(ch))
         if gname is None or gname in feet_by_glyph:
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
+        reference_contours[gname] = RA.snapshot(glyph)
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         if _is_arch_char(ch):
@@ -299,12 +308,13 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None and prop_name not in feet_by_glyph:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            reference_contours[prop_name] = RA.snapshot(prop_glyph)
             feet_by_glyph[prop_name] = S.detect_feet(prop_glyph, guides)
             dots_by_glyph[prop_name] = D.detect_dot_contours(prop_glyph)
-    return feet_by_glyph, dots_by_glyph
+    return feet_by_glyph, dots_by_glyph, reference_contours
 
 
-def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> ufoLib2.Font:
+def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, reference_contours) -> ufoLib2.Font:
     inst = R.instantiate(wght, wdth, grad)
     glyphset = inst.getGlyphSet()
     hmtx = inst["hmtx"]
@@ -333,6 +343,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
     template_contour = None
     if o_gname is not None:
         o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
+        if o_gname in reference_contours:
+            RA.align_to_reference(o_glyph_raw, reference_contours[o_gname])
         if o_glyph_raw.contours:
             template_contour = CC.outer_contour(o_glyph_raw.contours)
 
@@ -348,6 +360,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         if gname is None:
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
+        if gname in reference_contours:
+            RA.align_to_reference(glyph, reference_contours[gname])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         if _is_arch_char(ch):
@@ -367,6 +381,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            if prop_name in reference_contours:
+                RA.align_to_reference(prop_glyph, reference_contours[prop_name])
             D.boost_dots(prop_glyph, dots_by_glyph.get(prop_name, []), dot_factor)
             S.apply_feet(prop_glyph, feet_by_glyph.get(prop_name, []), guides, serf)
             ufo[prop_name] = prop_glyph
@@ -411,10 +427,10 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
 
 def build_all():
     SOURCES_DIR.mkdir(exist_ok=True)
-    feet_by_glyph, dots_by_glyph = compute_reference_specs()
+    feet_by_glyph, dots_by_glyph, reference_contours = compute_reference_specs()
     paths = {}
     for wght, wdth, serf, grad in P.master_grid():
-        ufo = build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph)
+        ufo = build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, reference_contours)
         name = P.master_name(wght, wdth, serf, grad)
         path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufo.save(path, overwrite=True)

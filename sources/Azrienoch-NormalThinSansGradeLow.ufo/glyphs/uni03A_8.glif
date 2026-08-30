@@ -10,20 +10,7 @@
       <point x="608.0648193359375" y="1083" type="line"/>
     </contour>
     <contour>
-      <point x="604.238525390625" y="289.5" type="line"/>
-      <point x="604.238525390625" y="259.5" type="line"/>
-      <point x="588.42333984375" y="259.5" type="line" smooth="yes"/>
-      <point x="324.41455078125" y="265.5"/>
-      <point x="128.749267578125" y="466.744140625"/>
-      <point x="128.749267578125" y="700.7578125" type="qcurve" smooth="yes"/>
-      <point x="128.749267578125" y="1083" type="line"/>
-      <point x="155.75" y="1083" type="line"/>
-      <point x="155.75" y="749.7578125" type="line" smooth="yes"/>
-      <point x="155.75" y="536.0341796875"/>
-      <point x="342.24169921875" y="289.5"/>
-      <point x="595.33642578125" y="289.5" type="qcurve" smooth="yes"/>
-    </contour>
-    <contour>
+      <point x="588.5860595703125" y="259.5" type="line"/>
       <point x="588.5860595703125" y="289.5" type="line"/>
       <point x="594.270751953125" y="289.5" type="line" smooth="yes"/>
       <point x="850.013916015625" y="289.5"/>
@@ -35,7 +22,20 @@
       <point x="1061.85791015625" y="469.33381259412647"/>
       <point x="872.806884765625" y="259.5"/>
       <point x="600.0220555094033" y="259.5" type="qcurve" smooth="yes"/>
-      <point x="588.5860595703125" y="259.5" type="line"/>
+    </contour>
+    <contour>
+      <point x="604.238525390625" y="259.5" type="line"/>
+      <point x="588.42333984375" y="259.5" type="line" smooth="yes"/>
+      <point x="324.41455078125" y="265.5"/>
+      <point x="128.749267578125" y="466.744140625"/>
+      <point x="128.749267578125" y="700.7578125" type="qcurve" smooth="yes"/>
+      <point x="128.749267578125" y="1083" type="line"/>
+      <point x="155.75" y="1083" type="line"/>
+      <point x="155.75" y="749.7578125" type="line" smooth="yes"/>
+      <point x="155.75" y="536.0341796875"/>
+      <point x="342.24169921875" y="289.5"/>
+      <point x="595.33642578125" y="289.5" type="qcurve" smooth="yes"/>
+      <point x="604.238525390625" y="289.5" type="line"/>
     </contour>
     <contour>
       <point x="533.98" y="0.0" type="line"/>
