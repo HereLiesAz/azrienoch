@@ -54,10 +54,15 @@ is in what it does with that space:
   and stay legible when condensed, without Azrienoch reimplementing an
   optical-kerning algorithm of its own.
 - **A horizontal-terminal design principle.** Roboto Flex's own grotesque
-  terminals are already cut flat (horizontal or vertical), not on the
-  stroke's own angle -- Azrienoch's slab serifs follow the same rule
-  (they're rectangles, by construction), and no reshaping was needed to
-  bring the inherited letterforms into line with it.
+  terminals are meant to be cut flat (horizontal or vertical), not on
+  the stroke's own angle -- Azrienoch's slab serifs follow the same rule
+  (they're rectangles, by construction). 'c' already cuts both its
+  openings flat, which is what exposed 'e'/'g' as exceptions: 'e's
+  lower-right opening and 'g's descender-tail hook both turned out to
+  end in a genuine diagonal cut instead, growing sharply with weight.
+  `tools/quirks.py` fixes both by moving one existing point's Y to match
+  its neighbor's -- no new points, so topology stays exactly what gvar
+  needs across every master.
 - **Counters pushed wide at every weight.** Roboto Flex's `XTRA` axis
   controls counter width independently of stroke weight; Azrienoch's
   `wght` mapping deliberately keeps `XTRA` generous even at Black
@@ -110,14 +115,14 @@ is in what it does with that space:
   two different thicknesses even though they're the same family of
   shape: 'o'/'c'/'e' read visibly heavier at their vertical extremes than
   the wall of 'd'/'b'/'p'/'q's bowl does right where it meets the flat
-  stem. `tools/round_contrast.py` measures both with real curve
-  flattening (not a bounding box, too coarse for a thickness that
-  changes along a curve) and moves only 'o'/'c'/'e's own inner top/bottom
-  points toward the outer edge, in the same proportion the neck is
-  thinner at the one weight (Regular) where measuring the neck itself is
-  reliable -- at Thin, Roboto Flex's own neck pinches to nearly nothing,
-  a genuine corner of its design space rather than something to match
-  exactly.
+  stem. `tools/round_contrast.py` compares both contours' own Y-extremes
+  directly (both are already on-curve points there, so no curve
+  flattening is needed for this particular measurement) and moves only
+  'o'/'c'/'e's own inner top/bottom points toward the outer edge, in the
+  same proportion the neck is thinner at the one weight (Regular) where
+  measuring the neck itself is reliable -- at Thin, Roboto Flex's own
+  neck pinches to nearly nothing, a genuine corner of its design space
+  rather than something to match exactly.
 - **Symmetric arch counters ('n'/'h'/'m'/'u').** Roboto Flex springs the
   curve of an arch letter from its two stems at two different heights --
   'n's left stem meets its arch 84 units higher than the right stem does
@@ -145,6 +150,32 @@ is in what it does with that space:
   renders as a hole rather than solid fill. 'e'/'c' aren't included yet:
   their outer and inner boundaries share a single open contour, which
   needs a different approach than this one.
+- **Arch letters' counters ('n'/'h'/'m'/'u') round to match.** These
+  don't have a separate counter contour to reshape the way a bowl does
+  -- the counter is bounded by a curve embedded in the letter's own
+  single outer contour, spanning between the two spring points
+  `arch_symmetry.py` finds. `tools/arch_shape.py` extends the same "copy
+  'o's own shape" idea to this open case: that span turns out to share
+  'o's own 7-point half-oval structure exactly, at every weight, for all
+  four letters. Since the spring points are shared with the stems and
+  can't move, this solves the similarity transform (rotation + uniform
+  scale, exactly determined by the two fixed spring points) that maps
+  the template's matching span onto them, then applies it to the points
+  between -- verified to bulge to the correct side of its own chord (not
+  assumed from how it looked for one letter: an early version relied on
+  a plain rotation, which happened to look right for 'n'/'h' but visibly
+  flattened 'u').
+- **A `matplotlib` bug found while checking the dot/counter match.**
+  `Path.interpolated()` -- used in a couple of places to "flatten" a
+  curve for measurement -- doesn't evaluate curve segments at all (its
+  own docstring says so): it linearly interpolates the raw vertex array,
+  so a circle's own control polygon comes back an octagon. Visual
+  rendering was never affected (matplotlib's renderer evaluates curves
+  correctly when drawing), only code calling `.interpolated()` to get
+  points back out for measurement or point-in-polygon tests was.
+  `preview.py::flatten_path` is a real bezier sampler; `canonical_counter.
+  py`'s outer/inner detection no longer needs to flatten at all
+  (`Path.contains_point` is already curve-aware called directly).
 
 The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
@@ -216,7 +247,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   letter's own counter (checked via the adjacent contour segment's
   length), which is what keeps it from notching into arch letters like
   'n'/'m'/'p'/'r'/'h'.
-- `quirks.py` -- the 'G' spur and 'R' leg kick (see "Design" above).
+- `quirks.py` -- the 'G' spur, 'R' leg kick, and 'e'/'g's flat terminals
+  (see "Design" above).
 - `dots.py` -- the weight-tapered dot boost and the 'i'/'j' tittle
   reposition-to-ascender-height fix (see "Design" above).
 - `single_story_a.py` -- builds 'a' from 'd's own outline (see "Design"
@@ -225,6 +257,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   bowl's own neck thickness (see "Design" above).
 - `arch_symmetry.py` -- symmetrizes 'n'/'h'/'m'/'u's arch-spring heights
   (see "Design" above).
+- `arch_shape.py` -- rounds 'n'/'h'/'m'/'u's arch counters to match 'o's
+  own shape (see "Design" above).
 - `counter_shape.py` -- shrinks the flat "waist" on a counter's round
   sides; mostly superseded by `canonical_counter.py` below for the
   glyphs that structurally match, still applied first as a harmless
