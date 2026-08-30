@@ -15,9 +15,9 @@ from __future__ import annotations
 import pathlib
 
 import ufoLib2
+from fontTools.pens.recordingPen import DecomposingRecordingPen
 
 from tools import params as P
-from tools import qu2cu_exact as Q
 from tools import roboto_source as R
 from tools import serifs as S
 
@@ -34,21 +34,29 @@ SOURCES_DIR = HERE / "sources"
 REFERENCE_WGHT, REFERENCE_WDTH = 400, 100
 
 
-def _draw_cubic(ufo_glyph, tt_glyph):
-    """Copy a (TrueType, quadratic) glyph's outline in as cubic curves.
+def _copy_outline(ufo_glyph, tt_glyph, glyphset):
+    """Copy a Roboto Flex (TrueType, quadratic) glyph's outline in as-is.
 
-    Degree-elevating each quadratic segment to exactly one cubic (see
-    ``qu2cu_exact.py``) is lossless and, critically, deterministic: it
-    always emits the same number of segments a glyph's quadratic topology
-    has, which is guaranteed identical across every master of a variable
-    font -- unlike fontTools' adaptive ``Qu2CuPen``, which fits cubics to
-    an error tolerance and can pick a different segment count per master.
-    booleanOperations (used to size the SERF feet) only understands cubic
-    curves, not TrueType 'qcurve' runs, so this also has to happen before
-    any serif geometry is added.
+    Composite glyphs (e.g. '%', built from 'zerosuperior' + 'uni2044'
+    components) are decomposed against Roboto Flex's *own* full
+    glyphset: those component glyphs exist there even though Azrienoch
+    doesn't import them as standalone characters, so drawing straight
+    into our UFO's pen would leave a dangling component reference to a
+    glyph our font doesn't have. ``DecomposingRecordingPen`` resolves
+    that first, so what lands in the UFO is always plain contours.
+
+    Otherwise, no curve conversion: the SERF axis (``serifs.py``) only
+    ever adds plain rectangle contours alongside the imported outline --
+    it never reshapes the outline itself -- so there's no reason to touch
+    the quadratic points Roboto Flex's own gvar already guarantees are
+    topologically identical across every master. A conversion step
+    (cubic or otherwise) risks picking a different point count on
+    different masters if it isn't perfectly deterministic, which silently
+    breaks interpolation between them.
     """
-    seg_pen = ufo_glyph.getPen()
-    tt_glyph.draw(Q.ExactQu2CuPen(seg_pen))
+    rec = DecomposingRecordingPen(glyphset)
+    tt_glyph.draw(rec)
+    rec.replay(ufo_glyph.getPen())
 
 
 def _guides(cap_height, x_height, ascender, descender):
@@ -78,7 +86,7 @@ def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
 
 def _extract_glyph(gname, glyphset, hmtx, unicode_val):
     glyph = ufoLib2.objects.Glyph(name=gname)
-    _draw_cubic(glyph, glyphset[gname])
+    _copy_outline(glyph, glyphset[gname], glyphset)
     glyph.width = hmtx[gname][0]
     if unicode_val is not None:
         glyph.unicodes = [unicode_val]

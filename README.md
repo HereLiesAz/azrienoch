@@ -85,20 +85,16 @@ the steps below any time `tools/` or `third_party/roboto-flex/` changes.
   Roboto Flex's axis space, instances the vendored variable font there
   with `fontTools.varLib.instancer`, and extracts glyph outlines,
   advance widths and kerning.
-- `qu2cu_exact.py` -- a deterministic (non-adaptive) quadratic-to-cubic
-  conversion pen. This matters more than it sounds: fontTools' own
-  adaptive `Qu2CuPen` fits cubics to an error tolerance and can pick a
-  *different number* of curve segments for two instances of what gvar
-  guarantees is the same point topology -- silently breaking
-  interpolation compatibility between masters. Degree-elevating each
-  quadratic segment 1:1 avoids that.
 - `serifs.py` -- detects candidate stem feet once from a reference
   instance, then adds the *same* foot contours (by fractional position)
   to every master, sized by that master's own `SERF` value. Every master
   of a glyph gets identical topology this way -- collapsed to a hairline
   at `SERF=0`, grown to a full slab at `SERF=100` -- which is what makes
   the axis interpolate at all rather than failing to compile.
-- `ufo_build.py` -- assembles the 12 master UFOs.
+- `ufo_build.py` -- assembles the 12 master UFOs, copying each glyph's
+  quadratic outline through unmodified (no curve conversion -- gvar
+  already guarantees the same point topology across masters, so nothing
+  needs re-fitting; only `serifs.py`'s added rectangles are new points).
 - `designspace_build.py` -- writes the `.designspace` and runs
   `fontmake` to compile the variable TTF.
 - `geometry.py` -- the rectangle-contour primitive `serifs.py` builds feet
@@ -119,14 +115,11 @@ This regenerates `sources/*.ufo`, `sources/Azrienoch.designspace` and
 
 ## Known limitations
 
-- **Core Latin MVP glyph set.** Uppercase, lowercase, digits and a core
-  punctuation set (~88 glyphs) -- not full Latin Extended, and no other
-  scripts. `tools/ufo_build.py::CORE_CHARS` is the place to grow it.
-- **Three `wght` samples per axis path.** The height/stroke correlation
-  is only anchored at wght 100/400/900; a fourth intermediate master
-  would let that curve bend more deliberately.
-- **`GRAD`, `opsz` and `slnt` are fixed**, not exposed as Azrienoch axes,
-  though the underlying Roboto Flex source supports all three.
+This is a Core Latin MVP (~88 glyphs: uppercase, lowercase, digits, core
+punctuation) -- not full Latin Extended, no other scripts, no named
+`fvar` instances, and no `GSUB` features (ligatures, figure styles,
+case-sensitive forms) beyond the kerning that is carried over. See
+[TODO.md](./TODO.md) for the full, itemized list of what's next.
 
 ## License
 

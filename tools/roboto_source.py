@@ -14,7 +14,7 @@ correlates them), a variable sans/serif axis Roboto Flex doesn't have, and
 the horizontal/vertical-only terminal rule.
 
 For each Azrienoch master we pick a *point* in Roboto Flex's axis space
-(see ``ROBOTO_LOCATION_AT``), fully instantiate the variable font there
+(see ``roboto_location``), fully instantiate the variable font there
 with ``fontTools.varLib.instancer`` (collapsing gvar/GPOS variation to a
 static glyf/GPOS at that point), and extract glyph outlines, advance
 widths and kerning straight out of the result.
