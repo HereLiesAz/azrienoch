@@ -15,6 +15,7 @@ from __future__ import annotations
 import os
 import pathlib
 import re
+import unicodedata
 
 import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
@@ -32,6 +33,33 @@ from tools import serifs as S
 from tools import single_story_a as A
 
 ROUND_CONTRAST_CHARS = {"o", "c", "e"}
+
+# Letters an arch spring-pair (a stem meeting a curve) means the same
+# thing 'n'/'h'/'m'/'u' does: a real arch counter that should read as
+# round as 'o's own. arch_symmetry.py's find_spring_pairs and
+# arch_shape.py's reshape_arch_counters are purely structural -- "two
+# stems this long, joined by a curve" -- with no idea which letter
+# they're looking at, so calling them unconditionally on every glyph (as
+# both were, until this was found) also matches letters that happen to
+# share that same stem-and-curve skeleton for an unrelated reason:
+# capital 'U' (and its accented forms -- 'Ù'/'Ú'/'Û'/'Ü'/'Ū'/... are two
+# stems joined by a curve too, just not an arch's), 'r'/'ŕ'/'ŗ'/'ř', and
+# several Greek letters unrelated to the arch family entirely (found via
+# a before/after diff of the compiled font: Greek 'μ' came out warped by
+# tens of thousands of units at Black weight -- an obviously wrong match,
+# not a subtle one). Restricting to the letters this was actually
+# designed and verified for -- 'h'/'n'/'m'/'u' and their accented Latin
+# forms -- via each character's own NFD base letter (falling back to the
+# character itself for the one exception, 'ħ', which doesn't decompose)
+# is what keeps the two functions' generic geometry from firing on a
+# letter that only coincidentally matches their skeleton.
+_ARCH_BASE_LETTERS = {"h", "n", "m", "u"}
+_ARCH_EXTRA_CHARS = {"ħ"}
+
+
+def _is_arch_char(ch: str) -> bool:
+    base = unicodedata.normalize("NFD", ch)[:1] or ch
+    return base in _ARCH_BASE_LETTERS or ch in _ARCH_EXTRA_CHARS
 
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -233,8 +261,9 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
-        AS.symmetrize(glyph)
-        ASH.reshape_arch_counters(glyph, template_contour)
+        if _is_arch_char(ch):
+            AS.symmetrize(glyph)
+            ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         CC.reshape_counter(glyph, template_contour)
@@ -295,8 +324,9 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
-        AS.symmetrize(glyph)
-        ASH.reshape_arch_counters(glyph, template_contour)
+        if _is_arch_char(ch):
+            AS.symmetrize(glyph)
+            ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         CC.reshape_counter(glyph, template_contour)
