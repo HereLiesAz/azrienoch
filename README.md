@@ -79,6 +79,22 @@ is in what it does with that space:
   per master, and both only ever move existing points -- never add or
   remove one -- so they don't touch the topology gvar interpolation
   depends on.
+- **A genuinely sharp bottom point on 'v'/'w', at every weight.**
+  Roboto Flex doesn't draw the point where 'v'/'w's two diagonals meet
+  as a single vertex -- it's a short flat baseline segment between two
+  separate on-curve points, and that segment widens aggressively with
+  weight (imperceptible at Thin, hundreds of units wide by Black),
+  reading as a blunt, flattened bottom rather than the sharp Akzidenz-
+  reminiscent point this design wants to keep. `tools/quirks.py`'s
+  `_sharpen_baseline_notches` collapses both endpoints of that segment
+  onto their own shared midpoint at every master -- both already sit
+  exactly on the baseline, so only X moves, and the two points become
+  coincident: a true zero-width vertex, still with the same point count.
+  Because `apply_quirks` runs before `tools/serifs.py`'s foot detection,
+  this also fixes a second bug as a side effect: with the segment
+  flattened to zero width, it no longer meets `serifs.py`'s minimum-run
+  threshold, so 'v'/'w's point no longer picks up a spurious slab foot
+  at `SERF` > 0 the way a real stem terminal would.
 - **Dots that read as a mark, not a fleck -- and don't fuse into the
   stroke beside them.** Two separate fixes here, both in
   `tools/dots.py`. First, Roboto Flex's period/colon/semicolon/tittle/
@@ -247,8 +263,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   letter's own counter (checked via the adjacent contour segment's
   length), which is what keeps it from notching into arch letters like
   'n'/'m'/'p'/'r'/'h'.
-- `quirks.py` -- the 'G' spur, 'R' leg kick, and 'e'/'g's flat terminals
-  (see "Design" above).
+- `quirks.py` -- the 'G' spur, 'R' leg kick, 'e'/'g's flat terminals, and
+  'v'/'w's sharp baseline point (see "Design" above).
 - `dots.py` -- the weight-tapered dot boost and the 'i'/'j' tittle
   reposition-to-ascender-height fix (see "Design" above).
 - `single_story_a.py` -- builds 'a' from 'd's own outline (see "Design"

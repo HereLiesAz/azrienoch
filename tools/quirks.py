@@ -131,9 +131,47 @@ def _horizontal_terminal_g(glyph) -> None:
     pts[0].y = pts[30].y
 
 
+_BASELINE_TOL = 2.0  # units; how close to y=0 both ends of a notch must be
+
+
+def _sharpen_baseline_notches(glyph) -> None:
+    """Collapse 'v'/'w's bottom vertex/vertices back to a genuine sharp
+    point at every weight, instead of Roboto Flex's own flat-bottomed
+    notch there. Roboto Flex draws the point where two diagonals meet at
+    the baseline not as one vertex but as a short flat 'line' segment
+    between two separate on-curve points -- barely visible at Thin
+    (under 65 units wide) but Roboto Flex widens it aggressively with
+    weight (past 500 units by Black), which reads as a flat-bottomed
+    trough, not the sharp Akzidenz-reminiscent point this is worth
+    keeping. Every such segment (one for 'v', two for 'w', found
+    generically rather than hardcoded per letter since the fix is the
+    same either way) gets its two endpoints collapsed onto their own
+    midpoint -- both already sit exactly on the baseline, so only x
+    moves, and the two points become coincident: a zero-width vertex
+    that still satisfies "never add or remove a point."
+    """
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    n = len(pts)
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        if a.type != "line" or b.type != "line":
+            continue
+        if abs(a.y) > _BASELINE_TOL or abs(b.y) > _BASELINE_TOL:
+            continue
+        if a.x == b.x:
+            continue  # already a point, or a degenerate zero-length edge
+        mid_x = (a.x + b.x) / 2.0
+        a.x = mid_x
+        b.x = mid_x
+
+
 _QUIRKS = {
     "G": _spur_G,
     "R": _kick_R,
     "e": _horizontal_terminal_e,
     "g": _horizontal_terminal_g,
+    "v": _sharpen_baseline_notches,
+    "w": _sharpen_baseline_notches,
 }
