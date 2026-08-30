@@ -74,6 +74,22 @@ is in what it does with that space:
   per master, and both only ever move existing points -- never add or
   remove one -- so they don't touch the topology gvar interpolation
   depends on.
+- **Dots that read as a mark, not a fleck -- and don't fuse into the
+  stroke beside them.** Two separate fixes here, both in
+  `tools/dots.py`. First, Roboto Flex's period/colon/semicolon/tittle/
+  exclam/question dots barely grow with `wght` the way stems do, so they
+  read as an afterthought next to Azrienoch's already-wide counters --
+  every dot Azrienoch imports gets scaled up around its own centroid, by
+  an amount that tapers from a real lift at Thin down to none at all by
+  Bold/Black, where Roboto Flex's own dots are already a reasonable size
+  and boosting further would crowd a colon's two dots into each other.
+  Second, and unrelated: Roboto Flex's own 'i'/'j' tittle sits low of
+  where letters like h/d/b/k/l actually top out, and at Bold and
+  especially Black weight sits close enough to the stem beneath it that
+  the two read as one fused shape rather than a stem with a dot above
+  it. Moving the tittle straight up so its top lands exactly on that
+  true ascender height (measured off 'h' itself, not the font's own
+  much-taller `hhea.ascender` line-spacing metric) fixes both at once.
 
 The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
@@ -146,6 +162,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   length), which is what keeps it from notching into arch letters like
   'n'/'m'/'p'/'r'/'h'.
 - `quirks.py` -- the 'G' spur and 'R' leg kick (see "Design" above).
+- `dots.py` -- the weight-tapered dot boost and the 'i'/'j' tittle
+  reposition-to-ascender-height fix (see "Design" above).
 - `ufo_build.py` -- assembles the 48 master UFOs, copying each glyph's
   quadratic outline through unmodified (no curve conversion -- gvar
   already guarantees the same point topology across masters, so nothing
