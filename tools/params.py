@@ -20,9 +20,11 @@ WGHT_AXIS = ("wght", 100, 400, 900)
 WDTH_AXIS = ("wdth", 75, 100, 100)
 SERF_AXIS = ("SERF", 0, 0, 100)
 
-WGHT_MASTERS = (100, 400, 900)
+WGHT_MASTERS = (100, 400, 700, 900)
 WDTH_MASTERS = (75, 100)
 SERF_MASTERS = (0, 100)
+
+WGHT_NAMES = {100: "Thin", 400: "Regular", 700: "Bold", 900: "Black"}
 
 
 def master_grid():
@@ -34,7 +36,7 @@ def master_grid():
 
 
 def master_name(wght, wdth, serf):
-    w = {100: "Thin", 400: "Regular", 900: "Black"}[wght]
+    w = WGHT_NAMES[wght]
     d = {75: "Condensed", 100: "Normal"}[wdth]
     s = "Serif" if serf else "Sans"
     return f"{d}{w}{s}"

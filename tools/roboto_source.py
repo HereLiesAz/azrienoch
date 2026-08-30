@@ -38,25 +38,38 @@ ROBOTO_TTF = str(
 
 UPM = 2048  # Roboto Flex's unitsPerEm; Azrienoch keeps it to avoid rescaling.
 
-# Roboto Flex's own axis extremes, at Azrienoch's wght masters (100/400/900).
-# 400 uses Roboto Flex's authentic defaults; 100/900 push the parametric
-# height and stroke axes to their extremes -- this is the whole "height as
-# a matter of weight" mechanism, implemented on real engineered masters.
+# Roboto Flex's own axis extremes, at Azrienoch's wght masters (100/400/
+# 700/900). The height/stroke axes (XOPQ, YOPQ, YTUC/YTLC/YTAS/YTDE/YTFI)
+# push toward Roboto Flex's own extremes -- the "height as a matter of
+# weight" mechanism. The 700 (Bold) sample isn't the linear midpoint
+# between Regular and Black: height growth is front-loaded (most of it
+# happens by Bold, tapering off toward Black) while stroke thickness
+# keeps growing roughly proportionally, so the curve actually bends
+# there instead of being two straight segments pretending to be one.
+#
+# XTRA (counter width, range 323-603) deliberately does NOT follow that
+# same thin->thick progression: it's pushed wide at every weight, most
+# pointedly at Black, where a typeface would normally let its counters
+# get crowded out by ink. Refusing that trade -- keeping the void as
+# prominent as the stroke even under the heaviest weight -- is the
+# point: Azrienoch's counters are a considered shape, not leftover space.
 _HEIGHT_AXES_AT_WGHT = {
-    100: dict(XOPQ=27, YOPQ=25, XTRA=344, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
-    400: dict(XOPQ=96, YOPQ=79, XTRA=468, YTUC=712, YTLC=514, YTAS=750, YTDE=-203, YTFI=738),
-    900: dict(XOPQ=175, YOPQ=135, XTRA=400, YTUC=760, YTLC=570, YTAS=854, YTDE=-305, YTFI=788),
+    100: dict(XOPQ=27, YOPQ=25, XTRA=420, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
+    400: dict(XOPQ=96, YOPQ=79, XTRA=540, YTUC=712, YTLC=514, YTAS=750, YTDE=-203, YTFI=738),
+    700: dict(XOPQ=145, YOPQ=113, XTRA=565, YTUC=748, YTLC=555, YTAS=820, YTDE=-270, YTFI=772),
+    900: dict(XOPQ=175, YOPQ=135, XTRA=580, YTUC=760, YTLC=570, YTAS=854, YTDE=-305, YTFI=788),
 }
 
 
-def _lerp3(x, xs, ys):
-    x0, x1, x2 = xs
-    y0, y1, y2 = ys
-    if x <= x1:
-        t = 0.0 if x1 == x0 else (x - x0) / (x1 - x0)
-        return y0 + (y1 - y0) * t
-    t = 0.0 if x2 == x1 else (x - x1) / (x2 - x1)
-    return y1 + (y2 - y1) * t
+def _lerp_piecewise(x, xs, ys):
+    """Piecewise-linear interpolation across any number of sample points."""
+    for i in range(len(xs) - 1):
+        x0, x1 = xs[i], xs[i + 1]
+        if x <= x1 or i == len(xs) - 2:
+            t = 0.0 if x1 == x0 else (x - x0) / (x1 - x0)
+            y0, y1 = ys[i], ys[i + 1]
+            return y0 + (y1 - y0) * t
+    raise AssertionError("unreachable")  # xs is non-empty by construction
 
 
 def roboto_location(wght: float, wdth: float) -> dict:
@@ -65,7 +78,7 @@ def roboto_location(wght: float, wdth: float) -> dict:
     height_axes = {}
     for tag in ("XOPQ", "YOPQ", "XTRA", "YTUC", "YTLC", "YTAS", "YTDE", "YTFI"):
         ys = tuple(_HEIGHT_AXES_AT_WGHT[w][tag] for w in wghts)
-        height_axes[tag] = _lerp3(wght, wghts, ys)
+        height_axes[tag] = _lerp_piecewise(wght, wghts, ys)
 
     # Azrienoch wdth 75..100 (Condensed..Normal) -> Roboto Flex wdth 82..100:
     # a real but moderate condensation, short of Roboto's most extreme setting.

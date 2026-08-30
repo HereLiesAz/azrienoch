@@ -50,10 +50,26 @@ is in what it does with that space:
   stroke's own angle -- Azrienoch's slab serifs follow the same rule
   (they're rectangles, by construction), and no reshaping was needed to
   bring the inherited letterforms into line with it.
+- **Counters pushed wide at every weight.** Roboto Flex's `XTRA` axis
+  controls counter width independently of stroke weight; Azrienoch's
+  `wght` mapping deliberately keeps `XTRA` generous even at Black
+  (`tools/roboto_source.py::_HEIGHT_AXES_AT_WGHT`), refusing the usual
+  trade where the heaviest weight lets its ink crowd the void out. The
+  counter is a considered shape, not leftover space.
+- **A couple of barely-noticeable Akzidenz-Grotesk quirks.**
+  `tools/quirks.py` makes two small, targeted edits on top of the
+  imported outline: 'G' gets a proper hanging spur (Roboto Flex's own
+  crossbar, extended), and 'R' gets a subtly flared, kicked-out leg,
+  instead of a plain conservative one. Both are computed relative to the
+  glyph's own local geometry (a multiple of its own bar thickness or leg
+  width) so they scale with weight and width instead of needing tuning
+  per master, and both only ever move existing points -- never add or
+  remove one -- so they don't touch the topology gvar interpolation
+  depends on.
 
-The letterform character itself aims for an analytical neo-grotesque:
+The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
-Helvetica/Akzidenz-Grotesk's rational flat-terminal directness.
+Helvetica's rational flat-terminal directness.
 
 ## Axes
 
@@ -67,11 +83,11 @@ Helvetica/Akzidenz-Grotesk's rational flat-terminal directness.
 
 ```
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
-sources/*.ufo                     the 12 (wght x wdth x SERF) UFO masters (build output)
+sources/*.ufo                     the 16 (wght x wdth x SERF) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
 third_party/roboto-flex/          vendored Roboto Flex source font + its own OFL.txt/AUTHORS.txt
 tools/                            the build pipeline (see below)
-specimen/                         specimen renders
+specimen/                         specimen renders + the interactive specimen page (index.html)
 ```
 
 `sources/*.ufo`, `sources/Azrienoch.designspace` and
@@ -92,13 +108,25 @@ the steps below any time `tools/` or `third_party/roboto-flex/` changes.
   to every master, sized by that master's own `SERF` value. Every master
   of a glyph gets identical topology this way -- collapsed to a hairline
   at `SERF=0`, grown to a full slab at `SERF=100` -- which is what makes
-  the axis interpolate at all rather than failing to compile.
-- `ufo_build.py` -- assembles the 12 master UFOs, copying each glyph's
+  the axis interpolate at all rather than failing to compile. Each foot
+  only grows on the side(s) that border a real stem rather than the
+  letter's own counter (checked via the adjacent contour segment's
+  length), which is what keeps it from notching into arch letters like
+  'n'/'m'/'p'/'r'/'h'.
+- `quirks.py` -- the 'G' spur and 'R' leg kick (see "Design" above).
+- `ufo_build.py` -- assembles the 16 master UFOs, copying each glyph's
   quadratic outline through unmodified (no curve conversion -- gvar
   already guarantees the same point topology across masters, so nothing
   needs re-fitting; only `serifs.py`'s added rectangles are new points).
-- `designspace_build.py` -- writes the `.designspace` and runs
-  `fontmake` to compile the variable TTF.
+  Composite glyphs (accents, '%') are decomposed against Roboto Flex's
+  own glyphset first, so what lands in the UFO is always plain contours.
+- `designspace_build.py` -- writes the `.designspace` (axes, sources,
+  named instances, `STAT` axis-value labels) and runs `fontmake` to
+  compile the variable TTF, then runs `validate_build.py`.
+- `validate_build.py` -- sanity-checks the build: `fvar` axes/instances
+  match `params.py`, every master has the same glyph set, and every
+  glyph has identical contour/point topology across all 16 masters.
+  Runnable on its own: `python3 -m tools.validate_build`.
 - `geometry.py` -- the rectangle-contour primitive `serifs.py` builds feet
   from.
 - `preview.py` -- a matplotlib-based text renderer (from the compiled
@@ -113,13 +141,20 @@ python3 -m tools.designspace_build
 ```
 
 This regenerates `sources/*.ufo`, `sources/Azrienoch.designspace` and
-`fonts/variable/Azrienoch-VF.ttf`.
+`fonts/variable/Azrienoch-VF.ttf`, and validates the result.
+
+## Specimen
+
+`specimen/index.html` is a self-contained (font embedded) interactive
+specimen: live `wght`/`wdth`/`SERF` sliders, all 16 named-instance
+presets, an editable hero sample, and a glyph-set showcase. Open it
+directly in a browser -- no server needed.
 
 ## Known limitations
 
-This is a Core Latin MVP (~88 glyphs: uppercase, lowercase, digits, core
-punctuation) -- not full Latin Extended, no other scripts, no named
-`fvar` instances, and no `GSUB` features (ligatures, figure styles,
+273 glyphs (uppercase, lowercase, digits, core punctuation, Latin-1
+Supplement and Latin Extended-A) -- not full Latin Extended, no other
+scripts, and no `GSUB` features (ligatures, figure styles,
 case-sensitive forms) beyond the kerning that is carried over. See
 [TODO.md](./TODO.md) for the full, itemized list of what's next.
 
