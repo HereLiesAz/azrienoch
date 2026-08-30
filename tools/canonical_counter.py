@@ -113,12 +113,18 @@ def outer_contour(contours):
     Roboto Flex/construction artifacts at that extreme, not bugs here.
     Point-in-polygon containment is the actual definition of "outer" and
     isn't fooled by either: test each contour's own bbox center against
-    every other contour's flattened path -- the outer is whichever one's
-    center point is contained by nothing else."""
-    flattened = [Path(*contour_to_mpl(c)).interpolated(200) for c in contours]
+    every other contour's own path -- the outer is whichever one's
+    center point is contained by nothing else. `contains_point` is called
+    directly on the path `contour_to_mpl` builds (proper CURVE3/CURVE4
+    codes), never through `Path.interpolated()` first -- that method's
+    own docstring says codes other than LINETO/MOVETO/CLOSEPOLY "are not
+    handled correctly", and confirmed it silently linearly-interpolates
+    the raw control polygon instead of the true curve (a circle's own
+    control points round-tripped through it come back an octagon)."""
+    paths = [Path(*contour_to_mpl(c)) for c in contours]
     for i, contour in enumerate(contours):
         center = _bbox_center(contour.points)
-        if not any(j != i and flattened[j].contains_point(center) for j in range(len(contours))):
+        if not any(j != i and paths[j].contains_point(center) for j in range(len(contours))):
             return contour
     return max(contours, key=lambda c: _bbox_area(c.points))
 

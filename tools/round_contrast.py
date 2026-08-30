@@ -5,11 +5,12 @@ Roboto Flex draws these as two different thicknesses even though they're
 the same family of curve: 'o'/'c' read visibly heavier at their vertical
 extremes (the "center" of the round shape) than the wall of 'd'/'b'/'p'/
 'q's bowl does right where it meets the stem (the "neck"). Confirmed by
-measuring both with matplotlib's own curve flattening (via
-`preview.py::contour_to_mpl`), not bounding boxes, which are too coarse
-for a wall thickness that changes along a curve: at Regular (wght 400),
-'d'/'b'/'p'/'q's neck averages ~101 units against 'o's own top/bottom
-thickness of 140 -- a ratio of about 0.75.
+comparing the outer and inner contours' own Y-coordinates directly at
+each shape's vertical extreme (`_inner_extremes`, below) -- both are
+already on-curve points there, so no curve flattening is needed to
+measure this particular thickness: at Regular (wght 400), 'd'/'b'/'p'/
+'q's neck averages ~101 units against 'o's own top/bottom thickness of
+140 -- a ratio of about 0.75.
 
 That ratio, not an absolute target, is what gets applied at every
 master: measuring the neck itself turns out to be reliable only near
@@ -52,11 +53,6 @@ every master stays topologically identical.
 
 from __future__ import annotations
 
-import numpy as np
-from matplotlib.path import Path
-
-from tools.preview import contour_to_mpl
-
 Y_PLATEAU_TOL = 1.0  # units; points within this share a "level" for grouping
 
 # Measured once at Regular (wght 400, wdth 100): the average of 'd'/'b'/
@@ -64,16 +60,6 @@ Y_PLATEAU_TOL = 1.0  # units; points within this share a "level" for grouping
 # thickness (140) -- see module docstring for why this ratio, not an
 # absolute target, is what carries across masters.
 CENTER_THICKNESS_RATIO = 0.75
-
-
-def _flatten(contour, n=400):
-    verts, codes = contour_to_mpl(contour)
-    return Path(verts, codes).interpolated(n).vertices
-
-
-def _min_dist(pt, poly):
-    d = np.hypot(poly[:, 0] - pt[0], poly[:, 1] - pt[1])
-    return float(d.min())
 
 
 def _outer_contour(contours):

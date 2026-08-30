@@ -17,6 +17,7 @@ import pathlib
 import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
+from tools import arch_shape as ASH
 from tools import arch_symmetry as AS
 from tools import canonical_counter as CC
 from tools import counter_shape as CS
@@ -203,6 +204,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         AS.symmetrize(glyph)
+        ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         CC.reshape_counter(glyph, template_contour)
@@ -264,6 +266,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         AS.symmetrize(glyph)
+        ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         CC.reshape_counter(glyph, template_contour)
