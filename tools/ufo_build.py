@@ -61,6 +61,31 @@ def _is_arch_char(ch: str) -> bool:
     base = unicodedata.normalize("NFD", ch)[:1] or ch
     return base in _ARCH_BASE_LETTERS or ch in _ARCH_EXTRA_CHARS
 
+
+# Same over-matching risk as arch reshaping, for the same reason:
+# canonical_counter.py's reshape_counter is also a purely structural
+# detector (a 14-point on/off-curve pattern shared by 'o's own contour),
+# with no idea which letter it's looking at -- see that module's own
+# docstring, which names exactly 'o'/'d'/'b'/'p'/'q'/'g'/'a' as the
+# intended, verified family (task that shipped it: "Build canonical-oval
+# counter reshape (o/d/b/p/q/g/a)"). Left unconditional, the same way
+# arch reshaping was, it also fires on every OTHER letter that happens to
+# have a closed counter for an unrelated reason: capital 'O'/'Q', digits
+# ('0'), '%', 'Ø'/'þ'/'đ', and a wide swath of Greek and Cyrillic letters
+# (ρ/σ/θ, б/р/й/Ю, ...) whose counters were never designed or verified to
+# match 'o's own proportions -- found the same way the arch bug was,
+# checking which characters this function actually changes something for
+# versus the 7 it was built for. None of these came out as badly broken
+# as arch reshaping's Greek 'μ' did, but forcing a Cyrillic 'б' or Greek
+# 'σ' through 'o's exact oval is still an unintended, undesigned change,
+# not a merely-cosmetic side effect worth keeping by accident.
+_COUNTER_BASE_LETTERS = {"o", "d", "b", "p", "q", "g", "a"}
+
+
+def _is_closed_counter_char(ch: str) -> bool:
+    base = unicodedata.normalize("NFD", ch)[:1] or ch
+    return base in _COUNTER_BASE_LETTERS
+
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
@@ -266,7 +291,8 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
-        CC.reshape_counter(glyph, template_contour)
+        if _is_closed_counter_char(ch):
+            CC.reshape_counter(glyph, template_contour)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
@@ -329,7 +355,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
             ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
-        CC.reshape_counter(glyph, template_contour)
+        if _is_closed_counter_char(ch):
+            CC.reshape_counter(glyph, template_contour)
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
         if ch in D.TITTLE_CHARS and ascender_height is not None:
             D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)
