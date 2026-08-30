@@ -25,7 +25,7 @@ OUTPUT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
 # master grid -- feeds both the STAT table (so design apps show a proper
 # "Weight"/"Width"/"Serif" style picker instead of raw axis sliders) and
 # the family-name half of each named instance below.
-WGHT_LABELS = {100: "Thin", 400: "Regular", 700: "Bold", 900: "Black"}
+WGHT_LABELS = {100: "Thin", 250: "ExtraLight", 400: "Regular", 700: "Bold", 900: "Black"}
 WDTH_LABELS = {75: "Condensed", 100: "Normal"}
 SERF_LABELS = {0: "Sans", 100: "Serif"}
 GRAD_LABELS = {-50: "Low", 0: "Regular", 50: "High"}
@@ -71,11 +71,18 @@ def write_designspace(ufo_paths: dict) -> pathlib.Path:
             src.copyFeatures = True
         doc.addSource(src)
 
-        inst = InstanceDescriptor()
-        inst.familyName = "Azrienoch"
-        inst.styleName = P.master_name(wght, wdth, serf, grad)
-        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
-        doc.addInstance(inst)
+        # Every master grid point needs a source (gvar interpolates from
+        # all of them), but not every one is meant to be a user-facing
+        # named style -- wght=250 exists purely to shorten the Thin-to-
+        # Regular interpolation gap (see params.py::WGHT_INSTANCE_MASTERS)
+        # and was never designed as its own weight, so it doesn't get an
+        # fvar named instance the way Thin/Regular/Bold/Black do.
+        if wght in P.WGHT_INSTANCE_MASTERS:
+            inst = InstanceDescriptor()
+            inst.familyName = "Azrienoch"
+            inst.styleName = P.master_name(wght, wdth, serf, grad)
+            inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
+            doc.addInstance(inst)
 
     doc.write(str(DESIGNSPACE_PATH))
     return DESIGNSPACE_PATH

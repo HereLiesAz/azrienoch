@@ -43,7 +43,7 @@ def check_fvar(errors):
         got = axes.get(tag)
         if got != exp:
             _fail(f"fvar axis {tag}: expected {exp}, got {got}", errors)
-    expected_instances = len(list(P.master_grid()))
+    expected_instances = sum(1 for wght, *_ in P.master_grid() if wght in P.WGHT_INSTANCE_MASTERS)
     got_instances = len(font["fvar"].instances)
     if got_instances != expected_instances:
         _fail(

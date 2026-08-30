@@ -72,6 +72,20 @@ _HEIGHT_AXES_AT_WGHT = {
     # stays broken through ~40) while changing the overall Thin stroke
     # weight by an imperceptible amount -- verified side by side.
     100: dict(XOPQ=45, YOPQ=25, XTRA=420, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
+    # 175 and 250 each land exactly on the straight line the two points
+    # bracketing them already defined (250 is the 100->400 segment's own
+    # midpoint; once 250 existed, 175 is the 100->250 segment's own
+    # midpoint in turn) -- neither is a separately-tuned design point,
+    # both exist only so params.py::WGHT_MASTERS has explicit masters for
+    # rotation_align.py/taper_align.py to anchor shorter Roboto Flex
+    # extraction jumps to (see those modules' docstrings, and
+    # params.py::WGHT_INSTANCE_MASTERS). Landing exactly on the
+    # pre-existing line at each step means adding them changes nothing
+    # about this curve's own shape -- `_lerp_piecewise` still returns the
+    # same value anywhere from 100 to 400 it did before either entry
+    # existed, including at 175 and 250 themselves.
+    175: dict(XOPQ=58, YOPQ=38, XTRA=450, YTUC=574, YTLC=440, YTAS=674, YTDE=-124, YTFI=604),
+    250: dict(XOPQ=70, YOPQ=52, XTRA=480, YTUC=620, YTLC=465, YTAS=700, YTDE=-150, YTFI=649),
     400: dict(XOPQ=96, YOPQ=79, XTRA=540, YTUC=712, YTLC=514, YTAS=750, YTDE=-203, YTFI=738),
     700: dict(XOPQ=145, YOPQ=113, XTRA=565, YTUC=748, YTLC=555, YTAS=820, YTDE=-270, YTFI=772),
     900: dict(XOPQ=175, YOPQ=135, XTRA=580, YTUC=760, YTLC=570, YTAS=854, YTDE=-305, YTFI=788),

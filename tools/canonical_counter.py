@@ -268,3 +268,140 @@ def reshape_counter(glyph, template_contour) -> bool:
             p.x, p.y = x, y
         reshaped_any = True
     return reshaped_any
+
+
+def reshape_outer_to_reference(glyph, reference_outer_points) -> bool:
+    """Reshape `glyph`'s own outer contour into an affine-scaled copy of
+    `reference_outer_points` (a fixed reference master's raw, pre-quirks
+    outer contour -- in practice always 'o's own outer at the
+    designspace's reference weight). Returns True if reshaped.
+
+    Exists for the same reason `reshape_counter` exists, applied one
+    level up. Roboto Flex's own raw extraction of 'o's outer contour
+    doesn't keep the same corner/waist role at the same point index
+    across weight -- confirmed directly: at wght=100, even the best
+    available type-preserving rotation against the reference (wght=400)
+    still leaves several of the 14 points off by up to 180 degrees in
+    angle-from-centroid, and no rotation OR reversal of the raw points
+    reconciles it, because the raw data's own point ROLES genuinely
+    differ between those two masters, not just their numbering. Left
+    unfixed, this doesn't just leave `rotation_align.py`'s own fix
+    imperfect for 'o' itself -- 'o's outer contour's own signed area
+    actually crosses zero (a real, momentary collapse through a
+    degenerate sliver, confirmed via direct signed-area sampling) around
+    wght 135 -- it also feeds a per-master-inconsistent template into
+    `reshape_counter`, which every closed counter (d/b/p/q/g/a, and 'o's
+    own inner counter) templates off of, so the same raw quirk cascades
+    into THEIR interpolation too (confirmed on 'g'/'p': their own
+    counter's signed area, healthy at both wght 100 and 175, collapsed
+    to under 1% of itself at wght 140). Reshaping 'o's outer to a single
+    FIXED reference once, here, before it's ever used as anyone's
+    template, fixes the source directly instead of chasing each of its
+    downstream symptoms.
+
+    Unlike `reshape_counter`'s mirror decision (which has to track its
+    own outer's sign, since a counter's only real constraint is
+    "opposite whatever encloses it"), the contour reshaped here has no
+    sibling it must oppose -- any single fixed absolute sign, applied
+    identically at every master, keeps the result self-consistent. This
+    always mirrors to match the REFERENCE's own sign specifically, never
+    "whatever this contour's sign already happened to be" -- that
+    per-master-unstable alternative is exactly the choice
+    `reshape_counter`'s own docstring already documents as the wrong
+    one, for the same reason it would be wrong here too."""
+    outer = outer_contour(glyph.contours)
+    return _reshape_contour_to_reference(outer, reference_outer_points)
+
+
+def _reshape_contour_to_reference(contour, reference_points) -> bool:
+    """Low-level primitive shared by `reshape_outer_to_reference` and
+    `stabilize_round_glyph`: reshape one `contour`'s own points into an
+    affine-scaled copy of `reference_points`, matched by on/off-curve
+    type (forward or reversed reading, whichever is legal) and mirrored
+    to match `reference_points`' own signed-area sign. Returns True if
+    reshaped."""
+    pts = contour.points
+    target_types = [_type_key(p) for p in pts]
+    ref_types = [_type_key(p) for p in reference_points]
+    mapping = _find_rotation(target_types, ref_types)
+    if mapping is None:
+        mapping = _find_reversed_rotation(target_types, ref_types)
+    if mapping is None:
+        return False
+
+    rx0 = min(p.x for p in reference_points)
+    rx1 = max(p.x for p in reference_points)
+    ry0 = min(p.y for p in reference_points)
+    ry1 = max(p.y for p in reference_points)
+    if rx1 <= rx0 or ry1 <= ry0:
+        return False
+    rcx, rcy = (rx0 + rx1) / 2.0, (ry0 + ry1) / 2.0
+
+    ox0 = min(p.x for p in pts)
+    ox1 = max(p.x for p in pts)
+    oy0 = min(p.y for p in pts)
+    oy1 = max(p.y for p in pts)
+    if ox1 <= ox0 or oy1 <= oy0:
+        return False
+    ocx, ocy = (ox0 + ox1) / 2.0, (oy0 + oy1) / 2.0
+    scale_x = (ox1 - ox0) / (rx1 - rx0)
+    scale_y = (oy1 - oy0) / (ry1 - ry0)
+    new_coords = [
+        (
+            ocx + (reference_points[mapping[i]].x - rcx) * scale_x,
+            ocy + (reference_points[mapping[i]].y - rcy) * scale_y,
+        )
+        for i in range(len(pts))
+    ]
+
+    ref_sign = _signed_area(reference_points) >= 0
+    n = len(new_coords)
+    proposed_area = sum(
+        new_coords[i][0] * new_coords[(i + 1) % n][1] - new_coords[(i + 1) % n][0] * new_coords[i][1]
+        for i in range(n)
+    )
+    proposed_sign = proposed_area >= 0
+    if proposed_sign != ref_sign:
+        new_coords = [(2 * ocx - x, y) for x, y in new_coords]
+
+    for p, (x, y) in zip(pts, new_coords):
+        p.x, p.y = x, y
+    return True
+
+
+def stabilize_round_glyph(glyph, reference_contours) -> bool:
+    """Reshape EVERY contour of `glyph` into an affine-scaled copy of its
+    own corresponding reference-master contour (matched by list
+    position -- `rotation_align.align_to_reference` must already have
+    run, so that position already matches). Unlike `reshape_counter` /
+    `reshape_outer_to_reference`, this never borrows another glyph's
+    shape as a template -- each contour only ever gets reshaped against
+    ITS OWN reference self, so it changes nothing about the glyph's own
+    design, only its cross-master point correspondence. Returns True if
+    every contour was reshaped.
+
+    For a glyph built from wholly independent geometry (not derived from
+    'o' the way d/b/p/q/g/a are, e.g. digit '0', which shares 'o's own
+    14-point double-oval structure purely by coincidence of being
+    another round, roughly symmetric shape), this is the same fix
+    `reshape_outer_to_reference` applies to 'o' itself, generalized to
+    every one of the glyph's own contours instead of just its outer one.
+    Confirmed needed on digit '0': at wght=140, with only
+    `rotation_align.py`'s own rotation-only fix applied, its own outer
+    contour visibly flattens to a near-straight line in the live
+    specimen -- the same species of collapse 'o' itself had, for the
+    same reason (Roboto Flex's own raw extraction doesn't keep this
+    shape's corner/waist point roles at the same index across weight,
+    and no rotation or reversal of the existing points can reconcile
+    it)."""
+    contours = glyph.contours
+    if len(contours) != len(reference_contours):
+        return False
+    ok = True
+    for contour, ref_points in zip(contours, reference_contours):
+        if len(contour.points) != len(ref_points):
+            ok = False
+            continue
+        if not _reshape_contour_to_reference(contour, ref_points):
+            ok = False
+    return ok

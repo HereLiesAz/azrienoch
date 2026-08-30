@@ -88,6 +88,46 @@ def _is_closed_counter_char(ch: str) -> bool:
     base = unicodedata.normalize("NFD", ch)[:1] or ch
     return base in _COUNTER_BASE_LETTERS
 
+
+# 'o' isn't the only round, roughly-symmetric shape Roboto Flex's own raw
+# extraction mishandles across weight the same way -- confirmed directly
+# on the compiled font (a signed-area sweep from wght 100 to 900) that
+# capital 'O', digit '0', and digits '6'/'9' all momentarily collapse
+# through a degenerate sliver in the same wght~130-150 range 'o' itself
+# did, and 'D' does too (its bowl has the same double-oval structure as
+# 'O's). Confirmed this is specifically a self-correspondence problem,
+# not a borrowed-template one: `stabilize_round_glyph`
+# (canonical_counter.py) never copies another glyph's shape, only
+# realigns each of these against ITS OWN reference-master self, so
+# there's no over-matching risk the way `reshape_counter`/
+# `reshape_arch_counters` have (see those two functions' own docstrings)
+# -- scoped to this specific letter set anyway, rather than applied
+# universally, because for a glyph whose weight-dependent shape genuinely
+# isn't just a scaled copy of its reference self (most letters), forcing
+# it to become one would be a real, unwanted design change, not a bugfix.
+# 'o' is IN this set -- its accented forms (ò/ó/ô/õ/ö/ø, ...) are
+# independent extractions with their own points, not a reuse of plain
+# 'o's, and were confirmed to have this exact same collapse themselves
+# (e.g. 'ø' momentarily solid-black around wght 140, same as an
+# unfixed 'o' would be). The literal character 'o' is excluded below,
+# not here, because that ONE glyph already gets the equivalent fix
+# further down in this same loop iteration (its own outer via
+# `reshape_outer_to_reference`, its own inner counter via
+# `reshape_counter` + the realignment right after it) -- both needed
+# earlier than this call runs, since 'o' also serves as everyone else's
+# counter-reshaping template. Stabilizing literal 'o' here too would
+# just get overwritten by that more specific handling; every OTHER
+# glyph whose NFD base is 'o' still needs this call, since none of them
+# get that dedicated treatment.
+_ROUND_STABILIZE_BASE_LETTERS = {"o", "O", "0", "6", "9", "D"}
+
+
+def _needs_round_stabilization(ch: str) -> bool:
+    if ch == "o":
+        return False
+    base = unicodedata.normalize("NFD", ch)[:1] or ch
+    return base in _ROUND_STABILIZE_BASE_LETTERS
+
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
@@ -303,6 +343,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             RC.thin_round(glyph)
         if _is_closed_counter_char(ch):
             CC.reshape_counter(glyph, template_contour)
+            RA.align_to_reference(glyph, reference_contours[gname])
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
@@ -336,16 +377,29 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         h_glyph = _extract_glyph(h_gname, glyphset, hmtx, None)
         ascender_height = max(p.y for c in h_glyph.contours for p in c.points)
 
-    # 'o's own outer contour, raw and unprocessed, is the reference
-    # "genuinely round" shape every other counter gets reshaped to match
-    # -- see canonical_counter.py. Extracted fresh per master so it
-    # tracks this weight/width's own proportions.
+    # 'o's own outer contour is the reference "genuinely round" shape
+    # every other counter gets reshaped to match -- see
+    # canonical_counter.py. Extracted fresh per master, then reshaped
+    # into an affine-scaled copy of the SAME fixed reference-master
+    # outer used everywhere else in this pipeline (reference_contours):
+    # Roboto Flex's own raw extraction doesn't keep 'o's outer contour's
+    # corner/waist point roles consistent across weight (confirmed: even
+    # rotation_align.py's own rotation-based fix can't fully reconcile
+    # wght=100's raw points against the reference, since the mismatch
+    # isn't a rotation/reversal of the same roles, the roles themselves
+    # differ), so leaving this contour as a fresh, un-reshaped per-master
+    # extraction would carry that inconsistency into every closed
+    # counter that templates off of it -- see
+    # canonical_counter.py::reshape_outer_to_reference's own docstring.
     o_gname = cmap.get(ord("o"))
     template_contour = None
+    ref_outer_pts = None
     if o_gname is not None:
         o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
         if o_gname in reference_contours:
             RA.align_to_reference(o_glyph_raw, reference_contours[o_gname])
+            ref_outer_pts = max(reference_contours[o_gname], key=RA._bbox_area)
+            CC.reshape_outer_to_reference(o_glyph_raw, ref_outer_pts)
         if o_glyph_raw.contours:
             template_contour = CC.outer_contour(o_glyph_raw.contours)
 
@@ -364,6 +418,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         if gname in reference_contours:
             RA.align_to_reference(glyph, reference_contours[gname])
             TA.align_taper_signs(glyph, reference_contours[gname])
+            if _needs_round_stabilization(ch):
+                CC.stabilize_round_glyph(glyph, reference_contours[gname])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         if _is_arch_char(ch):
@@ -371,8 +427,39 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
             ASH.reshape_arch_counters(glyph, template_contour)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
+        if ch == "o" and ref_outer_pts is not None:
+            # 'o's own OUTPUT glyph is a separate extraction from
+            # `o_glyph_raw` above (which exists purely to serve as
+            # everyone else's template) -- fixing that template's own
+            # outer contour doesn't touch this one. Reshape THIS glyph's
+            # outer the same way, against the same fixed reference, or
+            # 'o' itself keeps momentarily collapsing through a
+            # degenerate sliver around wght 135 even though every letter
+            # that templates off of it no longer does. See
+            # canonical_counter.py::reshape_outer_to_reference.
+            CC.reshape_outer_to_reference(glyph, ref_outer_pts)
         if _is_closed_counter_char(ch):
             CC.reshape_counter(glyph, template_contour)
+            # `reshape_counter` copies the counter's own points fresh from
+            # 'o's own outer contour (see canonical_counter.py), found by
+            # matching each point's on/off-curve TYPE independently at
+            # every master -- a search that's blind to which of several
+            # type-valid readings is the geometrically-right one whenever
+            # 'o's own raw extraction (a Roboto Flex quirk, not something
+            # under Azrienoch's control) doesn't keep the same corner/waist
+            # role at the same point index across weight. Confirmed on 'g'
+            # and 'p': that per-master-independent search picked a
+            # genuinely different correspondence at wght=100 than at every
+            # other master, and gvar naively lerping between two
+            # differently-labeled point orders collapsed the counter to
+            # under 1% of its own area partway through -- exactly the
+            # species of bug `align_to_reference` exists to fix, just
+            # freshly reintroduced by this reshape. Re-running it here,
+            # against this same glyph's own (already-proven-consistent,
+            # confirmed directly) reference layout, re-normalizes whatever
+            # rotation the reshape happened to land on back to the one
+            # every other master uses.
+            RA.align_to_reference(glyph, reference_contours[gname])
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
         if ch in D.TITTLE_CHARS and ascender_height is not None:
             D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)

@@ -5,6 +5,7 @@
       <labelname xml:lang="en">Weight</labelname>
       <labels>
         <label uservalue="100" name="Thin"/>
+        <label uservalue="250" name="ExtraLight"/>
         <label uservalue="400" name="Regular" elidable="true"/>
         <label uservalue="700" name="Bold"/>
         <label uservalue="900" name="Black"/>
@@ -125,6 +126,198 @@
     <source filename="Azrienoch-NormalThinSerifGradeHigh.ufo" name="source.NormalThinSerifGradeHigh" familyname="Azrienoch" stylename="NormalThinSerifGradeHigh">
       <location>
         <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSansGradeLow.ufo" name="source.CondensedThinLightSansGradeLow" familyname="Azrienoch" stylename="CondensedThinLightSansGradeLow">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSans.ufo" name="source.CondensedThinLightSans" familyname="Azrienoch" stylename="CondensedThinLightSans">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSansGradeHigh.ufo" name="source.CondensedThinLightSansGradeHigh" familyname="Azrienoch" stylename="CondensedThinLightSansGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSerifGradeLow.ufo" name="source.CondensedThinLightSerifGradeLow" familyname="Azrienoch" stylename="CondensedThinLightSerifGradeLow">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSerif.ufo" name="source.CondensedThinLightSerif" familyname="Azrienoch" stylename="CondensedThinLightSerif">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinLightSerifGradeHigh.ufo" name="source.CondensedThinLightSerifGradeHigh" familyname="Azrienoch" stylename="CondensedThinLightSerifGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSansGradeLow.ufo" name="source.NormalThinLightSansGradeLow" familyname="Azrienoch" stylename="NormalThinLightSansGradeLow">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSans.ufo" name="source.NormalThinLightSans" familyname="Azrienoch" stylename="NormalThinLightSans">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSansGradeHigh.ufo" name="source.NormalThinLightSansGradeHigh" familyname="Azrienoch" stylename="NormalThinLightSansGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSerifGradeLow.ufo" name="source.NormalThinLightSerifGradeLow" familyname="Azrienoch" stylename="NormalThinLightSerifGradeLow">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSerif.ufo" name="source.NormalThinLightSerif" familyname="Azrienoch" stylename="NormalThinLightSerif">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinLightSerifGradeHigh.ufo" name="source.NormalThinLightSerifGradeHigh" familyname="Azrienoch" stylename="NormalThinLightSerifGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="175"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSansGradeLow.ufo" name="source.CondensedExtraLightSansGradeLow" familyname="Azrienoch" stylename="CondensedExtraLightSansGradeLow">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSans.ufo" name="source.CondensedExtraLightSans" familyname="Azrienoch" stylename="CondensedExtraLightSans">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSansGradeHigh.ufo" name="source.CondensedExtraLightSansGradeHigh" familyname="Azrienoch" stylename="CondensedExtraLightSansGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSerifGradeLow.ufo" name="source.CondensedExtraLightSerifGradeLow" familyname="Azrienoch" stylename="CondensedExtraLightSerifGradeLow">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSerif.ufo" name="source.CondensedExtraLightSerif" familyname="Azrienoch" stylename="CondensedExtraLightSerif">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedExtraLightSerifGradeHigh.ufo" name="source.CondensedExtraLightSerifGradeHigh" familyname="Azrienoch" stylename="CondensedExtraLightSerifGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSansGradeLow.ufo" name="source.NormalExtraLightSansGradeLow" familyname="Azrienoch" stylename="NormalExtraLightSansGradeLow">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSans.ufo" name="source.NormalExtraLightSans" familyname="Azrienoch" stylename="NormalExtraLightSans">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSansGradeHigh.ufo" name="source.NormalExtraLightSansGradeHigh" familyname="Azrienoch" stylename="NormalExtraLightSansGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSerifGradeLow.ufo" name="source.NormalExtraLightSerifGradeLow" familyname="Azrienoch" stylename="NormalExtraLightSerifGradeLow">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSerif.ufo" name="source.NormalExtraLightSerif" familyname="Azrienoch" stylename="NormalExtraLightSerif">
+      <location>
+        <dimension name="wght" xvalue="250"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalExtraLightSerifGradeHigh.ufo" name="source.NormalExtraLightSerifGradeHigh" familyname="Azrienoch" stylename="NormalExtraLightSerifGradeHigh">
+      <location>
+        <dimension name="wght" xvalue="250"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>

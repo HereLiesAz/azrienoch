@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="uni0146" format="2">
+  <advance width="838"/>
+  <unicode hex="0146"/>
+  <outline>
+    <contour>
+      <point x="142.0902099609375" y="0" type="line"/>
+      <point x="160.91021728515625" y="0" type="line"/>
+      <point x="160.91021728515625" y="646.9771423339844" type="line"/>
+      <point x="160.91021728515625" y="754.1455503503862"/>
+      <point x="303.99884829346456" y="888.5679931640625"/>
+      <point x="423.61224365234375" y="888.5679931640625" type="qcurve" smooth="yes"/>
+      <point x="543.2256390112229" y="888.5679931640625"/>
+      <point x="686.3142700195312" y="754.1455503503862"/>
+      <point x="686.3142700195312" y="646.9771423339844" type="qcurve" smooth="yes"/>
+      <point x="686.3142700195312" y="0" type="line"/>
+      <point x="705.061767578125" y="0" type="line"/>
+      <point x="705.061767578125" y="594.0401000976562" type="line" smooth="yes"/>
+      <point x="705.061767578125" y="733.5556146530878"/>
+      <point x="570.9940974983626" y="889.3146362304688"/>
+      <point x="455.48114013671875" y="889.3146362304688" type="qcurve" smooth="yes"/>
+      <point x="355.23082798549103" y="889.3146362304688"/>
+      <point x="203.52337472098213" y="794.8636447045111"/>
+      <point x="157.72186279296875" y="714.9164428710938" type="qcurve"/>
+      <point x="158.786376953125" y="714.9164428710938" type="line"/>
+      <point x="160.6374267578125" y="869.974609375" type="line"/>
+      <point x="142.0902099609375" y="869.974609375" type="line"/>
+    </contour>
+    <contour>
+      <point x="362.79046630859375" y="-582.4205932617188" type="qcurve"/>
+      <point x="344.5443115234375" y="-584.08203125" type="line"/>
+      <point x="456.5311279296875" y="-214.93035888671875" type="line"/>
+      <point x="428.15472412109375" y="-216.93035888671875" type="line"/>
+      <point x="396.6356201171875" y="-356.5970458984375"/>
+      <point x="378.27349853515625" y="-491.32830810546875"/>
+    </contour>
+    <contour>
+      <point x="94.45" y="0.0" type="line"/>
+      <point x="207.66" y="0.0" type="line"/>
+      <point x="207.66" y="1.0" type="line"/>
+      <point x="94.45" y="1.0" type="line"/>
+    </contour>
+    <contour>
+      <point x="636.86" y="0.0" type="line"/>
+      <point x="749.4" y="0.0" type="line"/>
+      <point x="749.4" y="1.0" type="line"/>
+      <point x="636.86" y="1.0" type="line"/>
+    </contour>
+    <contour>
+      <point x="94.45" y="869.0" type="line"/>
+      <point x="197.97" y="869.0" type="line"/>
+      <point x="197.97" y="870" type="line"/>
+      <point x="94.45" y="870" type="line"/>
+    </contour>
+  </outline>
+</glyph>
