@@ -22,6 +22,7 @@ from tools import params as P
 from tools import quirks as Q
 from tools import roboto_source as R
 from tools import serifs as S
+from tools import single_story_a as A
 
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -153,6 +154,18 @@ def _prop_glyph_name(gname: str, glyphset) -> str | None:
     return prop if prop in glyphset else None
 
 
+def _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, xheight):
+    """The base outline for character `ch` (named `gname`), before
+    quirks/dots/feet. Every character reuses Roboto Flex's own glyph
+    unmodified except 'a' -- see single_story_a.py."""
+    if ch == "a":
+        d_gname = cmap.get(ord("d"))
+        if d_gname is not None:
+            d_glyph = _extract_glyph(d_gname, glyphset, hmtx, None)
+            return A.build_from_d(d_glyph, xheight)
+    return _extract_glyph(gname, glyphset, hmtx, ord(ch))
+
+
 def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int]]]:
     """Foot specs (``serifs.py``) and dot-contour indices (``dots.py``) per
     glyph name, both detected once from the (400, 100) instance and
@@ -173,7 +186,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         gname = cmap.get(ord(ch))
         if gname is None or gname in feet_by_glyph:
             continue
-        glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
@@ -218,7 +231,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         gname = cmap.get(ord(ch))
         if gname is None:
             continue
-        glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
         if ch in D.TITTLE_CHARS and ascender_height is not None:

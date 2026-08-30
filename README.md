@@ -90,6 +90,18 @@ is in what it does with that space:
   it. Moving the tittle straight up so its top lands exactly on that
   true ascender height (measured off 'h' itself, not the font's own
   much-taller `hhea.ascender` line-spacing metric) fixes both at once.
+- **A single-story 'a', built from 'd'.** Roboto Flex, like most
+  grotesques, draws 'a' as a double-story letterform -- a small bowl
+  low, capped by a separate ear/hook above -- the printed-book
+  convention, not how most people actually write the letter by hand.
+  `tools/single_story_a.py` builds Azrienoch's 'a' the way a single-story
+  'a' is actually constructed: as the exact same bowl-and-stem shape as
+  'd', just with the stem shortened from ascender height down to
+  x-height (since, unlike 'd', 'a' has no ascender). It's not drawn
+  separately -- it's literally 'd's own outline with its topmost points
+  moved down, so it inherits 'd's proportions exactly and flows through
+  the rest of the pipeline (SERF feet included) the same way any other
+  imported glyph does.
 
 The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
@@ -164,6 +176,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
 - `quirks.py` -- the 'G' spur and 'R' leg kick (see "Design" above).
 - `dots.py` -- the weight-tapered dot boost and the 'i'/'j' tittle
   reposition-to-ascender-height fix (see "Design" above).
+- `single_story_a.py` -- builds 'a' from 'd's own outline (see "Design"
+  above).
 - `ufo_build.py` -- assembles the 48 master UFOs, copying each glyph's
   quadratic outline through unmodified (no curve conversion -- gvar
   already guarantees the same point topology across masters, so nothing
