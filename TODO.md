@@ -1,8 +1,9 @@
 # TODO
 
 Tracked follow-up work for Azrienoch, beyond what's in this repository.
-Checked items are done; everything else is open. See `README.md` for the
-design rationale these build on.
+Checked items are done (built, or a deliberate decision with reasoning);
+everything else is open. See `README.md` for the design rationale these
+build on.
 
 ## Glyph coverage
 
@@ -11,12 +12,23 @@ design rationale these build on.
       Supplement and Latin Extended-A (273 glyphs total). Composite
       glyphs (accents, `%`) decompose cleanly against Roboto Flex's own
       glyphset via `_copy_outline`'s `DecomposingRecordingPen`.
-- [ ] Numeral sets: Roboto Flex ships one alternate figure style
-      (proportional, glyph suffix `.prop`) behind its `pnum` GSUB feature,
-      which Azrienoch doesn't import (see "No `GSUB` table" below) -- only
-      the default figures come across today.
-- [ ] Greek and Cyrillic: Roboto Flex covers both; Azrienoch currently
-      only imports Latin.
+- [x] ~~Numeral sets: Roboto Flex's alternate proportional-figure style
+      (`.prop`, behind its `pnum` GSUB feature)~~ -- done:
+      `tools/ufo_build.py` now imports each digit's `.prop` variant
+      alongside the default tabular one and emits a `feature pnum { ... }`
+      block per master substituting between them, with the same
+      `SERF`-axis feet applied to both. Verified in the compiled font:
+      `GSUB` carries a `pnum` feature whose mapping substitutes each
+      `uniXXXX` for `uniXXXX.prop`, and the `.prop` glyphs carry distinct
+      (narrower, variable-width) advance widths from their tabular
+      counterparts.
+- [x] ~~Greek and Cyrillic: Roboto Flex covers both~~ -- done: added the
+      modern monotonic Greek alphabet (upper/lowercase, final-form sigma,
+      tonos-accented and dialytika vowels) and the modern Russian
+      Cyrillic alphabet (upper/lowercase, including Ё/ё) to `CORE_CHARS`.
+      All 133 added characters verified present in Roboto Flex's cmap
+      with no gaps before importing. Glyph total: 273 -> 407 characters
+      (418 glyphs including `.notdef` and the 10 `.prop` digit variants).
 
 ## Axis space
 
@@ -25,13 +37,28 @@ design rationale these build on.
       growth (most of it by Bold, tapering toward Black) while stroke
       thickness keeps growing roughly proportionally, so the curve
       actually bends there instead of being two straight segments.
-- [ ] Consider exposing `GRAD` (grade) as a real Azrienoch axis --
-      Roboto Flex supports it natively and it's a natural fit alongside
-      `wght`/`wdth`/`SERF`; currently fixed at 0 in `roboto_location()`.
-- [ ] Consider an `opsz` (optical size) axis, currently fixed at 24 in
-      `roboto_location()`.
-- [ ] `slnt` (slant/italic) is fixed at 0 -- Azrienoch has no italic.
-      Worth a design decision on whether it ever should.
+- [x] ~~Consider exposing `GRAD` (grade) as a real Azrienoch axis~~ --
+      done: `GRAD` (-50-50, default 0) is now a real registered axis.
+      Unlike `wght` it changes stroke weight without touching metrics or
+      advance widths, so it's safe for live optical compensation. Three
+      masters (-50/0/50), not two -- `fontmake` requires an actual source
+      at a designspace's default location on every axis, so 0 has to be a
+      real master alongside the extremes, not just their interpolated
+      midpoint. Verified: rendering the same text at GRAD=-50 vs. GRAD=50
+      shows visibly heavier strokes at the same advance widths.
+      Master grid grew from 16 to 48 (4 wght x 2 wdth x 2 SERF x 3 GRAD).
+- [x] ~~Consider an `opsz` (optical size) axis~~ -- decided against:
+      exposing it would reintroduce a size-driven proportion change,
+      which directly contradicts "height as a matter of weight, not of
+      font size" (README's "Design" section). Fixed at Roboto Flex's own
+      default (24) and, since it's now permanently fixed, trimmed out of
+      the vendored font entirely (see "Font engineering completeness"
+      below).
+- [x] ~~`slnt` (slant/italic)~~ -- decided against: Roboto Flex's own
+      `slnt` axis only reaches -10 degrees, a barely-there lean rather
+      than a real italic, and an actual italic needs redrawn letterforms
+      (different 'a'/'e'/'f' constructions), not a shear -- out of scope.
+      Fixed at 0 (upright) and trimmed out of the vendored font.
 - [ ] Re-derive the `SERF` foot-sizing formulas
       (`tools/serifs.py::apply_feet`) once real serif specimens have been
       eyeballed at more than a handful of weights -- the 0.9/0.42
@@ -46,23 +73,36 @@ design rationale these build on.
 
 ## Font engineering completeness
 
-- [x] ~~No named instances in `fvar`~~ -- done: 16 named instances (one
-      per master) via `tools/designspace_build.py::write_designspace`,
-      plus `STAT` axis-value labels (`WGHT_LABELS`/`WDTH_LABELS`/
-      `SERF_LABELS`) so design apps show a proper style picker instead of
+- [x] ~~No named instances in `fvar`~~ -- done: one named instance per
+      master (48, after the `GRAD` axis addition) via
+      `tools/designspace_build.py::write_designspace`, plus `STAT`
+      axis-value labels (`WGHT_LABELS`/`WDTH_LABELS`/`SERF_LABELS`/
+      `GRAD_LABELS`) so design apps show a proper style picker instead of
       raw sliders.
-- [ ] **No `GSUB` table** -- confirmed no ligatures, case-sensitive
-      punctuation, or figure-style features carried over from Roboto
-      Flex, since only kerning (`GPOS`) is extracted today
-      (`tools/roboto_source.py::extract_kerning`). Decide which of Roboto
-      Flex's features are worth porting.
-- [ ] **No hinting.** Fine for modern renderers (browsers, macOS, most of
-      Linux); worth a pass if Windows GDI/small-size legacy rendering
-      matters for this project.
+- [x] ~~No `GSUB` table~~ -- partially addressed: `pnum` (proportional
+      figures) is now ported (see "Glyph coverage" above). Ligatures and
+      case-sensitive punctuation forms remain unported -- Roboto Flex's
+      own use of them is minimal enough (mostly `liga`/`locl` for
+      non-Latin shaping Azrienoch doesn't import) that it wasn't judged
+      worth the added build complexity yet; revisit if a concrete need
+      comes up.
+- [x] ~~No hinting~~ -- decided against, not merely deferred: TrueType
+      hinting for a *variable* font (hinting that has to stay correct
+      across the whole `gvar` design space) is not what tools like
+      `ttfautohint` do -- they hint one static instance at a time and
+      have no concept of interpolatable hint programs at all. Real
+      variable-font hinting uses specialized, largely manual tooling
+      (e.g. Microsoft's VTT) that's a project of its own, and many
+      production variable fonts (including several of Google Fonts' own)
+      ship unhinted for exactly this reason, relying on FreeType/
+      DirectWrite/CoreText's own rendering-time hinting/antialiasing.
+      Worth revisiting only if Windows GDI or another legacy small-size
+      rendering path turns out to matter for this project.
 - [x] ~~Review the auto-generated `STAT` table's axis value records~~ --
-      done as part of the named-instances work above: 7 axis-value
-      records (3 `wght`, 2 `wdth`, 2 `SERF`), each weight/width/serif
-      value labeled and the defaults marked elidable.
+      done as part of the named-instances work above, and re-verified
+      after the `wght`-Bold and `GRAD` additions: one axis-value record
+      per label (`WGHT_LABELS`/`WDTH_LABELS`/`SERF_LABELS`/`GRAD_LABELS`),
+      each value labeled and each axis's default marked elidable.
 - [x] ~~Investigate why raw (pre-filter) kerning pair counts from
       `extract_kerning` vary so much with `wdth` at `wght=100`~~ --
       resolved, not a bug. Sampling intermediate widths shows the
@@ -100,18 +140,24 @@ design rationale these build on.
 - [ ] Install the compiled `fonts/variable/Azrienoch-VF.ttf` in a real OS
       / browser / design app and spot-check rendering -- everything so
       far has been verified by instancing + rendering in Python
-      (`tools/preview.py`), not through a real font-rendering stack.
-- [ ] Consider trimming the vendored
-      `third_party/roboto-flex/RobotoFlex[...].ttf` (currently the full
-      13-axis, ~1.8MB source) if repo size becomes a concern -- e.g. via
-      `fonttools varLib.instancer` to drop axes Azrienoch never uses
-      (`GRAD`, `opsz`, `slnt`) before vendoring, once those are settled
-      as permanently fixed rather than candidates for exposure above.
+      (`tools/preview.py`), not through a real font-rendering stack. This
+      sandboxed environment has no such stack available to test against.
+- [x] ~~Consider trimming the vendored
+      `third_party/roboto-flex/RobotoFlex[...].ttf`~~ -- done, now that
+      `opsz`/`slnt` are settled as permanently fixed (see "Axis space"
+      above): `fontTools.varLib.instancer` instances both out at their
+      defaults, shrinking the vendored file from ~1.78 MB to ~0.68 MB
+      with no behavior change (`roboto_location()` always requested those
+      same fixed values from the untrimmed font).
 
 ## Presentation
 
 - [x] ~~A specimen page~~ -- done: `specimen/index.html`, a
       self-contained (font embedded as a data URI) interactive specimen
       with live `wght`/`wdth`/`SERF` sliders using
-      `font-variation-settings`, all 16 named-instance presets, an
-      editable hero sample, and a glyph-set showcase.
+      `font-variation-settings`, all named-instance presets, an editable
+      hero sample, and a glyph-set showcase.
+- [ ] The specimen page's `NAMED_INSTANCES` preset list and embedded font
+      predate the `GRAD` axis and the Greek/Cyrillic/`pnum` glyph growth
+      -- needs regenerating against the current 48-master build (tracked
+      as part of finishing this round's rebuild).

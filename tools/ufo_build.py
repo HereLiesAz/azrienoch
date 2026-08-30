@@ -1,6 +1,6 @@
 """Build Azrienoch's UFO masters + designspace from Roboto Flex.
 
-For each (wght, wdth, SERF) master in ``params.master_grid()``: instance
+For each (wght, wdth, SERF, GRAD) master in ``params.master_grid()``: instance
 Roboto Flex at the corresponding location (``roboto_source.py``), copy
 over ``CORE_CHARS``' outlines/advances/kerning, and apply the 'G'/'R'
 quirks (``quirks.py``). Every master -- SERF=0 included -- gets the same
@@ -43,7 +43,23 @@ LATIN_EXT_A = (
     "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
 )
 
-CORE_CHARS = UPPER + LOWER + DIGITS + PUNCT + LATIN1 + LATIN_EXT_A
+# Greek and Coptic: the modern monotonic Greek alphabet, upper- and
+# lowercase (including final-form sigma 'ς', distinct from medial 'σ'),
+# plus the tonos-accented and dialytika (diaeresis) vowels.
+GREEK = (
+    "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+    "αβγδεζηθικλμνξοπρστυφχψω"
+    "ςΆΈΉΊΌΎΏάέήίόύώΪΫϊϋΐΰ"
+)
+
+# Cyrillic: the modern Russian alphabet, upper- and lowercase, including
+# 'Ё'/'ё'.
+CYRILLIC = (
+    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+)
+
+CORE_CHARS = UPPER + LOWER + DIGITS + PUNCT + LATIN1 + LATIN_EXT_A + GREEK + CYRILLIC
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 SOURCES_DIR = HERE / "sources"
@@ -99,7 +115,7 @@ LICENSE = (
 LICENSE_URL = "http://scripts.sil.org/OFL"
 
 
-def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
+def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf, grad):
     os2 = inst["OS/2"]
     hhea = inst["hhea"]
     fi = ufo.info
@@ -109,7 +125,7 @@ def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
     fi.capHeight = os2.sCapHeight
     fi.xHeight = os2.sxHeight
     fi.familyName = "Azrienoch"
-    fi.styleName = P.master_name(wght, wdth, serf)
+    fi.styleName = P.master_name(wght, wdth, serf, grad)
     fi.versionMajor, fi.versionMinor = 1, 0
     # A distributed .ttf carries its own copyright/license -- OFL clause 2
     # requires each copy to include the license, and a copy of the raw
@@ -130,6 +146,12 @@ def _extract_glyph(gname, glyphset, hmtx, unicode_val):
     return glyph
 
 
+def _prop_glyph_name(gname: str, glyphset) -> str | None:
+    """Roboto Flex's alternate proportional-figure glyph for a digit, if any."""
+    prop = gname + ".prop"
+    return prop if prop in glyphset else None
+
+
 def compute_reference_feet() -> dict[str, list[dict]]:
     """Foot specs per glyph name, detected once from the (400, 100) instance."""
     inst = R.instantiate(REFERENCE_WGHT, REFERENCE_WDTH)
@@ -147,17 +169,22 @@ def compute_reference_feet() -> dict[str, list[dict]]:
         glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
         Q.apply_quirks(ch, glyph)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
+
+        prop_name = _prop_glyph_name(gname, glyphset)
+        if prop_name is not None and prop_name not in feet_by_glyph:
+            prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            feet_by_glyph[prop_name] = S.detect_feet(prop_glyph, guides)
     return feet_by_glyph
 
 
-def build_master_ufo(wght, wdth, serf, feet_by_glyph) -> ufoLib2.Font:
-    inst = R.instantiate(wght, wdth)
+def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
+    inst = R.instantiate(wght, wdth, grad)
     glyphset = inst.getGlyphSet()
     hmtx = inst["hmtx"]
-    cmap = R.cmap_for(wght, wdth)
+    cmap = R.cmap_for(wght, wdth, grad)
 
     ufo = ufoLib2.Font()
-    _font_info(ufo, inst, wght, wdth, serf)
+    _font_info(ufo, inst, wght, wdth, serf, grad)
     guides = _guides(ufo.info.capHeight, ufo.info.xHeight, ufo.info.ascender, ufo.info.descender)
 
     imported_names = set()
@@ -166,6 +193,7 @@ def build_master_ufo(wght, wdth, serf, feet_by_glyph) -> ufoLib2.Font:
     ufo[".notdef"] = notdef
     imported_names.add(".notdef")
 
+    prop_subs: dict[str, str] = {}
     for ch in CORE_CHARS:
         gname = cmap.get(ord(ch))
         if gname is None:
@@ -175,6 +203,22 @@ def build_master_ufo(wght, wdth, serf, feet_by_glyph) -> ufoLib2.Font:
         S.apply_feet(glyph, feet_by_glyph.get(gname, []), guides, serf)
         ufo[gname] = glyph
         imported_names.add(gname)
+
+        prop_name = _prop_glyph_name(gname, glyphset)
+        if prop_name is not None:
+            prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            S.apply_feet(prop_glyph, feet_by_glyph.get(prop_name, []), guides, serf)
+            ufo[prop_name] = prop_glyph
+            imported_names.add(prop_name)
+            prop_subs[gname] = prop_name
+
+    if prop_subs:
+        # Roboto Flex's own `pnum` (proportional figures) GSUB feature:
+        # default figures are tabular (fixed-width, for columns of numbers),
+        # this substitutes in Roboto Flex's alternate proportional-width
+        # digit outlines when the feature is enabled.
+        subs = "\n".join(f"    sub {a} by {b};" for a, b in sorted(prop_subs.items()))
+        ufo.features.text = f"feature pnum {{\n{subs}\n}} pnum;\n"
 
     raw_kerning = R.extract_kerning(inst)
     kerning = {
@@ -191,12 +235,12 @@ def build_all():
     SOURCES_DIR.mkdir(exist_ok=True)
     feet_by_glyph = compute_reference_feet()
     paths = {}
-    for wght, wdth, serf in P.master_grid():
-        ufo = build_master_ufo(wght, wdth, serf, feet_by_glyph)
-        name = P.master_name(wght, wdth, serf)
+    for wght, wdth, serf, grad in P.master_grid():
+        ufo = build_master_ufo(wght, wdth, serf, grad, feet_by_glyph)
+        name = P.master_name(wght, wdth, serf, grad)
         path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufo.save(path, overwrite=True)
-        paths[(wght, wdth, serf)] = path
+        paths[(wght, wdth, serf, grad)] = path
         print("wrote", path, "glyphs:", len(ufo), "kerning pairs:", len(ufo.kerning))
     return paths
 

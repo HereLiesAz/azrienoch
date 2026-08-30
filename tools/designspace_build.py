@@ -25,9 +25,10 @@ OUTPUT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
 # master grid -- feeds both the STAT table (so design apps show a proper
 # "Weight"/"Width"/"Serif" style picker instead of raw axis sliders) and
 # the family-name half of each named instance below.
-WGHT_LABELS = {100: "Thin", 400: "Regular", 900: "Black"}
+WGHT_LABELS = {100: "Thin", 400: "Regular", 700: "Bold", 900: "Black"}
 WDTH_LABELS = {75: "Condensed", 100: "Normal"}
 SERF_LABELS = {0: "Sans", 100: "Serif"}
+GRAD_LABELS = {-50: "Low", 0: "Regular", 50: "High"}
 
 
 def _add_axis_labels(axis, value_labels: dict, default):
@@ -44,6 +45,7 @@ def write_designspace(ufo_paths: dict) -> pathlib.Path:
         ("wght", *P.WGHT_AXIS[1:], "Weight", WGHT_LABELS),
         ("wdth", *P.WDTH_AXIS[1:], "Width", WDTH_LABELS),
         ("SERF", *P.SERF_AXIS[1:], "Serif", SERF_LABELS),
+        ("GRAD", *P.GRAD_AXIS[1:], "Grade", GRAD_LABELS),
     ):
         axis = AxisDescriptor()
         axis.tag = tag
@@ -55,14 +57,14 @@ def write_designspace(ufo_paths: dict) -> pathlib.Path:
         _add_axis_labels(axis, value_labels, default)
         doc.addAxis(axis)
 
-    for (wght, wdth, serf), path in ufo_paths.items():
+    for (wght, wdth, serf, grad), path in ufo_paths.items():
         src = SourceDescriptor()
         src.path = str(path)
-        src.name = f"source.{P.master_name(wght, wdth, serf)}"
+        src.name = f"source.{P.master_name(wght, wdth, serf, grad)}"
         src.familyName = "Azrienoch"
-        src.styleName = P.master_name(wght, wdth, serf)
-        src.location = {"wght": wght, "wdth": wdth, "SERF": serf}
-        if (wght, wdth, serf) == (400, 100, 0):
+        src.styleName = P.master_name(wght, wdth, serf, grad)
+        src.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
+        if (wght, wdth, serf, grad) == (400, 100, 0, 0):
             src.copyLib = True
             src.copyInfo = True
             src.copyGroups = True
@@ -71,8 +73,8 @@ def write_designspace(ufo_paths: dict) -> pathlib.Path:
 
         inst = InstanceDescriptor()
         inst.familyName = "Azrienoch"
-        inst.styleName = P.master_name(wght, wdth, serf)
-        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf}
+        inst.styleName = P.master_name(wght, wdth, serf, grad)
+        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
         doc.addInstance(inst)
 
     doc.write(str(DESIGNSPACE_PATH))
