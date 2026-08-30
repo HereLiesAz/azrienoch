@@ -1,4 +1,4 @@
-"""Build Multiplex's UFO masters + designspace from Roboto Flex.
+"""Build Azrienoch's UFO masters + designspace from Roboto Flex.
 
 For each (wght, wdth, SERF) master in ``params.master_grid()``: instance
 Roboto Flex at the corresponding location (``roboto_source.py``), copy
@@ -70,7 +70,7 @@ def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf):
     fi.descender = hhea.descender
     fi.capHeight = os2.sCapHeight
     fi.xHeight = os2.sxHeight
-    fi.familyName = "Multiplex"
+    fi.familyName = "Azrienoch"
     fi.styleName = P.master_name(wght, wdth, serf)
     fi.versionMajor, fi.versionMinor = 1, 0
     return fi
@@ -147,7 +147,7 @@ def build_all():
     for wght, wdth, serf in P.master_grid():
         ufo = build_master_ufo(wght, wdth, serf, feet_by_glyph)
         name = P.master_name(wght, wdth, serf)
-        path = SOURCES_DIR / f"Multiplex-{name}.ufo"
+        path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufo.save(path, overwrite=True)
         paths[(wght, wdth, serf)] = path
         print("wrote", path, "glyphs:", len(ufo), "kerning pairs:", len(ufo.kerning))

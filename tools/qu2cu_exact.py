@@ -5,7 +5,7 @@ can pick a *different number* of output segments for glyph instances that
 started with the same point topology (guaranteed by gvar across every
 master of a variable font) but happen to have differently-curved
 coordinates at each master -- silently breaking interpolation
-compatibility between Multiplex's masters. Degree-elevating each
+compatibility between Azrienoch's masters. Degree-elevating each
 TrueType quadratic segment to exactly one cubic, with no fitting or
 merging, is lossless and always emits the same number of segments as the
 input has -- which is what compatibility actually requires here.
