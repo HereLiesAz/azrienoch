@@ -218,21 +218,50 @@ def reshape_counter(glyph, template_contour) -> bool:
         # a "forward" correspondence even when the target's actual
         # winding was the reverse of the template's -- confirmed for
         # 'd's own counter, which only had a forward-type match yet
-        # winds opposite 'o's outer). The robust fix doesn't try to
-        # predict the sign at all: build the new coordinates, check
-        # whether they came out with the wrong sign, and if so mirror
-        # them left-right about the contour's own center. A mirrored
-        # ellipse is congruent to the original (round shapes are
-        # reflection-symmetric), so this costs nothing visually while
-        # always landing on the correct winding.
-        original_sign = _signed_area(pts) >= 0
+        # winds opposite 'o's outer). So the sign has to be checked and
+        # corrected, not predicted -- but checked against what, exactly,
+        # is the part that matters and was wrong before this fix.
+        #
+        # The original approach compared the reshaped result's sign to
+        # the target counter's own PREVIOUS sign (before reshaping) --
+        # which sounds safe (whatever direction it already wound, keep
+        # winding that way) but isn't: that absolute sign is itself
+        # unstable across this glyph's own masters. Confirmed directly on
+        # raw, unprocessed Roboto Flex 'o': its own inner counter winds
+        # positive at Thin and negative at Regular -- both individually
+        # valid (a single static instance never cares which absolute
+        # direction a hole winds, only that it opposes its outer), but
+        # gvar interpolates by POINT INDEX, not by "whichever absolute
+        # direction this master happened to use" -- so keying the mirror
+        # decision to that unstable sign made the decision itself flip
+        # between masters, which is what actually produced the
+        # catastrophic collapse this was rebuilt to fix (confirmed: 'o's
+        # counter interpolated perfectly well, no collapse at all, with
+        # this whole function skipped entirely -- the mirroring was the
+        # thing breaking it, not the underlying geometry).
+        #
+        # What IS stable across masters is the *relationship* between a
+        # counter and its own outer contour: a hole must always wind
+        # opposite whatever encloses it, in every valid instance of this
+        # glyph, at every weight -- that's a structural fill-rule
+        # requirement, not a numeric coincidence, and it holds even
+        # though the outer's own absolute sign is exactly as unstable as
+        # the counter's (confirmed the same way: Roboto Flex's own 'o'
+        # outer contour also flips between Thin and Regular -- but always
+        # opposite its own inner counter at both). Comparing against the
+        # outer's sign at this SAME master, instead of the counter's own
+        # sign from before this function ran, makes the mirror decision
+        # track that stable relationship instead of either contour's
+        # unstable absolute direction.
+        outer_sign = _signed_area(outer.points) >= 0
+        desired_sign = not outer_sign
         n = len(new_coords)
         proposed_area = sum(
             new_coords[i][0] * new_coords[(i + 1) % n][1] - new_coords[(i + 1) % n][0] * new_coords[i][1]
             for i in range(n)
         )
         proposed_sign = proposed_area >= 0
-        if proposed_sign != original_sign:
+        if proposed_sign != desired_sign:
             new_coords = [(2 * ocx - x, y) for x, y in new_coords]
 
         for p, (x, y) in zip(pts, new_coords):

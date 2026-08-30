@@ -4,19 +4,6 @@
   <unicode hex="010E"/>
   <outline>
     <contour>
-      <point x="161.37548828125" y="0.0" type="line"/>
-      <point x="365.209228515625" y="0.0" type="line" smooth="yes"/>
-      <point x="563.309814453125" y="0.0"/>
-      <point x="797.5233154296875" y="248.28076171875"/>
-      <point x="797.5233154296875" y="497.68115234375" type="qcurve" smooth="yes"/>
-      <point x="797.5233154296875" y="586.71875" type="line" smooth="yes"/>
-      <point x="797.5233154296875" y="828.59912109375"/>
-      <point x="568.389892578125" y="1082.0"/>
-      <point x="365.209228515625" y="1082.0" type="qcurve" smooth="yes"/>
-      <point x="161.37548828125" y="1082.0" type="line"/>
-    </contour>
-    <contour>
-      <point x="135.69482421875" y="-37.719970703125" type="line"/>
       <point x="135.69482421875" y="1119.9599609375" type="line"/>
       <point x="364.96923828125" y="1119.9599609375" type="line" smooth="yes"/>
       <point x="576.50244140625" y="1119.47998046875"/>
@@ -26,6 +13,19 @@
       <point x="823.18310546875" y="233.080810546875"/>
       <point x="571.662353515625" y="-37.719970703125"/>
       <point x="365.209228515625" y="-37.719970703125" type="qcurve" smooth="yes"/>
+      <point x="135.69482421875" y="-37.719970703125" type="line"/>
+    </contour>
+    <contour>
+      <point x="161.37548828125" y="1082.0" type="line"/>
+      <point x="161.37548828125" y="0.0" type="line"/>
+      <point x="365.209228515625" y="0.0" type="line" smooth="yes"/>
+      <point x="563.309814453125" y="0.0"/>
+      <point x="797.5233154296875" y="248.28076171875"/>
+      <point x="797.5233154296875" y="497.68115234375" type="qcurve" smooth="yes"/>
+      <point x="797.5233154296875" y="586.71875" type="line" smooth="yes"/>
+      <point x="797.5233154296875" y="828.59912109375"/>
+      <point x="568.389892578125" y="1082.0"/>
+      <point x="365.209228515625" y="1082.0" type="qcurve" smooth="yes"/>
     </contour>
     <contour>
       <point x="344.9071044921875" y="1220.72021484375" type="line"/>
