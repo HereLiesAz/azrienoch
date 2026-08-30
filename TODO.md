@@ -60,17 +60,23 @@ design rationale these build on.
 - [ ] Review the auto-generated `STAT` table's axis value records --
       not audited beyond confirming the table exists.
 
-- [ ] Investigate why raw (pre-filter) kerning pair counts from
-      `extract_kerning` vary so much with `wdth` at `wght=100` (e.g.
-      33820 pairs at Roboto Flex wdth=82 vs 15656 at wdth=100, with every
-      wdth=100 pair also present at wdth=82) -- `roboto_location()`'s
-      wdth mapping is arithmetically correct and the values are within
-      Roboto Flex's real fvar bounds, so this isn't a confirmed bug, but
-      it's a bigger swing than expected and hasn't been traced to a root
-      cause (e.g. some values crossing exactly zero under the Thin
-      weight's extreme parametric-axis interpolation, versus a genuine
-      difference in how many kerning classes Roboto Flex actually
-      differentiates at that corner of its own design space).
+- [x] ~~Investigate why raw (pre-filter) kerning pair counts from
+      `extract_kerning` vary so much with `wdth` at `wght=100`~~ --
+      resolved, not a bug. Sampling intermediate widths shows the
+      "vanishing" pairs decrease smoothly and monotonically to exactly
+      zero as `wdth` approaches normal (e.g. one pair: 19 -> 15 -> 11 ->
+      7 -> 4 -> 0 across wdth 75 -> 100), the signature of correctly
+      interpolated data, not a discontinuity. Reproducing the same
+      comparison with Roboto Flex's own default parametric axes (instead
+      of Azrienoch's thin-weight correlation) at `wght=100` gives
+      identical counts either way, so it isn't caused by anything
+      Azrienoch adds -- it's Roboto Flex's authentic Thin master having
+      several thousand extra, tiny (mostly single-digit-unit) kerning
+      corrections that exist only at condensed widths and taper to zero
+      at normal width, which makes sense: thinner strokes need more
+      micro-adjustment to avoid collisions when condensed. 679 of those
+      pairs involve glyphs Azrienoch actually imports, so it does ship,
+      correctly.
 
 ## Tooling / process
 
