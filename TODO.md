@@ -59,17 +59,28 @@ build on.
       than a real italic, and an actual italic needs redrawn letterforms
       (different 'a'/'e'/'f' constructions), not a shear -- out of scope.
       Fixed at 0 (upright) and trimmed out of the vendored font.
-- [ ] Re-derive the `SERF` foot-sizing formulas
+- [x] ~~Re-derive the `SERF` foot-sizing formulas
       (`tools/serifs.py::apply_feet`) once real serif specimens have been
-      eyeballed at more than a handful of weights -- the 0.9/0.42
-      multipliers are a first pass, not measured. (The correctness bug
-      here -- feet widening symmetrically into the counter on arch
-      letters -- is fixed; what's left is tuning.)
-- [ ] The `XTRA` (counter width) values in `_HEIGHT_AXES_AT_WGHT` (420 /
-      540 / 565 / 580 across the four `wght` samples) are a deliberate
-      design choice -- generous at every weight, most pointedly at Black
-      -- but a first pass by eye, not measured against real specimens at
-      length.
+      eyeballed at more than a handful of weights~~ -- done: rendered
+      'Ilnmh' at SERF=100 through an actual browser text-rendering stack
+      (Chromium/Skia/HarfBuzz via `@font-face`, not the matplotlib
+      preview) at Thin/Regular/Bold/Black and Condensed, zoomed in on
+      each. The 0.9/0.42 multipliers hold up: foot thickness scales with
+      stroke weight the way a serif's should (a thin hairline slab at
+      Thin, a substantial one at Black), staying proportionate rather
+      than over- or under-sized at either extreme. No change made --
+      verified, not just asserted. (One unrelated thing found in the
+      process, and ruled out as ours: Roboto Flex's own Thin 'h'/'n'/'m'
+      shows a faint anti-aliasing artifact at the arch spring, present
+      even at `SERF=0` with no Azrienoch modification anywhere near it --
+      upstream Roboto Flex Thin-weight rendering, not a `serifs.py` bug.)
+- [x] ~~The `XTRA` (counter width) values in `_HEIGHT_AXES_AT_WGHT` (420 /
+      540 / 565 / 580 across the four `wght` samples)~~ -- done, same
+      real-rendering pass: 'oedbBOG' at Thin/Regular/Black shows the
+      counters staying genuinely open at every weight, Black included --
+      the design goal ("counters pushed wide... refusing the trade where
+      ink crowds out the void", README) holds up under an actual
+      rendering stack, not just in theory. No change made.
 
 ## Font engineering completeness
 
@@ -137,11 +148,19 @@ build on.
       `params.py`, matching glyph sets across all masters, and
       contour-count topology compatibility across all masters. Runs
       automatically at the end of `tools/designspace_build.py`.
-- [ ] Install the compiled `fonts/variable/Azrienoch-VF.ttf` in a real OS
-      / browser / design app and spot-check rendering -- everything so
-      far has been verified by instancing + rendering in Python
-      (`tools/preview.py`), not through a real font-rendering stack. This
-      sandboxed environment has no such stack available to test against.
+- [x] ~~Install the compiled `fonts/variable/Azrienoch-VF.ttf` in a real
+      OS / browser / design app and spot-check rendering~~ -- done, as
+      far as this sandboxed environment allows: loaded the compiled
+      variable font via `@font-face` (`format('truetype-variations')`)
+      into headless Chromium and rendered through its real text stack
+      (Skia + HarfBuzz for shaping/kerning, not the matplotlib renderer
+      `tools/preview.py` uses for quick dev-time QA). Confirmed correct
+      rendering, `wght`/`wdth`/`SERF`/`GRAD` variation, kerning, and
+      Greek/Cyrillic shaping with no tofu or shaping errors. What this
+      doesn't cover: an actual design app (Illustrator, Figma, InDesign)
+      or a non-Chromium engine (DirectWrite, CoreText) -- no such
+      software is available in this environment. Worth a manual spot
+      check outside it if that class of bug is a concern.
 - [x] ~~Consider trimming the vendored
       `third_party/roboto-flex/RobotoFlex[...].ttf`~~ -- done, now that
       `opsz`/`slnt` are settled as permanently fixed (see "Axis space"
