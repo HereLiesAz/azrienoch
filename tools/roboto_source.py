@@ -61,7 +61,17 @@ UPM = 2048  # Roboto Flex's unitsPerEm; Azrienoch keeps it to avoid rescaling.
 # prominent as the stroke even under the heaviest weight -- is the
 # point: Azrienoch's counters are a considered shape, not leftover space.
 _HEIGHT_AXES_AT_WGHT = {
-    100: dict(XOPQ=27, YOPQ=25, XTRA=420, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
+    # XOPQ=45, not Roboto Flex's own floor of 27: at 27, the exclamation
+    # mark's dot balloons into an oversized oval while every other dot
+    # (i/j tittles, period, colon, question mark) stays a small fleck --
+    # confirmed (via a headless-browser render, and a per-axis bisection
+    # that isolated XOPQ as the only one of the eight axes responsible)
+    # to be a bad interpolation corner in Roboto Flex's own exclam glyph
+    # at its most extreme XOPQ value, not something Azrienoch's other
+    # axis choices caused. 45 is comfortably clear of that corner (it
+    # stays broken through ~40) while changing the overall Thin stroke
+    # weight by an imperceptible amount -- verified side by side.
+    100: dict(XOPQ=45, YOPQ=25, XTRA=420, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
     400: dict(XOPQ=96, YOPQ=79, XTRA=540, YTUC=712, YTLC=514, YTAS=750, YTDE=-203, YTFI=738),
     700: dict(XOPQ=145, YOPQ=113, XTRA=565, YTUC=748, YTLC=555, YTAS=820, YTDE=-270, YTFI=772),
     900: dict(XOPQ=175, YOPQ=135, XTRA=580, YTUC=760, YTLC=570, YTAS=854, YTDE=-305, YTFI=788),

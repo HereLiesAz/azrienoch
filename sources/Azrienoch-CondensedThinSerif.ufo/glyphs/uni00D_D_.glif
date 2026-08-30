@@ -1,49 +1,49 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <glyph name="uni00DD" format="2">
-  <advance width="809"/>
+  <advance width="839"/>
   <unicode hex="00DD"/>
   <outline>
     <contour>
-      <point x="417.30029296875" y="0" type="line"/>
-      <point x="354.620361328125" y="0" type="line"/>
-      <point x="354.620361328125" y="395.800048828125" type="line"/>
-      <point x="793.400634765625" y="1082" type="line"/>
-      <point x="858.96630859375" y="1082" type="line"/>
-      <point x="452.5375073383309" y="399.7852234446674" type="line"/>
-      <point x="439.498779296875" y="381.35986328125"/>
-      <point x="394.627197265625" y="289.969482421875"/>
-      <point x="382.35240981158086" y="260.21630859375" type="qcurve"/>
-      <point x="375.573486328125" y="260.21630859375" type="line"/>
-      <point x="358.7666015625" y="289.969482421875"/>
-      <point x="331.89501953125" y="358.599853515625"/>
-      <point x="319.5884616473963" y="380.7852234446674" type="qcurve" smooth="yes"/>
-      <point x="-52.03701407847353" y="1082" type="line"/>
-      <point x="14.56005859375" y="1082" type="line"/>
-      <point x="417.30029296875" y="391.800048828125" type="line"/>
+      <point x="419.6480712890625" y="0" type="line"/>
+      <point x="392.9674072265625" y="0" type="line"/>
+      <point x="392.9674072265625" y="408.84326171875" type="line"/>
+      <point x="823.9217529296875" y="1082" type="line"/>
+      <point x="889.2265625" y="1082" type="line"/>
+      <point x="486.4498608539559" y="404.4807800852924" type="line"/>
+      <point x="473.4111328125" y="385.7945556640625"/>
+      <point x="431.669921875" y="301.1866455078125"/>
+      <point x="416.5140919404871" y="272.216064453125" type="qcurve"/>
+      <point x="415.49725341796875" y="272.216064453125" type="line"/>
+      <point x="396.852783203125" y="301.1866455078125"/>
+      <point x="372.068115234375" y="363.29541015625"/>
+      <point x="359.5006930927088" y="385.4807800852924" type="qcurve" smooth="yes"/>
+      <point x="-12.124782633161004" y="1082" type="line"/>
+      <point x="15.081787109375" y="1082" type="line"/>
+      <point x="419.6480712890625" y="404.84326171875" type="line"/>
     </contour>
     <contour>
-      <point x="311.46435546875" y="1225.480224609375" type="line"/>
-      <point x="271.0244140625" y="1235.72021484375" type="line"/>
-      <point x="519.784912109375" y="1567.88037109375" type="line"/>
-      <point x="542.704833984375" y="1550.88037109375" type="line"/>
+      <point x="344.85498046875" y="1225.480224609375" type="line"/>
+      <point x="304.4150390625" y="1235.72021484375" type="line"/>
+      <point x="566.21875" y="1560.054443359375" type="line"/>
+      <point x="564.3565673828125" y="1557.9237060546875" type="line"/>
     </contour>
     <contour>
-      <point x="304.85" y="0.0" type="line"/>
-      <point x="504.15" y="0.0" type="line"/>
-      <point x="504.15" y="45.05" type="line"/>
-      <point x="304.85" y="45.05" type="line"/>
+      <point x="316.16" y="0.0" type="line"/>
+      <point x="522.84" y="0.0" type="line"/>
+      <point x="522.84" y="46.69" type="line"/>
+      <point x="316.16" y="46.69" type="line"/>
     </contour>
     <contour>
-      <point x="626.3" y="1404.7" type="line"/>
-      <point x="853.85" y="1404.7" type="line"/>
-      <point x="853.85" y="1456" type="line"/>
-      <point x="626.3" y="1456" type="line"/>
+      <point x="649.53" y="1402.83" type="line"/>
+      <point x="885.51" y="1402.83" type="line"/>
+      <point x="885.51" y="1456" type="line"/>
+      <point x="649.53" y="1456" type="line"/>
     </contour>
     <contour>
-      <point x="-47.04" y="1402.66" type="line"/>
-      <point x="189.75" y="1402.66" type="line"/>
-      <point x="189.75" y="1456" type="line"/>
-      <point x="-47.04" y="1456" type="line"/>
+      <point x="-48.78" y="1400.72" type="line"/>
+      <point x="196.79" y="1400.72" type="line"/>
+      <point x="196.79" y="1456" type="line"/>
+      <point x="-48.78" y="1456" type="line"/>
     </contour>
   </outline>
 </glyph>

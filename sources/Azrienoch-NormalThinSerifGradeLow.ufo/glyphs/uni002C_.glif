@@ -1,19 +1,19 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <glyph name="uni002C" format="2">
-  <advance width="414"/>
+  <advance width="435"/>
   <unicode hex="002C"/>
   <outline>
     <contour>
       <point x="193.5" y="-186.5" type="qcurve"/>
-      <point x="170.25" y="-165.25" type="line"/>
-      <point x="210.5" y="-111.25"/>
-      <point x="217.75" y="27.25"/>
-      <point x="216.75" y="92.25" type="qcurve" smooth="yes"/>
-      <point x="215.75" y="155.5" type="line"/>
-      <point x="241.25" y="155.5" type="line"/>
-      <point x="241.25" y="89.25" type="line" smooth="yes"/>
-      <point x="243.25" y="26.25"/>
-      <point x="229" y="-129.25"/>
+      <point x="169.20654296875" y="-164.728271484375" type="line"/>
+      <point x="220.9345703125" y="-108.641357421875"/>
+      <point x="238.3582763671875" y="27.25"/>
+      <point x="237.3582763671875" y="92.25" type="qcurve" smooth="yes"/>
+      <point x="236.3582763671875" y="155.5" type="line"/>
+      <point x="233.6849365234375" y="155.5" type="line"/>
+      <point x="233.6849365234375" y="89.25" type="line" smooth="yes"/>
+      <point x="235.6849365234375" y="26.25"/>
+      <point x="229.2608642578125" y="-126.11962890625"/>
     </contour>
   </outline>
 </glyph>

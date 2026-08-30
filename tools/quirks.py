@@ -6,7 +6,11 @@ they read as neutral rather than *analytical* in the Helvetica/Akzidenz
 sense. This module makes a handful of small, targeted edits to specific
 glyphs, on top of the imported outline, to give the design a little more
 character without redrawing anything: a proper spur on 'G', a slightly
-kicked leg on 'R'.
+kicked leg on 'R', and a genuinely flat terminal on 'e'/'g' where Roboto
+Flex actually cuts on a diagonal despite the project's own horizontal-
+terminal principle (see README's "A horizontal-terminal design
+principle" -- 'c' already cuts flat there, which is what exposed 'e'/'g'
+as the exceptions).
 
 Each edit moves a small number of *existing* points by index, computed
 relative to the glyph's own local geometry (a fraction of its own stem
@@ -87,7 +91,49 @@ def _kick_R(glyph) -> None:
     outer.x += leg_w * 0.18
 
 
+def _horizontal_terminal_e(glyph) -> None:
+    """Cut 'e's lower-right opening flat instead of on a diagonal.
+    Roboto Flex's own 'e' ends the bottom curve at an on-curve point
+    (index 6) and connects it with a straight 'line' segment directly to
+    the point starting the curve back into the counter (index 7) -- but
+    unlike 'c's matching opening (which steps in, across, and back out,
+    always vertically/horizontally), this segment is a genuine diagonal,
+    growing sharply with weight (about 92 units of vertical drop over its
+    length at Regular, over 200 at Black). Since there's no third point
+    here to build 'c's step with, the minimal topology-safe fix is
+    moving point 7 to point 6's own height -- point 6 stays exactly where
+    Roboto Flex's outer curve already lands, only the cut's angle
+    changes.
+    """
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) < 8 or pts[6].type != "qcurve" or pts[7].type != "line":
+        return  # not the outline shape this was written against
+    pts[7].y = pts[6].y
+
+
+def _horizontal_terminal_g(glyph) -> None:
+    """Cut 'g's descender-loop tail flat instead of on a diagonal, the
+    same defect as 'e's (see `_horizontal_terminal_e`) at the open end
+    of the hook: Roboto Flex connects the tail curve's landing point
+    (index 30) to the loop's own start (index 0) with a straight 'line'
+    that grows from a subtle diagonal at Thin to a steep ~300-unit drop
+    at Black. Point 30 stays where the outer tail curve already lands;
+    point 0 moves up to match its height, leaving the loop's own return
+    curve (from point 0 onward) shifted but not reshaped.
+    """
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 31 or pts[30].type != "qcurve" or pts[0].type != "line":
+        return  # not the outline shape this was written against
+    pts[0].y = pts[30].y
+
+
 _QUIRKS = {
     "G": _spur_G,
     "R": _kick_R,
+    "e": _horizontal_terminal_e,
+    "g": _horizontal_terminal_g,
 }

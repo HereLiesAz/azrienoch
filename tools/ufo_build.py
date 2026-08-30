@@ -17,10 +17,19 @@ import pathlib
 import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
+from tools import arch_shape as ASH
+from tools import arch_symmetry as AS
+from tools import canonical_counter as CC
+from tools import counter_shape as CS
+from tools import dots as D
 from tools import params as P
 from tools import quirks as Q
 from tools import roboto_source as R
+from tools import round_contrast as RC
 from tools import serifs as S
+from tools import single_story_a as A
+
+ROUND_CONTRAST_CHARS = {"o", "c", "e"}
 
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -152,8 +161,25 @@ def _prop_glyph_name(gname: str, glyphset) -> str | None:
     return prop if prop in glyphset else None
 
 
-def compute_reference_feet() -> dict[str, list[dict]]:
-    """Foot specs per glyph name, detected once from the (400, 100) instance."""
+def _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, xheight):
+    """The base outline for character `ch` (named `gname`), before
+    quirks/dots/feet. Every character reuses Roboto Flex's own glyph
+    unmodified except 'a' -- see single_story_a.py."""
+    if ch == "a":
+        d_gname = cmap.get(ord("d"))
+        if d_gname is not None:
+            d_glyph = _extract_glyph(d_gname, glyphset, hmtx, None)
+            return A.build_from_d(d_glyph, xheight)
+    return _extract_glyph(gname, glyphset, hmtx, ord(ch))
+
+
+def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int]]]:
+    """Foot specs (``serifs.py``) and dot-contour indices (``dots.py``) per
+    glyph name, both detected once from the (400, 100) instance and
+    reapplied identically on every master -- see those modules'
+    docstrings for why detecting once and reusing by index/fraction,
+    rather than redetecting per master, is what keeps every master of a
+    glyph topologically identical."""
     inst = R.instantiate(REFERENCE_WGHT, REFERENCE_WDTH)
     glyphset = inst.getGlyphSet()
     hmtx = inst["hmtx"]
@@ -161,23 +187,39 @@ def compute_reference_feet() -> dict[str, list[dict]]:
     os2, hhea = inst["OS/2"], inst["hhea"]
     guides = _guides(os2.sCapHeight, os2.sxHeight, hhea.ascender, hhea.descender)
 
+    o_gname = cmap.get(ord("o"))
+    template_contour = None
+    if o_gname is not None:
+        o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
+        if o_glyph_raw.contours:
+            template_contour = CC.outer_contour(o_glyph_raw.contours)
+
     feet_by_glyph = {}
+    dots_by_glyph = {}
     for ch in CORE_CHARS:
         gname = cmap.get(ord(ch))
         if gname is None or gname in feet_by_glyph:
             continue
-        glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        CS.round_off_waists(glyph)
+        AS.symmetrize(glyph)
+        ASH.reshape_arch_counters(glyph, template_contour)
+        if ch in ROUND_CONTRAST_CHARS:
+            RC.thin_round(glyph)
+        CC.reshape_counter(glyph, template_contour)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
+        dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None and prop_name not in feet_by_glyph:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
             feet_by_glyph[prop_name] = S.detect_feet(prop_glyph, guides)
-    return feet_by_glyph
+            dots_by_glyph[prop_name] = D.detect_dot_contours(prop_glyph)
+    return feet_by_glyph, dots_by_glyph
 
 
-def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
+def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> ufoLib2.Font:
     inst = R.instantiate(wght, wdth, grad)
     glyphset = inst.getGlyphSet()
     hmtx = inst["hmtx"]
@@ -186,6 +228,28 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
     ufo = ufoLib2.Font()
     _font_info(ufo, inst, wght, wdth, serf, grad)
     guides = _guides(ufo.info.capHeight, ufo.info.xHeight, ufo.info.ascender, ufo.info.descender)
+    dot_factor = D.boost_factor_for_wght(wght)
+
+    # The true height ascender letters (h/d/b/k/l) actually reach -- not
+    # `guides["ascender"]` (`hhea.ascender`), which is line-spacing
+    # padding, well above any real glyph -- measured off 'h' itself so
+    # `reposition_tittle` can align 'i'/'j' to it (see dots.py).
+    h_gname = cmap.get(ord("h"))
+    ascender_height = None
+    if h_gname is not None:
+        h_glyph = _extract_glyph(h_gname, glyphset, hmtx, None)
+        ascender_height = max(p.y for c in h_glyph.contours for p in c.points)
+
+    # 'o's own outer contour, raw and unprocessed, is the reference
+    # "genuinely round" shape every other counter gets reshaped to match
+    # -- see canonical_counter.py. Extracted fresh per master so it
+    # tracks this weight/width's own proportions.
+    o_gname = cmap.get(ord("o"))
+    template_contour = None
+    if o_gname is not None:
+        o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
+        if o_glyph_raw.contours:
+            template_contour = CC.outer_contour(o_glyph_raw.contours)
 
     imported_names = set()
 
@@ -198,8 +262,17 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
         gname = cmap.get(ord(ch))
         if gname is None:
             continue
-        glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        CS.round_off_waists(glyph)
+        AS.symmetrize(glyph)
+        ASH.reshape_arch_counters(glyph, template_contour)
+        if ch in ROUND_CONTRAST_CHARS:
+            RC.thin_round(glyph)
+        CC.reshape_counter(glyph, template_contour)
+        D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
+        if ch in D.TITTLE_CHARS and ascender_height is not None:
+            D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)
         S.apply_feet(glyph, feet_by_glyph.get(gname, []), guides, serf)
         ufo[gname] = glyph
         imported_names.add(gname)
@@ -207,6 +280,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            D.boost_dots(prop_glyph, dots_by_glyph.get(prop_name, []), dot_factor)
             S.apply_feet(prop_glyph, feet_by_glyph.get(prop_name, []), guides, serf)
             ufo[prop_name] = prop_glyph
             imported_names.add(prop_name)
@@ -221,6 +295,23 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
         ufo.features.text = f"feature pnum {{\n{subs}\n}} pnum;\n"
 
     raw_kerning = R.extract_kerning(inst)
+
+    # 'a' is now built from 'd's own outline (single_story_a.py) -- its
+    # left edge (the bowl) and right edge (the stem, up to x-height) are
+    # geometrically identical to 'd's, so its kerning should be too.
+    # Roboto Flex's own pairs for 'a' were tuned for the old double-story
+    # shape; overwrite them with 'd's pairs in both positions rather than
+    # keep pairs tuned for a shape 'a' no longer has.
+    a_gname, d_gname = cmap.get(ord("a")), cmap.get(ord("d"))
+    if a_gname is not None and d_gname is not None:
+        for (left, right), value in list(raw_kerning.items()):
+            if left == d_gname:
+                raw_kerning[(a_gname, right)] = value
+            if right == d_gname:
+                raw_kerning[(left, a_gname)] = value
+        if (d_gname, d_gname) in raw_kerning:
+            raw_kerning[(a_gname, a_gname)] = raw_kerning[(d_gname, d_gname)]
+
     kerning = {
         pair: value
         for pair, value in raw_kerning.items()
@@ -233,10 +324,10 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph) -> ufoLib2.Font:
 
 def build_all():
     SOURCES_DIR.mkdir(exist_ok=True)
-    feet_by_glyph = compute_reference_feet()
+    feet_by_glyph, dots_by_glyph = compute_reference_specs()
     paths = {}
     for wght, wdth, serf, grad in P.master_grid():
-        ufo = build_master_ufo(wght, wdth, serf, grad, feet_by_glyph)
+        ufo = build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph)
         name = P.master_name(wght, wdth, serf, grad)
         path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufo.save(path, overwrite=True)

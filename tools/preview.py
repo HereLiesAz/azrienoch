@@ -64,6 +64,61 @@ def contour_to_mpl(contour):
     return verts, codes
 
 
+def flatten_path(verts, codes, steps=50):
+    """Sample `verts`/`codes` (matplotlib Path arrays, as returned by
+    `contour_to_mpl`) into a dense array of points that actually lie on
+    the curve -- `steps` points per curve/line segment.
+
+    NOT the same as `matplotlib.path.Path.interpolated()`: that method's
+    own docstring says codes other than LINETO/MOVETO/CLOSEPOLY "are not
+    handled correctly" -- it linearly interpolates the raw vertex array,
+    which for a CURVE3/CURVE4 segment means treating the off-curve
+    control point as if it were itself a polygon corner. `PathPatch`
+    rendering isn't affected (matplotlib's renderer evaluates the actual
+    bezier when drawing), only code that calls `.interpolated()` to get
+    points back out for measurement is -- confirmed by rendering a pure
+    circle's control polygon through `.interpolated()` and getting an
+    octagon back, not a circle. This evaluates the real quadratic/cubic
+    bezier at each step instead.
+    """
+    import numpy as np
+
+    points = []
+    i = 0
+    cur = None
+    n = len(codes)
+    while i < n:
+        code = codes[i]
+        if code == Path.MOVETO:
+            cur = verts[i]
+            points.append(cur)
+            i += 1
+        elif code == Path.LINETO:
+            points.append(verts[i])
+            cur = verts[i]
+            i += 1
+        elif code == Path.CURVE3:
+            ctrl, end = verts[i], verts[i + 1]
+            for t in np.linspace(0, 1, steps)[1:]:
+                x = (1 - t) ** 2 * cur[0] + 2 * (1 - t) * t * ctrl[0] + t**2 * end[0]
+                y = (1 - t) ** 2 * cur[1] + 2 * (1 - t) * t * ctrl[1] + t**2 * end[1]
+                points.append((x, y))
+            cur = end
+            i += 2
+        elif code == Path.CURVE4:
+            c1, c2, end = verts[i], verts[i + 1], verts[i + 2]
+            for t in np.linspace(0, 1, steps)[1:]:
+                mt = 1 - t
+                x = mt**3 * cur[0] + 3 * mt**2 * t * c1[0] + 3 * mt * t**2 * c2[0] + t**3 * end[0]
+                y = mt**3 * cur[1] + 3 * mt**2 * t * c1[1] + 3 * mt * t**2 * c2[1] + t**3 * end[1]
+                points.append((x, y))
+            cur = end
+            i += 3
+        else:  # CLOSEPOLY or anything else
+            i += 1
+    return np.array(points)
+
+
 def glyph_to_path(glyph_shape, ox=0, oy=0):
     all_verts, all_codes = [], []
     for c in glyph_shape.contours:
