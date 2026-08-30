@@ -32,6 +32,7 @@ from tools import rotation_align as RA
 from tools import round_contrast as RC
 from tools import serifs as S
 from tools import single_story_a as A
+from tools import taper_align as TA
 
 ROUND_CONTRAST_CHARS = {"o", "c", "e"}
 
@@ -362,6 +363,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         if gname in reference_contours:
             RA.align_to_reference(glyph, reference_contours[gname])
+            TA.align_taper_signs(glyph, reference_contours[gname])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         if _is_arch_char(ch):
