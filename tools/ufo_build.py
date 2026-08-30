@@ -128,6 +128,19 @@ def _needs_round_stabilization(ch: str) -> bool:
     base = unicodedata.normalize("NFD", ch)[:1] or ch
     return base in _ROUND_STABILIZE_BASE_LETTERS
 
+
+def _is_e_counter_char(ch: str) -> bool:
+    """'e' plus every accented form (é/è/ê/ë/ę/ė/ě/...) -- confirmed each
+    is an independent extraction sharing 'e's own 32-point base contour
+    (as `glyph.contours[0]`, with the accent as a separate contour after
+    it) rather than a reuse of plain 'e's points, and confirmed each has
+    the identical flat-top counter defect `reshape_named_span` (see
+    arch_shape.py) exists to fix -- the same "accented forms need their
+    own call, not just the base letter's" lesson as
+    `_ROUND_STABILIZE_BASE_LETTERS` above."""
+    base = unicodedata.normalize("NFD", ch)[:1] or ch
+    return base == "e"
+
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
@@ -339,6 +352,8 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         if _is_arch_char(ch):
             AS.symmetrize(glyph)
             ASH.reshape_arch_counters(glyph, template_contour)
+        if _is_e_counter_char(ch):
+            ASH.reshape_named_span(glyph, template_contour, 14, 21, "line", "line")
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         if _is_closed_counter_char(ch):
@@ -425,6 +440,14 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         if _is_arch_char(ch):
             AS.symmetrize(glyph)
             ASH.reshape_arch_counters(glyph, template_contour)
+        if _is_e_counter_char(ch):
+            # 'e's upper counter has the identical Roboto-Flex-flattens-
+            # the-curve problem the arch letters have, for the identical
+            # reason -- see arch_shape.py's own module docstring for why
+            # this goes through `reshape_named_span` with hardcoded
+            # indices instead of `reshape_arch_counters`'s structural
+            # spring-pair search.
+            ASH.reshape_named_span(glyph, template_contour, 14, 21, "line", "line")
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         if ch == "o" and ref_outer_pts is not None:
