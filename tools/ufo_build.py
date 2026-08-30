@@ -18,6 +18,7 @@ import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
 from tools import arch_symmetry as AS
+from tools import canonical_counter as CC
 from tools import counter_shape as CS
 from tools import dots as D
 from tools import params as P
@@ -185,6 +186,13 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
     os2, hhea = inst["OS/2"], inst["hhea"]
     guides = _guides(os2.sCapHeight, os2.sxHeight, hhea.ascender, hhea.descender)
 
+    o_gname = cmap.get(ord("o"))
+    template_contour = None
+    if o_gname is not None:
+        o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
+        if o_glyph_raw.contours:
+            template_contour = CC.outer_contour(o_glyph_raw.contours)
+
     feet_by_glyph = {}
     dots_by_glyph = {}
     for ch in CORE_CHARS:
@@ -197,6 +205,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         AS.symmetrize(glyph)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
+        CC.reshape_counter(glyph, template_contour)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
@@ -229,6 +238,17 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         h_glyph = _extract_glyph(h_gname, glyphset, hmtx, None)
         ascender_height = max(p.y for c in h_glyph.contours for p in c.points)
 
+    # 'o's own outer contour, raw and unprocessed, is the reference
+    # "genuinely round" shape every other counter gets reshaped to match
+    # -- see canonical_counter.py. Extracted fresh per master so it
+    # tracks this weight/width's own proportions.
+    o_gname = cmap.get(ord("o"))
+    template_contour = None
+    if o_gname is not None:
+        o_glyph_raw = _extract_glyph(o_gname, glyphset, hmtx, None)
+        if o_glyph_raw.contours:
+            template_contour = CC.outer_contour(o_glyph_raw.contours)
+
     imported_names = set()
 
     notdef = _extract_glyph(".notdef", glyphset, hmtx, None)
@@ -246,6 +266,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         AS.symmetrize(glyph)
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
+        CC.reshape_counter(glyph, template_contour)
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
         if ch in D.TITTLE_CHARS and ascender_height is not None:
             D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)

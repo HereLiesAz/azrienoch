@@ -105,19 +105,46 @@ is in what it does with that space:
   Flex tuned for the old double-story shape: `ufo_build.py` overwrites
   every kerning pair keyed to 'd' with an equivalent one keyed to 'a'
   before the master's kerning is filtered down and saved.
-- **'o'/'c' thinned at top and bottom, to match a bowl's own neck.**
+- **'o'/'c'/'e' thinned at top and bottom, to match a bowl's own neck.**
   Roboto Flex draws a full circle's curve and a bowl letter's curve at
   two different thicknesses even though they're the same family of
-  shape: 'o'/'c' read visibly heavier at their vertical extremes than
+  shape: 'o'/'c'/'e' read visibly heavier at their vertical extremes than
   the wall of 'd'/'b'/'p'/'q's bowl does right where it meets the flat
   stem. `tools/round_contrast.py` measures both with real curve
   flattening (not a bounding box, too coarse for a thickness that
-  changes along a curve) and moves only 'o'/'c's own inner top/bottom
+  changes along a curve) and moves only 'o'/'c'/'e's own inner top/bottom
   points toward the outer edge, in the same proportion the neck is
   thinner at the one weight (Regular) where measuring the neck itself is
   reliable -- at Thin, Roboto Flex's own neck pinches to nearly nothing,
   a genuine corner of its design space rather than something to match
   exactly.
+- **Symmetric arch counters ('n'/'h'/'m'/'u').** Roboto Flex springs the
+  curve of an arch letter from its two stems at two different heights --
+  'n's left stem meets its arch 84 units higher than the right stem does
+  -- which reads as a lopsided negative space even though the letter's
+  outer silhouette is close to symmetric. `tools/arch_symmetry.py` finds
+  each such spring pair generically (a real stem meeting a curve, sanity-
+  checked against unrelated springs like 'h's ascender) and moves each to
+  the pair's average height, translating the one adjacent off-curve
+  control point along with it so the curve's local shape stays smooth
+  rather than kinking.
+- **The same true oval, everywhere a counter is round.** Even after the
+  neck-thinning above, 'o's counter (and 'd'/'b'/'p'/'q'/'g'/'a's, all
+  built the same way) still read as a rounded square rather than a
+  genuine oval: Roboto Flex draws these as four quadrant curves bridged
+  by a short flat "waist," proportionally tiny on the outer contour but a
+  much bigger fraction of the smaller counter inside it. `tools/
+  canonical_counter.py` fixes this structurally instead of shrinking the
+  waist: 'o's own outer contour is already the design's reference for
+  "genuinely round," and every one of these counters turns out to share
+  its exact 14-point structure, just cyclically rotated to a different
+  start point. Every matching counter is rebuilt as a true affine-scaled
+  copy of 'o's own outer contour -- same size and position, only the
+  shape changes -- with the winding direction verified (and corrected by
+  mirroring, which costs nothing on a round shape) so the result still
+  renders as a hole rather than solid fill. 'e'/'c' aren't included yet:
+  their outer and inner boundaries share a single open contour, which
+  needs a different approach than this one.
 
 The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
@@ -194,8 +221,17 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   reposition-to-ascender-height fix (see "Design" above).
 - `single_story_a.py` -- builds 'a' from 'd's own outline (see "Design"
   above).
-- `round_contrast.py` -- thins 'o'/'c' at top and bottom to match a
+- `round_contrast.py` -- thins 'o'/'c'/'e' at top and bottom to match a
   bowl's own neck thickness (see "Design" above).
+- `arch_symmetry.py` -- symmetrizes 'n'/'h'/'m'/'u's arch-spring heights
+  (see "Design" above).
+- `counter_shape.py` -- shrinks the flat "waist" on a counter's round
+  sides; mostly superseded by `canonical_counter.py` below for the
+  glyphs that structurally match, still applied first as a harmless
+  no-op/fallback pass.
+- `canonical_counter.py` -- reshapes 'o'/'d'/'b'/'p'/'q'/'g'/'a's inner
+  counters into true affine-scaled copies of 'o's own outer contour (see
+  "Design" above).
 - `ufo_build.py` -- assembles the 48 master UFOs, copying each glyph's
   quadratic outline through unmodified (no curve conversion -- gvar
   already guarantees the same point topology across masters, so nothing

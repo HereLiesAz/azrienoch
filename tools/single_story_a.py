@@ -18,23 +18,45 @@ inherits everything 'd' already gets right, and flows through the rest
 of the pipeline (SERF feet, dot detection) exactly like any other
 imported glyph: by the time those run, it's just another glyph with a
 flat-topped stem, no special-casing needed.
+
+At Thin weight specifically (wght 100), cutting straight to `xheight`
+would put the stem top BELOW the bowl counter's own natural top: 'd's
+counter (contour 1) reaches y=874 at Thin while x-height itself is only
+821 there -- the counter's own top is comfortably below x-height at
+every other tested weight (a growing margin from wght 200 up), so this
+is a Thin-only extreme, the same kind of corner `roboto_source.py`'s
+XOPQ=27 fix and `round_contrast.py`'s neck-pinch already work around.
+Left uncorrected, the counter would poke out through the top of the
+shortened stem -- a self-intersecting outline, not just a visual defect.
+`COUNTER_CLEARANCE` keeps the stem top at least this far above the
+counter's own top when that's taller than `xheight`, so the outline
+stays valid at every weight; everywhere else the counter is already
+well clear and this has no effect.
 """
 
 from __future__ import annotations
 
 import ufoLib2
 
+COUNTER_CLEARANCE = 20.0  # units of headroom kept above the counter's own top
+
 
 def build_from_d(d_glyph, xheight: float):
     """A new glyph named 'a', built from `d_glyph`'s own contours with
-    the stem shortened to `xheight`. `d_glyph` itself is left untouched."""
+    the stem shortened to `xheight` (or just clear of the counter's own
+    top, if that's taller -- see module docstring). `d_glyph` itself is
+    left untouched."""
     glyph = ufoLib2.objects.Glyph(name="a")
     glyph.copyDataFromGlyph(d_glyph)  # deep-copies contours/width, not name
     glyph.unicodes = [ord("a")]
 
     outer = glyph.contours[0]
     top_y = max(p.y for p in outer.points)
+    target_y = xheight
+    if len(glyph.contours) > 1:
+        counter_top = max(p.y for p in glyph.contours[1].points)
+        target_y = max(target_y, counter_top + COUNTER_CLEARANCE)
     for p in outer.points:
         if p.y == top_y:
-            p.y = xheight
+            p.y = target_y
     return glyph
