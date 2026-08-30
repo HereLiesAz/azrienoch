@@ -141,6 +141,16 @@ def _is_e_counter_char(ch: str) -> bool:
     base = unicodedata.normalize("NFD", ch)[:1] or ch
     return base == "e"
 
+
+# v/V/w/W's own diagonal strokes -- the letters confirmed (a direct
+# edge-edge crossing sweep across the whole weight range) to have a
+# self-intersecting outer contour at some of Azrienoch's own actual
+# masters. See taper_align.py::stabilize_diagonal_strokes's own
+# docstring for the fix (checked-then-conditionally-fixed, never
+# unconditional -- most masters, including most of the heaviest
+# weights, need nothing done).
+_DIAGONAL_STROKE_CHARS = {"v", "V", "w", "W"}
+
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
@@ -437,6 +447,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
                 CC.stabilize_round_glyph(glyph, reference_contours[gname])
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
+        if ch in _DIAGONAL_STROKE_CHARS and gname in reference_contours:
+            TA.stabilize_diagonal_strokes(glyph, reference_contours[gname])
         if _is_arch_char(ch):
             AS.symmetrize(glyph)
             ASH.reshape_arch_counters(glyph, template_contour)

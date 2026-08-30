@@ -36,9 +36,53 @@ doesn't, mirrors the second point around the first (preserving the
 corner's own width exactly, just flipping which side is which), which
 is what removes the crossing without changing the corner's appearance
 at any master where it wasn't already backwards.
+
+That fixes the TOP corner's own two points trading places, but it isn't
+the whole story: confirmed directly (a real edge-edge crossing sweep,
+not just the two-point-order check above) that v/w's OUTER curve -- the
+run leading from each tip down into the sharp bottom vertex ('v'), or
+into each of 'w's own internal valleys -- can still cross the counter's
+own dead-straight inner diagonal at a wide band of intermediate `wght`
+values, independent of whether the top corner's own two points are
+correctly ordered. This isn't an in-between interpolation artifact
+either: the RAW, unprocessed Roboto Flex extraction at these weights
+already self-intersects, before any of Azrienoch's own code touches it
+-- Roboto Flex's own gvar deltas, at the specific combination of
+Azrienoch's custom stroke-weight parametric axes (`roboto_source.py`'s
+own height-as-weight curve) and these particular intermediate `wght`
+values, simply don't keep positive stroke width there at every point
+along the curve.
+
+`stabilize_diagonal_strokes` fixes this the same way
+`canonical_counter.py` already fixes an analogous raw-extraction defect
+for 'o' and its own family: only when the glyph's own contour is
+confirmed to actually self-intersect (checked directly, not assumed --
+most masters need nothing done at all, including most of the heaviest
+weights, where Roboto Flex's own native curve is perfectly fine and
+worth keeping untouched), replace the WHOLE contour with an
+affine-scaled copy of this SAME glyph's own shape at the reference
+master (always non-self-intersecting there, confirmed), fit to this
+master's own current bounding box via
+`canonical_counter._reshape_contour_to_reference` -- the same
+bbox-relative, independent-X/Y-scale primitive 'o'/'O'/'0'/'6'/'9'/'D'
+already use to stabilize themselves. A per-span reshape (moving only
+the curve nearest each crossing, anchored on the outer silhouette's own
+"safe" tip/notch corners) was tried first and worked for 'v'/'V'/'w',
+but not reliably for 'W' -- confirmed those "safe" anchors aren't
+always safe (they sit on a crossing themselves at 'W's own most
+extreme weights) and, more importantly, that even where it did clear
+the crossing it visibly looked wrong: a chord-relative scale moves each
+point's own local angle independently of its neighbors, so the
+counter's own vertex ends up pointing a different direction than the
+outer silhouette's own lowest point right next to it. A whole-contour
+bbox-relative copy doesn't have that problem -- every point moves
+together, preserving the whole shape's own internal angles exactly as
+Roboto Flex drew them at the reference master, just rescaled.
 """
 
 from __future__ import annotations
+
+from tools import canonical_counter as CC
 
 MIN_Y_FRACTION = 0.6  # only look in the upper part of the glyph
 Y_TOLERANCE = 2.0  # units; how close in Y two points must be to call them a flat run
@@ -89,3 +133,72 @@ def align_taper_signs(glyph, reference_contours) -> None:
                 continue
             if (cur_diff > 0) != (ref_diff > 0):
                 points[j].x = 2 * points[i].x - points[j].x
+
+
+def _ccw(a, b, c) -> bool:
+    return (c[1] - a[1]) * (b[0] - a[0]) > (b[1] - a[1]) * (c[0] - a[0])
+
+
+def _segments_cross(a, b, c, d) -> bool:
+    if a in (c, d) or b in (c, d):
+        return False
+    return _ccw(a, c, d) != _ccw(b, c, d) and _ccw(a, b, c) != _ccw(a, b, d)
+
+
+def contour_self_intersects(points) -> bool:
+    """Whether `points` (a contour's own on/off-curve points, taken as a
+    polygon of straight edges between consecutive points -- close enough
+    to the true curve for detecting the gross, wght-scale self-crossings
+    this module fixes, without needing a full bezier flattening) has any
+    two non-adjacent edges that cross."""
+    n = len(points)
+    if n < 4:
+        return False
+    coords = [(p.x, p.y) for p in points]
+    edges = [(coords[i], coords[(i + 1) % n]) for i in range(n)]
+    for i in range(n):
+        for j in range(i + 1, n):
+            if abs(i - j) <= 1 or (i == 0 and j == n - 1):
+                continue
+            if _segments_cross(edges[i][0], edges[i][1], edges[j][0], edges[j][1]):
+                return True
+    return False
+
+
+def stabilize_diagonal_strokes(glyph, reference_contours) -> bool:
+    """If `glyph`'s own first contour actually self-intersects, replace
+    it wholesale with an affine-scaled copy of this same glyph's own
+    reference-master shape (`canonical_counter._reshape_contour_to_reference`
+    -- the same bbox-relative, independent-X/Y-scale primitive that
+    fixes 'o' and its own family), fit to this master's own current
+    bounding box. Returns whether the contour is (now) clean.
+
+    A no-op, by design, on the large majority of masters where Roboto
+    Flex's own native curve is already fine (most of the weight range,
+    including most of the heaviest weights) -- this only ever touches a
+    master actually confirmed to need it, never blindly re-derives a
+    shape that was already correct.
+
+    An earlier version of this reshaped only the specific span(s) of the
+    curve nearest each crossing, anchored on the outer silhouette's own
+    tip/notch corners left untouched -- confirmed to work for 'v'/'V'/
+    'w' but not reliably for 'W', where those same "safe" anchor points
+    turned out to sit on a crossing themselves at the most extreme
+    weights, and confirmed to look visibly wrong even where it did
+    remove the crossing (a chord-relative scale doesn't move each
+    point's local angle in step with its neighbors, so the counter's own
+    vertex ends up pointing a visibly different direction than the
+    outer silhouette's own lowest point -- exactly the asymmetry a
+    bbox-relative whole-contour copy doesn't have, since it moves every
+    point together, preserving the whole shape's own internal angles)."""
+    if not glyph.contours:
+        return True
+    contour = glyph.contours[0]
+    points = contour.points
+    if not contour_self_intersects(points):
+        return True
+    ref_points = reference_contours[0]
+    if len(ref_points) != len(points):
+        return True
+    CC._reshape_contour_to_reference(contour, ref_points)
+    return not contour_self_intersects(points)
