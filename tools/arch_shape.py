@@ -49,6 +49,29 @@ does (via a signed cross product, not eyeballed), flipping the
 perpendicular sign when it doesn't, and only then rebuilding the point
 in the target's frame -- so the fix is verified per spring pair, not
 assumed from one visually-plausible case.
+
+A *uniform* scale (one factor for both the along-chord and the
+perpendicular/bulge direction) isn't right either -- caught by the user
+looking at 'm'/'u' at Thin, where the arch reads as a fat, ballooning
+blob instead of the same even hairline the rest of the letter has.
+Measured why: 'o's own bulge-to-chord ratio changes a lot across the
+weight range (0.64 at Thin down to 0.33 at Black -- 'o' opens up
+proportionally more at Thin, matching how a thin stroke needs a more
+generous curve to still read clearly), and at Black that ratio happens
+to be close to the arch's own native one (0.32), so the uniform-scale
+version looked fine there and only fell apart at the opposite extreme.
+The fix scales the two directions separately: `scale_along` still fits
+the chord length (unchanged, needed to reach the fixed spring points
+exactly), but `scale_perp` fits the template's bulge to *this letter's
+own native bulge depth* (measured from its own unmodified points before
+any are moved), not to the template's. That borrows only the curve's
+shape/quality (smoothness, no waist-flattening) from 'o', while leaving
+how far it actually bulges to what Roboto Flex already tuned correctly
+for that specific weight -- confirmed this way (chord-length ratio
+alone at Regular, wght 400) already lands within a few percent of
+'o's own ratio there too, so Black's "just happens to match" isn't a
+coincidence limited to one weight; it's what the native design already
+does, and Thin was the one place the mismatch was big enough to see.
 """
 
 from __future__ import annotations
@@ -99,16 +122,35 @@ def reshape_arch_counters(glyph, template_contour) -> bool:
             continue
         ux, uy = vt[0] / vt_len, vt[1] / vt_len  # template chord unit vector
         tux, tuy = vtar[0] / vtar_len, vtar[1] / vtar_len  # target chord unit vector
-        scale = vtar_len / vt_len
+        scale_along = vtar_len / vt_len
 
+        # Snapshot the target's own current points before any of them
+        # move, and use them to measure how far this letter's own curve
+        # already bulges from its chord -- see module docstring for why
+        # the bulge needs its own scale, separate from the along-chord
+        # one, rather than reusing scale_along for both.
+        original = [(pts[(entry_idx + k) % n].x, pts[(entry_idx + k) % n].y) for k in range(span_len)]
+        native_max_perp = 0.0
+        template_max_perp = 0.0
         mid_k = span_len // 2
-        mid_t = template_pts[(offset + mid_k) % tn]
-        dxt, dyt = mid_t.x - t_start.x, mid_t.y - t_start.y
-        template_perp = ux * dyt - uy * dxt
-        mid_orig = pts[(entry_idx + mid_k) % n]
-        dxo, dyo = mid_orig.x - start.x, mid_orig.y - start.y
-        target_perp = tux * dyo - tuy * dxo
-        mirror = (template_perp >= 0) != (target_perp >= 0)
+        template_perp_at_mid = 0.0
+        target_perp_at_mid = 0.0
+        for k in range(1, span_len - 1):
+            ox, oy = original[k]
+            dxo, dyo = ox - start.x, oy - start.y
+            perp_o = tux * dyo - tuy * dxo
+            native_max_perp = max(native_max_perp, abs(perp_o))
+            tp = template_pts[(offset + k) % tn]
+            dxt, dyt = tp.x - t_start.x, tp.y - t_start.y
+            perp_t = ux * dyt - uy * dxt
+            template_max_perp = max(template_max_perp, abs(perp_t))
+            if k == mid_k:
+                target_perp_at_mid = perp_o
+                template_perp_at_mid = perp_t
+        if template_max_perp < 1e-6:
+            continue
+        scale_perp = native_max_perp / template_max_perp
+        mirror = (template_perp_at_mid >= 0) != (target_perp_at_mid >= 0)
 
         for k in range(1, span_len - 1):
             tp = template_pts[(offset + k) % tn]
@@ -118,7 +160,7 @@ def reshape_arch_counters(glyph, template_contour) -> bool:
             if mirror:
                 perp = -perp
             target_pt = pts[(entry_idx + k) % n]
-            target_pt.x = start.x + scale * (along * tux - perp * tuy)
-            target_pt.y = start.y + scale * (along * tuy + perp * tux)
+            target_pt.x = start.x + scale_along * along * tux - scale_perp * perp * tuy
+            target_pt.y = start.y + scale_along * along * tuy + scale_perp * perp * tux
         reshaped_any = True
     return reshaped_any
