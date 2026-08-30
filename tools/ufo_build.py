@@ -2,12 +2,12 @@
 
 For each (wght, wdth, SERF) master in ``params.master_grid()``: instance
 Roboto Flex at the corresponding location (``roboto_source.py``), copy
-over the Core Latin MVP glyph set's outlines/advances/kerning. Every
-master -- SERF=0 included -- gets the same fixed set of foot contours per
-glyph (``serifs.py``), sized by that master's own SERF value; that keeps
-every master of a glyph topologically identical, which ``fontmake``
-requires to interpolate it at all. ``fontmake`` then compiles the result
-into one variable TTF.
+over ``CORE_CHARS``' outlines/advances/kerning, and apply the 'G'/'R'
+quirks (``quirks.py``). Every master -- SERF=0 included -- gets the same
+fixed set of foot contours per glyph (``serifs.py``), sized by that
+master's own SERF value; that keeps every master of a glyph
+topologically identical, which ``fontmake`` requires to interpolate it
+at all. ``fontmake`` then compiles the result into one variable TTF.
 """
 
 from __future__ import annotations
@@ -18,6 +18,7 @@ import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
 
 from tools import params as P
+from tools import quirks as Q
 from tools import roboto_source as R
 from tools import serifs as S
 
@@ -26,7 +27,23 @@ LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
 PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
 
-CORE_CHARS = UPPER + LOWER + DIGITS + PUNCT
+# Latin-1 Supplement: Western European accented letters (French, German,
+# Spanish, Portuguese, Italian, Scandinavian, ...) plus a few punctuation
+# marks (inverted !/?, degree, micro).
+LATIN1 = (
+    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
+    "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+    "¡¿°µ"
+)
+
+# Latin Extended-A: Central/Eastern European and Baltic accented letters
+# (Polish, Czech, Slovak, Hungarian, Romanian, Turkish, Baltic languages).
+LATIN_EXT_A = (
+    "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
+    "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
+)
+
+CORE_CHARS = UPPER + LOWER + DIGITS + PUNCT + LATIN1 + LATIN_EXT_A
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
 SOURCES_DIR = HERE / "sources"
@@ -128,6 +145,7 @@ def compute_reference_feet() -> dict[str, list[dict]]:
         if gname is None or gname in feet_by_glyph:
             continue
         glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        Q.apply_quirks(ch, glyph)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
     return feet_by_glyph
 
@@ -153,6 +171,7 @@ def build_master_ufo(wght, wdth, serf, feet_by_glyph) -> ufoLib2.Font:
         if gname is None:
             continue
         glyph = _extract_glyph(gname, glyphset, hmtx, ord(ch))
+        Q.apply_quirks(ch, glyph)
         S.apply_feet(glyph, feet_by_glyph.get(gname, []), guides, serf)
         ufo[gname] = glyph
         imported_names.add(gname)

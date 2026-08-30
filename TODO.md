@@ -1,28 +1,30 @@
 # TODO
 
-Tracked follow-up work for Azrienoch, beyond the MVP in this repository.
+Tracked follow-up work for Azrienoch, beyond what's in this repository.
 Checked items are done; everything else is open. See `README.md` for the
 design rationale these build on.
 
 ## Glyph coverage
 
-- [ ] Grow `tools/ufo_build.py::CORE_CHARS` past the Core Latin MVP
-      (~88 glyphs: uppercase, lowercase, digits, core punctuation) to
-      Latin-1/Latin Extended-A, so accented characters render instead of
-      falling back to `.notdef`. Composite glyphs (accents, and already
-      `%`) decompose cleanly against Roboto Flex's own glyphset via
-      `_copy_outline`'s `DecomposingRecordingPen` -- this is mainly a
-      matter of widening `CORE_CHARS`, not new plumbing.
+- [x] ~~Grow `tools/ufo_build.py::CORE_CHARS` past the Core Latin MVP~~
+      -- done: uppercase, lowercase, digits, core punctuation, Latin-1
+      Supplement and Latin Extended-A (273 glyphs total). Composite
+      glyphs (accents, `%`) decompose cleanly against Roboto Flex's own
+      glyphset via `_copy_outline`'s `DecomposingRecordingPen`.
 - [ ] Numeral sets: Roboto Flex ships one alternate figure style
       (proportional, glyph suffix `.prop`) behind its `pnum` GSUB feature,
       which Azrienoch doesn't import (see "No `GSUB` table" below) -- only
       the default figures come across today.
+- [ ] Greek and Cyrillic: Roboto Flex covers both; Azrienoch currently
+      only imports Latin.
 
 ## Axis space
 
-- [ ] A fourth `wght` sample between 400 and 900 (or 100 and 400) in
-      `tools/roboto_source.py::_HEIGHT_AXES_AT_WGHT`, so the height/stroke
-      correlation curve isn't purely two line segments.
+- [x] ~~A fourth `wght` sample~~ -- done: added 700 (Bold) to
+      `tools/roboto_source.py::_HEIGHT_AXES_AT_WGHT`, front-loading height
+      growth (most of it by Bold, tapering toward Black) while stroke
+      thickness keeps growing roughly proportionally, so the curve
+      actually bends there instead of being two straight segments.
 - [ ] Consider exposing `GRAD` (grade) as a real Azrienoch axis --
       Roboto Flex supports it natively and it's a natural fit alongside
       `wght`/`wdth`/`SERF`; currently fixed at 0 in `roboto_location()`.
@@ -32,34 +34,35 @@ design rationale these build on.
       Worth a design decision on whether it ever should.
 - [ ] Re-derive the `SERF` foot-sizing formulas
       (`tools/serifs.py::apply_feet`) once real serif specimens have been
-      eyeballed at more than the two or three weights checked so far --
-      the 0.9/0.42 multipliers are a first pass, not measured. (The more
-      serious bug here -- feet widening symmetrically into the counter on
-      arch letters like 'n'/'m'/'p'/'r'/'h' -- is fixed: `_flat_runs` now
-      checks which side of each flat run borders a real stem versus a
-      counter, and `apply_feet` only grows a foot on the extendable
-      side(s). What's left is tuning, not correctness.)
+      eyeballed at more than a handful of weights -- the 0.9/0.42
+      multipliers are a first pass, not measured. (The correctness bug
+      here -- feet widening symmetrically into the counter on arch
+      letters -- is fixed; what's left is tuning.)
+- [ ] The `XTRA` (counter width) values in `_HEIGHT_AXES_AT_WGHT` (420 /
+      540 / 565 / 580 across the four `wght` samples) are a deliberate
+      design choice -- generous at every weight, most pointedly at Black
+      -- but a first pass by eye, not measured against real specimens at
+      length.
 
 ## Font engineering completeness
 
-- [ ] **No named instances in `fvar`.** `fontmake` didn't generate any
-      (confirmed: `len(font['fvar'].instances) == 0`), so apps that pick
-      a style by name (rather than dragging axis sliders) currently only
-      ever see the default. Add `<instances>` to
-      `tools/designspace_build.py::write_designspace` for the 12 corners
-      (or a curated subset) with real names ("Thin", "Black Condensed
-      Serif", etc).
+- [x] ~~No named instances in `fvar`~~ -- done: 16 named instances (one
+      per master) via `tools/designspace_build.py::write_designspace`,
+      plus `STAT` axis-value labels (`WGHT_LABELS`/`WDTH_LABELS`/
+      `SERF_LABELS`) so design apps show a proper style picker instead of
+      raw sliders.
 - [ ] **No `GSUB` table** -- confirmed no ligatures, case-sensitive
       punctuation, or figure-style features carried over from Roboto
       Flex, since only kerning (`GPOS`) is extracted today
       (`tools/roboto_source.py::extract_kerning`). Decide which of Roboto
-      Flex's features are worth porting for the Core Latin MVP glyph set.
+      Flex's features are worth porting.
 - [ ] **No hinting.** Fine for modern renderers (browsers, macOS, most of
       Linux); worth a pass if Windows GDI/small-size legacy rendering
       matters for this project.
-- [ ] Review the auto-generated `STAT` table's axis value records --
-      not audited beyond confirming the table exists.
-
+- [x] ~~Review the auto-generated `STAT` table's axis value records~~ --
+      done as part of the named-instances work above: 7 axis-value
+      records (3 `wght`, 2 `wdth`, 2 `SERF`), each weight/width/serif
+      value labeled and the defaults marked elidable.
 - [x] ~~Investigate why raw (pre-filter) kerning pair counts from
       `extract_kerning` vary so much with `wdth` at `wght=100`~~ --
       resolved, not a bug. Sampling intermediate widths shows the
@@ -74,17 +77,26 @@ design rationale these build on.
       several thousand extra, tiny (mostly single-digit-unit) kerning
       corrections that exist only at condensed widths and taper to zero
       at normal width, which makes sense: thinner strokes need more
-      micro-adjustment to avoid collisions when condensed. 679 of those
-      pairs involve glyphs Azrienoch actually imports, so it does ship,
-      correctly.
+      micro-adjustment to avoid collisions when condensed.
+- [x] ~~SERF axis notches the counter on 'n'/'m'/'p'/'r'/'h'~~ -- fixed:
+      `tools/serifs.py::_flat_runs` now checks, for each end of a
+      candidate flat run, whether the adjacent contour segment is a long
+      straight line (a real stem, safe to grow a foot into) or a short
+      run into a curve (the counter side, left alone); `apply_feet` only
+      grows a foot on the extendable side(s).
+- [x] ~~Compiled TTF carries no copyright/license metadata~~ -- fixed:
+      `tools/ufo_build.py::_font_info` sets `copyright`/
+      `openTypeNameLicense`/`openTypeNameLicenseURL`, verified present in
+      the compiled font's `name` table (IDs 0/13/14).
 
 ## Tooling / process
 
-- [ ] A repeatable check (script or CI) that asserts the compiled font's
-      basics after every build: expected `fvar` axes and ranges, glyph
-      count, and contour-count compatibility across all 12 masters. Right
-      now this is verified by hand each time `tools/designspace_build.py`
-      runs.
+- [x] ~~A repeatable check (script or CI) that asserts the compiled
+      font's basics after every build~~ -- done:
+      `tools/validate_build.py` checks `fvar` axes/instances against
+      `params.py`, matching glyph sets across all masters, and
+      contour-count topology compatibility across all masters. Runs
+      automatically at the end of `tools/designspace_build.py`.
 - [ ] Install the compiled `fonts/variable/Azrienoch-VF.ttf` in a real OS
       / browser / design app and spot-check rendering -- everything so
       far has been verified by instancing + rendering in Python
@@ -98,8 +110,8 @@ design rationale these build on.
 
 ## Presentation
 
-- [ ] A specimen page (the old Graduate had one, built with
-      Grunt/Sass, removed along with the rest of Graduate) -- an
-      interactive `wght`/`wdth`/`SERF` demo using the CSS
-      `font-variation-settings` property would suit a variable font
-      better than a static image.
+- [x] ~~A specimen page~~ -- done: `specimen/index.html`, a
+      self-contained (font embedded as a data URI) interactive specimen
+      with live `wght`/`wdth`/`SERF` sliders using
+      `font-variation-settings`, all 16 named-instance presets, an
+      editable hero sample, and a glyph-set showcase.
