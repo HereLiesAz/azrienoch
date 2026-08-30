@@ -12,7 +12,9 @@ at all. ``fontmake`` then compiles the result into one variable TTF.
 
 from __future__ import annotations
 
+import os
 import pathlib
+import re
 
 import ufoLib2
 from fontTools.pens.recordingPen import DecomposingRecordingPen
@@ -123,6 +125,25 @@ LICENSE = (
 )
 LICENSE_URL = "http://scripts.sil.org/OFL"
 
+_VERSION_RE = re.compile(r"(\d+)\.(\d+)\.(\d+)")
+
+
+def _current_version() -> tuple[int, int, int]:
+    """The MAJOR/MINOR/PATCH this build embeds -- `AZRIENOCH_VERSION`
+    (the release workflow sets this to what `tools/next_version.py`
+    computed) takes precedence, so a released build's binary matches its
+    release tag exactly; otherwise falls back to the `VERSION` file
+    as-is, for a local dev build outside CI. See `tools/next_version.py`
+    for how a release's own version is decided; this only reads it."""
+    raw = os.environ.get("AZRIENOCH_VERSION")
+    if not raw:
+        version_file = HERE / "VERSION"
+        raw = version_file.read_text().strip() if version_file.exists() else "0.0.0"
+    m = _VERSION_RE.fullmatch(raw.strip())
+    if not m:
+        raise ValueError(f"not a MAJOR.MINOR.PATCH version: {raw!r}")
+    return int(m.group(1)), int(m.group(2)), int(m.group(3))
+
 
 def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf, grad):
     os2 = inst["OS/2"]
@@ -135,7 +156,16 @@ def _font_info(ufo: ufoLib2.Font, inst, wght, wdth, serf, grad):
     fi.xHeight = os2.sxHeight
     fi.familyName = "Azrienoch"
     fi.styleName = P.master_name(wght, wdth, serf, grad)
-    fi.versionMajor, fi.versionMinor = 1, 0
+    # `head.fontRevision` (what versionMajor/versionMinor become) is only
+    # Major.Minor, a single fixed-point number -- there's no third field
+    # for PATCH, so it's folded into the fraction as MINOR*100+PATCH
+    # (fine as long as MINOR stays a single digit, true for the
+    # foreseeable future). `openTypeNameVersion` carries the real
+    # MAJOR.MINOR.PATCH string, unambiguous, in the name table -- see
+    # `next_version.py` for how a release's version is decided.
+    major, minor, patch = _current_version()
+    fi.versionMajor, fi.versionMinor = major, minor * 100 + patch
+    fi.openTypeNameVersion = f"Version {major}.{minor}.{patch}"
     # A distributed .ttf carries its own copyright/license -- OFL clause 2
     # requires each copy to include the license, and a copy of the raw
     # binary distributed apart from this repo's OFL.txt would otherwise
