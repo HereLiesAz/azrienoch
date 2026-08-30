@@ -1,20 +1,20 @@
-"""Multiplex's letterform/spacing/kerning source: Roboto Flex.
+"""Azrienoch's letterform/spacing/kerning source: Roboto Flex.
 
-Multiplex does not draw its own letterforms from scratch. Roboto Flex
+Azrienoch does not draw its own letterforms from scratch. Roboto Flex
 (OFL-1.1, https://github.com/googlefonts/roboto-flex) ships a compiled
 variable font with thirteen axes, including nine "parametric" axes that
 independently control stroke thickness and vertical proportions
 (``XOPQ``/``YOPQ`` stroke weight, ``YTUC``/``YTLC``/``YTAS``/``YTDE``/
 ``YTFI`` cap/x/ascender/descender/figure height, ``XTRA`` counter width).
 That is real, professionally hinted and kerned engineering -- reusing it
-for the base letterforms and spacing means Multiplex's own work can go
+for the base letterforms and spacing means Azrienoch's own work can go
 into what's actually new: coupling height to weight as a single lever
-(Roboto Flex deliberately keeps them independent; Multiplex deliberately
+(Roboto Flex deliberately keeps them independent; Azrienoch deliberately
 correlates them), a variable sans/serif axis Roboto Flex doesn't have, and
 the horizontal/vertical-only terminal rule.
 
-For each Multiplex master we pick a *point* in Roboto Flex's axis space
-(see ``ROBOTO_LOCATION_AT``), fully instantiate the variable font there
+For each Azrienoch master we pick a *point* in Roboto Flex's axis space
+(see ``roboto_location``), fully instantiate the variable font there
 with ``fontTools.varLib.instancer`` (collapsing gvar/GPOS variation to a
 static glyf/GPOS at that point), and extract glyph outlines, advance
 widths and kerning straight out of the result.
@@ -36,9 +36,9 @@ ROBOTO_TTF = str(
     / "RobotoFlex[GRAD,XOPQ,XTRA,YOPQ,YTAS,YTDE,YTFI,YTLC,YTUC,opsz,slnt,wdth,wght].ttf"
 )
 
-UPM = 2048  # Roboto Flex's unitsPerEm; Multiplex keeps it to avoid rescaling.
+UPM = 2048  # Roboto Flex's unitsPerEm; Azrienoch keeps it to avoid rescaling.
 
-# Roboto Flex's own axis extremes, at Multiplex's wght masters (100/400/900).
+# Roboto Flex's own axis extremes, at Azrienoch's wght masters (100/400/900).
 # 400 uses Roboto Flex's authentic defaults; 100/900 push the parametric
 # height and stroke axes to their extremes -- this is the whole "height as
 # a matter of weight" mechanism, implemented on real engineered masters.
@@ -60,14 +60,14 @@ def _lerp3(x, xs, ys):
 
 
 def roboto_location(wght: float, wdth: float) -> dict:
-    """The Roboto Flex axis location Multiplex's (wght, wdth) maps to."""
+    """The Roboto Flex axis location Azrienoch's (wght, wdth) maps to."""
     wghts = P.WGHT_MASTERS
     height_axes = {}
     for tag in ("XOPQ", "YOPQ", "XTRA", "YTUC", "YTLC", "YTAS", "YTDE", "YTFI"):
         ys = tuple(_HEIGHT_AXES_AT_WGHT[w][tag] for w in wghts)
         height_axes[tag] = _lerp3(wght, wghts, ys)
 
-    # Multiplex wdth 75..100 (Condensed..Normal) -> Roboto Flex wdth 82..100:
+    # Azrienoch wdth 75..100 (Condensed..Normal) -> Roboto Flex wdth 82..100:
     # a real but moderate condensation, short of Roboto's most extreme setting.
     w0, w1 = P.WDTH_MASTERS[0], P.WDTH_MASTERS[-1]
     t_wd = 0.0 if w1 == w0 else (wdth - w0) / (w1 - w0)
@@ -106,7 +106,7 @@ def extract_kerning(font: TTFont) -> dict[tuple[str, str], float]:
     Handles both PairPos Format 1 (specific glyph pairs) and Format 2
     (class-based pairs, which is how most of Roboto Flex's kerning is
     actually stored) -- expanded out to a plain (left, right) -> value
-    dict, which ``ufo_build.py`` then filters down to the glyphs Multiplex
+    dict, which ``ufo_build.py`` then filters down to the glyphs Azrienoch
     actually imports and hands to a UFO's ``kerning`` mapping.
     """
     kerning: dict[tuple[str, str], float] = {}
@@ -134,9 +134,18 @@ def extract_kerning(font: TTFont) -> dict[tuple[str, str], float]:
             elif st.Format == 2:
                 c1 = st.ClassDef1.classDefs
                 c2 = st.ClassDef2.classDefs
-                class2_glyphs: dict[int, list[str]] = {}
+                # Per the OpenType spec, class 0 is implicit: every glyph
+                # not explicitly listed in ClassDef2 belongs to it. Building
+                # class2_glyphs only from c2.items() (as an earlier version
+                # of this function did) silently drops kerning for every
+                # implicit-class-0 glyph the moment Class2Record[0] is ever
+                # nonzero -- rebuild class 0 from the full glyph order.
+                class2_glyphs: dict[int, list[str]] = {
+                    0: [name for name in font.getGlyphOrder() if c2.get(name, 0) == 0]
+                }
                 for glyph, cls in c2.items():
-                    class2_glyphs.setdefault(cls, []).append(glyph)
+                    if cls != 0:
+                        class2_glyphs.setdefault(cls, []).append(glyph)
                 for g1 in st.Coverage.glyphs:
                     c1v = c1.get(g1, 0)
                     if c1v >= len(st.Class1Record):

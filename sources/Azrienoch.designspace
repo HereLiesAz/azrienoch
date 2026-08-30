@@ -1,0 +1,104 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="5.0">
+  <axes>
+    <axis tag="wght" name="wght" minimum="100" maximum="900" default="400">
+      <labelname xml:lang="en">Weight</labelname>
+    </axis>
+    <axis tag="wdth" name="wdth" minimum="75" maximum="100" default="100">
+      <labelname xml:lang="en">Width</labelname>
+    </axis>
+    <axis tag="SERF" name="SERF" minimum="0" maximum="100" default="0">
+      <labelname xml:lang="en">Serif</labelname>
+    </axis>
+  </axes>
+  <sources>
+    <source filename="Azrienoch-CondensedThinSans.ufo" name="source.CondensedThinSans" familyname="Azrienoch" stylename="CondensedThinSans">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedThinSerif.ufo" name="source.CondensedThinSerif" familyname="Azrienoch" stylename="CondensedThinSerif">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinSans.ufo" name="source.NormalThinSans" familyname="Azrienoch" stylename="NormalThinSans">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalThinSerif.ufo" name="source.NormalThinSerif" familyname="Azrienoch" stylename="NormalThinSerif">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedRegularSans.ufo" name="source.CondensedRegularSans" familyname="Azrienoch" stylename="CondensedRegularSans">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedRegularSerif.ufo" name="source.CondensedRegularSerif" familyname="Azrienoch" stylename="CondensedRegularSerif">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalRegularSans.ufo" name="source.NormalRegularSans" familyname="Azrienoch" stylename="NormalRegularSans">
+      <lib copy="1"/>
+      <groups copy="1"/>
+      <features copy="1"/>
+      <info copy="1"/>
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalRegularSerif.ufo" name="source.NormalRegularSerif" familyname="Azrienoch" stylename="NormalRegularSerif">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedBlackSans.ufo" name="source.CondensedBlackSans" familyname="Azrienoch" stylename="CondensedBlackSans">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-CondensedBlackSerif.ufo" name="source.CondensedBlackSerif" familyname="Azrienoch" stylename="CondensedBlackSerif">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalBlackSans.ufo" name="source.NormalBlackSans" familyname="Azrienoch" stylename="NormalBlackSans">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-NormalBlackSerif.ufo" name="source.NormalBlackSerif" familyname="Azrienoch" stylename="NormalBlackSerif">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+  </sources>
+</designspace>

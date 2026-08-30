@@ -1,4 +1,4 @@
-"""Write Multiplex's .designspace and compile the variable font with fontmake."""
+"""Write Azrienoch's .designspace and compile the variable font with fontmake."""
 
 from __future__ import annotations
 
@@ -12,8 +12,8 @@ from tools import params as P
 from tools import ufo_build as U
 
 HERE = pathlib.Path(__file__).resolve().parent.parent
-DESIGNSPACE_PATH = HERE / "sources" / "Multiplex.designspace"
-OUTPUT_TTF = HERE / "fonts" / "variable" / "Multiplex-VF.ttf"
+DESIGNSPACE_PATH = HERE / "sources" / "Azrienoch.designspace"
+OUTPUT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
 
 
 def write_designspace(ufo_paths: dict) -> pathlib.Path:
@@ -37,7 +37,7 @@ def write_designspace(ufo_paths: dict) -> pathlib.Path:
         src = SourceDescriptor()
         src.path = str(path)
         src.name = f"source.{P.master_name(wght, wdth, serf)}"
-        src.familyName = "Multiplex"
+        src.familyName = "Azrienoch"
         src.styleName = P.master_name(wght, wdth, serf)
         src.location = {"wght": wght, "wdth": wdth, "SERF": serf}
         if (wght, wdth, serf) == (400, 100, 0):

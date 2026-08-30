@@ -1,8 +1,10 @@
-"""Quick visual QA: render a row of glyphs straight from glyphset.py,
-bypassing the UFO/compile pipeline, for fast iteration on letterforms."""
+"""Quick visual QA: render text with the compiled variable font at a given
+axis location, bypassing any installed-font/OS text stack, for fast
+iteration and sanity-checking during development."""
 
 from __future__ import annotations
 
+import pathlib
 import sys
 
 import matplotlib
@@ -10,10 +12,12 @@ matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.path import Path
 from matplotlib.patches import PathPatch
+import ufoLib2
+from fontTools.ttLib import TTFont
+from fontTools.varLib import instancer
 
-sys.path.insert(0, ".")
-from tools import glyphset as G
-from tools import params as P
+HERE = pathlib.Path(__file__).resolve().parent.parent
+DEFAULT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
 
 
 def _mid(a, b):
@@ -21,6 +25,8 @@ def _mid(a, b):
 
 
 def contour_to_mpl(contour):
+    """Convert a ufoLib2 contour (line/cubic 'curve'/TrueType 'qcurve'
+    points) into matplotlib Path vertices+codes."""
     pts = [(p.x, p.y, p.type) for p in contour.points]
     start_idx = next(i for i, p in enumerate(pts) if p[2] is not None)
     pts = pts[start_idx:] + pts[:start_idx]
@@ -67,36 +73,41 @@ def glyph_to_path(glyph_shape, ox=0, oy=0):
     return Path(all_verts, all_codes)
 
 
-def render_row(names, wght, wdth, serf, out_path, gap=60):
-    m = P.metrics_for(wght, wdth, serf)
-    fig, ax = plt.subplots(figsize=(len(names) * 1.1, 2.2))
-    x = 0
-    for name in names:
-        fn = getattr(G, f"cap_{name}", None) or getattr(G, f"low_{name}", None) or getattr(G, f"dig_{name}", None)
-        if fn is None:
-            x += 400
+def render_text(ax, text, location, ttf_path=DEFAULT_TTF, x0=0):
+    """Draw `text` onto a matplotlib Axes at the given fvar location
+    ({"wght":..,"wdth":..,"SERF":..}). Returns the ending x position."""
+    font = TTFont(str(ttf_path))
+    inst = instancer.instantiateVariableFont(font, location, inplace=False)
+    cmap = inst.getBestCmap()
+    glyphset = inst.getGlyphSet()
+    hmtx = inst["hmtx"]
+    x = x0
+    for ch in text:
+        gname = cmap.get(ord(ch))
+        if gname is None:
+            x += 500
             continue
-        shape, w = fn(m)
-        path = glyph_to_path(shape, ox=x)
-        ax.add_patch(PathPatch(path, facecolor="black", edgecolor="none"))
-        ax.axhline(0, color="#ccc", lw=0.5, zorder=-1)
-        ax.axhline(m.cap_height, color="#ccc", lw=0.5, zorder=-1)
-        ax.axhline(m.x_height, color="#e0e0e0", lw=0.5, zorder=-1)
-        x += w + gap
-    ax.set_xlim(-40, x)
-    ax.set_ylim(m.descender - 60, m.ascender + 100)
-    ax.set_aspect("equal")
-    ax.axis("off")
-    fig.tight_layout()
-    fig.savefig(out_path, dpi=160)
-    plt.close(fig)
-    print("wrote", out_path)
+        glyph = ufoLib2.objects.Glyph()
+        glyphset[gname].drawPoints(glyph.getPointPen())
+        if glyph.contours:
+            ax.add_patch(PathPatch(glyph_to_path(glyph, ox=x), facecolor="black"))
+        x += hmtx[gname][0]
+    return x
 
 
 if __name__ == "__main__":
-    names = list(sys.argv[1]) if len(sys.argv) > 1 else list("IHEFLTNMUVAWXYZKOQDCGSBPRJ")
+    text = sys.argv[1] if len(sys.argv) > 1 else "Azrienoch"
     wght = float(sys.argv[2]) if len(sys.argv) > 2 else 400
     wdth = float(sys.argv[3]) if len(sys.argv) > 3 else 100
     serf = float(sys.argv[4]) if len(sys.argv) > 4 else 0
     out = sys.argv[5] if len(sys.argv) > 5 else "/tmp/preview.png"
-    render_row(names, wght, wdth, serf, out)
+
+    fig, ax = plt.subplots(figsize=(len(text) * 0.9, 2.4))
+    end_x = render_text(ax, text, {"wght": wght, "wdth": wdth, "SERF": serf})
+    ax.set_xlim(-100, end_x + 100)
+    ax.set_ylim(-700, 2300)
+    ax.set_aspect("equal")
+    ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    print("wrote", out)
