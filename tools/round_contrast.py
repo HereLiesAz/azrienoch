@@ -1,0 +1,113 @@
+"""Thin 'o'/'c's round strokes at top and bottom to match the stroke
+thickness where a bowl letter's own curve meets its flat stem.
+
+Roboto Flex draws these as two different thicknesses even though they're
+the same family of curve: 'o'/'c' read visibly heavier at their vertical
+extremes (the "center" of the round shape) than the wall of 'd'/'b'/'p'/
+'q's bowl does right where it meets the stem (the "neck"). Confirmed by
+measuring both with matplotlib's own curve flattening (via
+`preview.py::contour_to_mpl`), not bounding boxes, which are too coarse
+for a wall thickness that changes along a curve: at Regular (wght 400),
+'d'/'b'/'p'/'q's neck averages ~101 units against 'o's own top/bottom
+thickness of 140 -- a ratio of about 0.75.
+
+That ratio, not an absolute target, is what gets applied at every
+master: measuring the neck itself turns out to be reliable only near
+Regular. At Thin (wght 100) the neck in Roboto Flex's own native
+geometry pinches to within a unit of zero -- a genuine feature of that
+corner of Roboto Flex's design space (similar in kind to the XOPQ=27
+corner `roboto_source.py` already works around for the exclamation
+mark), not a measurement bug -- so matching it exactly would pinch
+'o'/'c' shut at Thin instead of just reading appropriately thinner.
+Applying the same *proportional* thinning (about 3/4 of each master's
+own native center thickness) at every weight avoids that corner while
+still delivering the requested effect: a center that reads consistently
+thinner than the sides, in the same proportion the neck does at the one
+weight where the comparison is clean.
+
+``thin_round`` moves only the points that sit at 'o'/'c's own *inner*
+vertical extremes toward the outer boundary. Those inner-extreme points
+are found as the second-highest (and second-lowest) distinct Y level
+among *all* of the glyph's points, regardless of which contour they're
+on: for 'o' (a separate outer and inner contour) the inner contour's own
+top/bottom naturally is that second level, since nothing on the outer
+contour sits between it and the true outer extreme; for 'c' (one
+contour tracing both edges, since the shape is open) the same is true
+by construction -- Roboto Flex draws the inner top/bottom as their own
+flat plateau, one level in from the outer one. Either way this never
+adds or removes a point, only moves the ones already there, so every
+master stays topologically identical.
+"""
+
+from __future__ import annotations
+
+import numpy as np
+from matplotlib.path import Path
+
+from tools.preview import contour_to_mpl
+
+Y_PLATEAU_TOL = 1.0  # units; points within this share a "level" for grouping
+
+# Measured once at Regular (wght 400, wdth 100): the average of 'd'/'b'/
+# 'p'/'q's neck thickness (~101) divided by 'o's own native top/bottom
+# thickness (140) -- see module docstring for why this ratio, not an
+# absolute target, is what carries across masters.
+CENTER_THICKNESS_RATIO = 0.75
+
+
+def _flatten(contour, n=400):
+    verts, codes = contour_to_mpl(contour)
+    return Path(verts, codes).interpolated(n).vertices
+
+
+def _min_dist(pt, poly):
+    d = np.hypot(poly[:, 0] - pt[0], poly[:, 1] - pt[1])
+    return float(d.min())
+
+
+def measure_center_thickness(glyph) -> float | None:
+    """'o'/'c's own current top/bottom wall thickness (the average of
+    the two), via curve flattening -- used both to compute the fixed
+    ratio once at reference, and to find each master's own starting
+    point before `thin_round` scales it down."""
+    contours = glyph.contours
+    all_points = [p for c in contours for p in c.points]
+    if not all_points:
+        return None
+    outer_top = max(p.y for p in all_points)
+    outer_bottom = min(p.y for p in all_points)
+    below_top = sorted({p.y for p in all_points if p.y < outer_top - Y_PLATEAU_TOL}, reverse=True)
+    above_bottom = sorted({p.y for p in all_points if p.y > outer_bottom + Y_PLATEAU_TOL})
+    if not below_top or not above_bottom:
+        return None
+    return ((outer_top - below_top[0]) + (above_bottom[0] - outer_bottom)) / 2.0
+
+
+def thin_round(glyph, ratio: float = CENTER_THICKNESS_RATIO) -> None:
+    """Move 'o'/'c's inner vertical-extreme points toward the outer
+    boundary so the wall thickness there becomes `ratio` times what it
+    currently is."""
+    contours = glyph.contours
+    all_points = [p for c in contours for p in c.points]
+    if not all_points:
+        return
+    outer_top = max(p.y for p in all_points)
+    outer_bottom = min(p.y for p in all_points)
+
+    below_top = sorted({p.y for p in all_points if p.y < outer_top - Y_PLATEAU_TOL}, reverse=True)
+    above_bottom = sorted({p.y for p in all_points if p.y > outer_bottom + Y_PLATEAU_TOL})
+    if not below_top or not above_bottom:
+        return
+    inner_top_y = below_top[0]
+    inner_bottom_y = above_bottom[0]
+
+    top_thickness = outer_top - inner_top_y
+    bottom_thickness = inner_bottom_y - outer_bottom
+    new_inner_top_y = outer_top - top_thickness * ratio
+    new_inner_bottom_y = outer_bottom + bottom_thickness * ratio
+
+    for p in all_points:
+        if abs(p.y - inner_top_y) <= Y_PLATEAU_TOL:
+            p.y = new_inner_top_y
+        elif abs(p.y - inner_bottom_y) <= Y_PLATEAU_TOL:
+            p.y = new_inner_bottom_y

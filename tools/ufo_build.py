@@ -21,8 +21,11 @@ from tools import dots as D
 from tools import params as P
 from tools import quirks as Q
 from tools import roboto_source as R
+from tools import round_contrast as RC
 from tools import serifs as S
 from tools import single_story_a as A
+
+ROUND_CONTRAST_CHARS = {"o", "c"}
 
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
@@ -188,6 +191,8 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        if ch in ROUND_CONTRAST_CHARS:
+            RC.thin_round(glyph)
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
@@ -233,6 +238,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
         Q.apply_quirks(ch, glyph)
+        if ch in ROUND_CONTRAST_CHARS:
+            RC.thin_round(glyph)
         D.boost_dots(glyph, dots_by_glyph.get(gname, []), dot_factor)
         if ch in D.TITTLE_CHARS and ascender_height is not None:
             D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)
@@ -258,6 +265,23 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph) -> uf
         ufo.features.text = f"feature pnum {{\n{subs}\n}} pnum;\n"
 
     raw_kerning = R.extract_kerning(inst)
+
+    # 'a' is now built from 'd's own outline (single_story_a.py) -- its
+    # left edge (the bowl) and right edge (the stem, up to x-height) are
+    # geometrically identical to 'd's, so its kerning should be too.
+    # Roboto Flex's own pairs for 'a' were tuned for the old double-story
+    # shape; overwrite them with 'd's pairs in both positions rather than
+    # keep pairs tuned for a shape 'a' no longer has.
+    a_gname, d_gname = cmap.get(ord("a")), cmap.get(ord("d"))
+    if a_gname is not None and d_gname is not None:
+        for (left, right), value in list(raw_kerning.items()):
+            if left == d_gname:
+                raw_kerning[(a_gname, right)] = value
+            if right == d_gname:
+                raw_kerning[(left, a_gname)] = value
+        if (d_gname, d_gname) in raw_kerning:
+            raw_kerning[(a_gname, a_gname)] = raw_kerning[(d_gname, d_gname)]
+
     kerning = {
         pair: value
         for pair, value in raw_kerning.items()

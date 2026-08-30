@@ -101,7 +101,23 @@ is in what it does with that space:
   separately -- it's literally 'd's own outline with its topmost points
   moved down, so it inherits 'd's proportions exactly and flows through
   the rest of the pipeline (SERF feet included) the same way any other
-  imported glyph does.
+  imported glyph does. Its kerning is 'd's too, not the pairs Roboto
+  Flex tuned for the old double-story shape: `ufo_build.py` overwrites
+  every kerning pair keyed to 'd' with an equivalent one keyed to 'a'
+  before the master's kerning is filtered down and saved.
+- **'o'/'c' thinned at top and bottom, to match a bowl's own neck.**
+  Roboto Flex draws a full circle's curve and a bowl letter's curve at
+  two different thicknesses even though they're the same family of
+  shape: 'o'/'c' read visibly heavier at their vertical extremes than
+  the wall of 'd'/'b'/'p'/'q's bowl does right where it meets the flat
+  stem. `tools/round_contrast.py` measures both with real curve
+  flattening (not a bounding box, too coarse for a thickness that
+  changes along a curve) and moves only 'o'/'c's own inner top/bottom
+  points toward the outer edge, in the same proportion the neck is
+  thinner at the one weight (Regular) where measuring the neck itself is
+  reliable -- at Thin, Roboto Flex's own neck pinches to nearly nothing,
+  a genuine corner of its design space rather than something to match
+  exactly.
 
 The letterform character overall aims for an analytical neo-grotesque:
 Roboto Flex's own modern, systematic proportions, read with some of
@@ -178,6 +194,8 @@ file from ~1.78 MB to ~0.68 MB with no behavior change.
   reposition-to-ascender-height fix (see "Design" above).
 - `single_story_a.py` -- builds 'a' from 'd's own outline (see "Design"
   above).
+- `round_contrast.py` -- thins 'o'/'c' at top and bottom to match a
+  bowl's own neck thickness (see "Design" above).
 - `ufo_build.py` -- assembles the 48 master UFOs, copying each glyph's
   quadratic outline through unmodified (no curve conversion -- gvar
   already guarantees the same point topology across masters, so nothing
