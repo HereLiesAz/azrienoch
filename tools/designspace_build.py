@@ -26,7 +26,7 @@ OUTPUT_WOFF2 = HERE / "fonts" / "variable" / "Azrienoch-VF.woff2"
 # master grid -- feeds both the STAT table (so design apps show a proper
 # "Weight"/"Width"/"Serif" style picker instead of raw axis sliders) and
 # the family-name half of each named instance below.
-WGHT_LABELS = {100: "Thin", 250: "ExtraLight", 400: "Regular", 700: "Bold", 900: "Black"}
+WGHT_LABELS = {180: "Thin", 250: "ExtraLight", 400: "Regular", 700: "Bold", 900: "Black"}
 WDTH_LABELS = {75: "Condensed", 100: "Normal"}
 SERF_LABELS = {0: "Sans", 100: "Serif"}
 GRAD_LABELS = {-50: "Low", 0: "Regular", 50: "High"}

@@ -218,7 +218,7 @@ purpose rather than by omission:
 
 | Axis | Tag | Range | Default |
 |---|---|---|---|
-| Weight | `wght` | 100-900 | 400 |
+| Weight | `wght` | 180-900 | 400 |
 | Width | `wdth` | 75-100 | 100 |
 | Serif | `SERF` | 0-100 | 0 |
 | Grade | `GRAD` | -50-50 | 0 |

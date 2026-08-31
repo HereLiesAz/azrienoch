@@ -93,44 +93,68 @@ def _kick_R(glyph) -> None:
     outer.x += leg_w * 0.18
 
 
+def _square_off_terminal(pts, right_idx, left_idx) -> None:
+    """Make a 2-point horizontal cut (`right_idx` -> `left_idx`, walking
+    backward through the contour) actually READ as 'c's flat, squared-off
+    terminal instead of the tip of a long diagonal taper.
+
+    Flattening the cut segment itself (`pts[left_idx].y = pts[right_idx].y`,
+    this module's original fix) makes the very last unit of the cut
+    technically horizontal, but confirmed by direct comparison against a
+    real render (not just point inspection) that this alone isn't what
+    makes 'c's own opening read as flat: 'c' gets there with FOUR
+    dedicated on-curve points at each of its own two terminals -- curve
+    end, a short vertical 'step in', the horizontal cut itself, a short
+    vertical 'step out', curve resumes -- so the ink stays at close to
+    full stroke width right up to a sharp, near-perpendicular corner.
+    'e'/'g' only ever had the two on-curve points bounding the cut itself
+    (no budget for 'c's own extra step points without adding one, which
+    the topology invariant forbids), so the curves on EITHER side of the
+    cut taper gradually all the way in, and the flat unit at the very tip
+    reads as the point of a diagonal hook, not a flat chop.
+
+    The fix: without adding a point, steepen the tangent each curve
+    already has AT the cut, by moving that curve's own nearest off-curve
+    control point (one step further into the curve, at `right_idx - 1`
+    and `left_idx + 1`) so it shares its neighboring on-curve point's x.
+    A quadratic curve's tangent at an endpoint runs straight through its
+    own nearest control point, so this makes both curves arrive at (and
+    leave from) the cut close to vertical -- the same near-perpendicular
+    corner 'c's own dedicated step points produce, built from a curve's
+    existing control point instead of a fourth on-curve point."""
+    right, left = pts[right_idx], pts[left_idx]
+    left.y = right.y
+    entry_ctrl = pts[right_idx - 1]
+    if entry_ctrl.type is None:
+        entry_ctrl.x = right.x
+    exit_ctrl = pts[(left_idx + 1) % len(pts)]
+    if exit_ctrl.type is None:
+        exit_ctrl.x = left.x
+
+
 def _horizontal_terminal_e(glyph) -> None:
-    """Cut 'e's lower-right opening flat instead of on a diagonal.
-    Roboto Flex's own 'e' ends the bottom curve at an on-curve point
-    (index 6) and connects it with a straight 'line' segment directly to
-    the point starting the curve back into the counter (index 7) -- but
-    unlike 'c's matching opening (which steps in, across, and back out,
-    always vertically/horizontally), this segment is a genuine diagonal,
-    growing sharply with weight (about 92 units of vertical drop over its
-    length at Regular, over 200 at Black). Since there's no third point
-    here to build 'c's step with, the minimal topology-safe fix is
-    moving point 7 to point 6's own height -- point 6 stays exactly where
-    Roboto Flex's outer curve already lands, only the cut's angle
-    changes.
-    """
+    """Square off 'e's lower-right opening -- see `_square_off_terminal`
+    for the general fix and why the cut itself being flat (point 7 at
+    point 6's own height) wasn't, on its own, enough to read as one."""
     if not glyph.contours:
         return
     pts = glyph.contours[0].points
     if len(pts) < 8 or pts[6].type != "qcurve" or pts[7].type != "line":
         return  # not the outline shape this was written against
-    pts[7].y = pts[6].y
+    _square_off_terminal(pts, 6, 7)
 
 
 def _horizontal_terminal_g(glyph) -> None:
-    """Cut 'g's descender-loop tail flat instead of on a diagonal, the
-    same defect as 'e's (see `_horizontal_terminal_e`) at the open end
-    of the hook: Roboto Flex connects the tail curve's landing point
-    (index 30) to the loop's own start (index 0) with a straight 'line'
-    that grows from a subtle diagonal at Thin to a steep ~300-unit drop
-    at Black. Point 30 stays where the outer tail curve already lands;
-    point 0 moves up to match its height, leaving the loop's own return
-    curve (from point 0 onward) shifted but not reshaped.
-    """
+    """Square off 'g's descender-loop tail -- the same defect and fix as
+    'e's (see `_horizontal_terminal_e`, `_square_off_terminal`), at the
+    open end of the hook between point 30 (where the tail curve lands)
+    and point 0 (the loop's own start)."""
     if not glyph.contours:
         return
     pts = glyph.contours[0].points
     if len(pts) != 31 or pts[30].type != "qcurve" or pts[0].type != "line":
         return  # not the outline shape this was written against
-    pts[0].y = pts[30].y
+    _square_off_terminal(pts, 30, 0)
 
 
 _BASELINE_TOL = 2.0  # units; how close to y=0 both ends of a notch must be
