@@ -333,16 +333,95 @@ def _sharpen_w_middle_peak(glyph) -> None:
         pts[k].x, pts[k].y = apex
 
 
+def _recenter_counter_span(pts, entry_idx, exit_idx, axis_x) -> None:
+    """Enforce left-right mirror symmetry, about the vertical line
+    x=`axis_x`, on the points from `entry_idx` to `exit_idx` inclusive
+    -- paired from both ends inward (entry with exit, entry+1 with
+    exit-1, ...) -- by averaging each pair's own distance from the axis
+    and placing both members that same distance out, on their own
+    side. Each point's own y is left untouched; only x moves."""
+    span = list(range(entry_idx, exit_idx + 1))
+    m = len(span)
+    for k in range((m + 1) // 2):
+        i, j = span[k], span[m - 1 - k]
+        pi, pj = pts[i], pts[j]
+        off_i = pi.x - axis_x
+        off_j = axis_x - pj.x
+        target = (off_i + off_j) / 2.0
+        pi.x = axis_x + target
+        pj.x = axis_x - target
+
+
+def _recenter_v_counter(glyph) -> None:
+    """v's own counter -- the negative-space notch between its two
+    strokes -- isn't centered under the outer silhouette's own sharp
+    bottom point: confirmed by point inspection (and by the user
+    directly, comparing the counter tip against a vertical line through
+    the outer vertex) that it sits offset toward the right leg by a
+    substantial, strikingly consistent amount at every point along its
+    own length -- roughly 80 units at Bold, checked at both the top
+    corners (index 4 vs 13) and the tip itself (index 8/9), not just
+    one spot -- present in Roboto Flex's own RAW extraction already,
+    confirmed by checking it before any of Azrienoch's own processing
+    touches the glyph at all. That uniform, whole-path offset is what
+    makes the right leg's own stroke read visibly thinner than the
+    left's, and is the actual mechanism behind the counter tip looking
+    "wonky" against the sharp, correctly-centered outer point right
+    next to it -- not primarily a sharpness problem (`_sharpen_apex_notches`
+    fixes that separately), a centering one.
+
+    Splits the correction evenly between the two sides (`_recenter_counter_span`)
+    rather than trusting one side as "correct" and moving only the
+    other -- there's no basis to prefer one leg's own drawing over the
+    other's, so this is the most conservative fix that actually
+    restores the missing symmetry."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 14:
+        return
+    if pts[1].type != "line" or pts[4].type != "line" or pts[13].type != "line":
+        return
+    axis_x = (pts[1].x + pts[2].x) / 2.0
+    _recenter_counter_span(pts, 4, 13, axis_x)
+
+
+def _recenter_w_counters(glyph) -> None:
+    """The same fix `_recenter_v_counter` applies to v's one counter,
+    applied to each of w's own two -- each recentered independently,
+    about its own nearby outer valley vertex (index 11/12 for the
+    right counter at index 14-23, index 1/2 for the left counter at
+    index 24-33), since w's two counters aren't symmetric with each
+    other the way its own two valleys are."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 34:
+        return
+    if pts[1].type != "line" or pts[11].type != "line" or pts[14].type != "line" or pts[24].type != "line":
+        return
+    right_axis = (pts[11].x + pts[12].x) / 2.0
+    left_axis = (pts[1].x + pts[2].x) / 2.0
+    _recenter_counter_span(pts, 14, 23, right_axis)
+    _recenter_counter_span(pts, 24, 33, left_axis)
+
+
 def _sharpen_v_w(glyph) -> None:
     """Every one of v/w's own vestigial-flat-notch fixes -- see
     `_sharpen_baseline_notches` (the outer bottom point),
-    `_sharpen_apex_notches` (v/w's own counter tips), and
+    `_sharpen_apex_notches` (v/w's own counter tips),
     `_sharpen_w_middle_peak` (w's own middle upward point, which needs
-    a wider fix than the other two) for what each one targets and why
-    they're separate checks."""
+    a wider fix than the other two), and `_recenter_v_counter` /
+    `_recenter_w_counters` (the counter's own left-right centering,
+    a separate defect from any of the above) for what each one targets
+    and why they're separate checks. Recentering runs last, after the
+    tips are already sharpened, so it's correcting the final tip
+    position, not one `_sharpen_apex_notches` is about to move again."""
     _sharpen_baseline_notches(glyph)
     _sharpen_apex_notches(glyph)
     _sharpen_w_middle_peak(glyph)
+    _recenter_v_counter(glyph)
+    _recenter_w_counters(glyph)
 
 
 _QUIRKS = {
