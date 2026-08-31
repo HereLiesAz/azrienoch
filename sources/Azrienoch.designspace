@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <designspace format="5.0">
   <axes>
-    <axis tag="wght" name="wght" minimum="100" maximum="900" default="400">
+    <axis tag="wght" name="wght" minimum="180" maximum="900" default="400">
       <labelname xml:lang="en">Weight</labelname>
       <labels>
-        <label uservalue="100" name="Thin"/>
+        <label uservalue="180" name="Thin"/>
         <label uservalue="250" name="ExtraLight"/>
         <label uservalue="400" name="Regular" elidable="true"/>
         <label uservalue="700" name="Bold"/>
@@ -37,7 +37,7 @@
   <sources>
     <source filename="Azrienoch-CondensedThinSansGradeLow.ufo" name="source.CondensedThinSansGradeLow" familyname="Azrienoch" stylename="CondensedThinSansGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -45,7 +45,7 @@
     </source>
     <source filename="Azrienoch-CondensedThinSans.ufo" name="source.CondensedThinSans" familyname="Azrienoch" stylename="CondensedThinSans">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -53,7 +53,7 @@
     </source>
     <source filename="Azrienoch-CondensedThinSansGradeHigh.ufo" name="source.CondensedThinSansGradeHigh" familyname="Azrienoch" stylename="CondensedThinSansGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -61,7 +61,7 @@
     </source>
     <source filename="Azrienoch-CondensedThinSerifGradeLow.ufo" name="source.CondensedThinSerifGradeLow" familyname="Azrienoch" stylename="CondensedThinSerifGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -69,7 +69,7 @@
     </source>
     <source filename="Azrienoch-CondensedThinSerif.ufo" name="source.CondensedThinSerif" familyname="Azrienoch" stylename="CondensedThinSerif">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -77,7 +77,7 @@
     </source>
     <source filename="Azrienoch-CondensedThinSerifGradeHigh.ufo" name="source.CondensedThinSerifGradeHigh" familyname="Azrienoch" stylename="CondensedThinSerifGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -85,7 +85,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSansGradeLow.ufo" name="source.NormalThinSansGradeLow" familyname="Azrienoch" stylename="NormalThinSansGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -93,7 +93,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSans.ufo" name="source.NormalThinSans" familyname="Azrienoch" stylename="NormalThinSans">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -101,7 +101,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSansGradeHigh.ufo" name="source.NormalThinSansGradeHigh" familyname="Azrienoch" stylename="NormalThinSansGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -109,7 +109,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSerifGradeLow.ufo" name="source.NormalThinSerifGradeLow" familyname="Azrienoch" stylename="NormalThinSerifGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -117,7 +117,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSerif.ufo" name="source.NormalThinSerif" familyname="Azrienoch" stylename="NormalThinSerif">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -125,103 +125,7 @@
     </source>
     <source filename="Azrienoch-NormalThinSerifGradeHigh.ufo" name="source.NormalThinSerifGradeHigh" familyname="Azrienoch" stylename="NormalThinSerifGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSansGradeLow.ufo" name="source.CondensedThinLightSansGradeLow" familyname="Azrienoch" stylename="CondensedThinLightSansGradeLow">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="-50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSans.ufo" name="source.CondensedThinLightSans" familyname="Azrienoch" stylename="CondensedThinLightSans">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="0"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSansGradeHigh.ufo" name="source.CondensedThinLightSansGradeHigh" familyname="Azrienoch" stylename="CondensedThinLightSansGradeHigh">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSerifGradeLow.ufo" name="source.CondensedThinLightSerifGradeLow" familyname="Azrienoch" stylename="CondensedThinLightSerifGradeLow">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="-50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSerif.ufo" name="source.CondensedThinLightSerif" familyname="Azrienoch" stylename="CondensedThinLightSerif">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="0"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-CondensedThinLightSerifGradeHigh.ufo" name="source.CondensedThinLightSerifGradeHigh" familyname="Azrienoch" stylename="CondensedThinLightSerifGradeHigh">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="75"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSansGradeLow.ufo" name="source.NormalThinLightSansGradeLow" familyname="Azrienoch" stylename="NormalThinLightSansGradeLow">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="-50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSans.ufo" name="source.NormalThinLightSans" familyname="Azrienoch" stylename="NormalThinLightSans">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="0"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSansGradeHigh.ufo" name="source.NormalThinLightSansGradeHigh" familyname="Azrienoch" stylename="NormalThinLightSansGradeHigh">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="0"/>
-        <dimension name="GRAD" xvalue="50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSerifGradeLow.ufo" name="source.NormalThinLightSerifGradeLow" familyname="Azrienoch" stylename="NormalThinLightSerifGradeLow">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="-50"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSerif.ufo" name="source.NormalThinLightSerif" familyname="Azrienoch" stylename="NormalThinLightSerif">
-      <location>
-        <dimension name="wght" xvalue="175"/>
-        <dimension name="wdth" xvalue="100"/>
-        <dimension name="SERF" xvalue="100"/>
-        <dimension name="GRAD" xvalue="0"/>
-      </location>
-    </source>
-    <source filename="Azrienoch-NormalThinLightSerifGradeHigh.ufo" name="source.NormalThinLightSerifGradeHigh" familyname="Azrienoch" stylename="NormalThinLightSerifGradeHigh">
-      <location>
-        <dimension name="wght" xvalue="175"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -619,7 +523,7 @@
   <instances>
     <instance familyname="Azrienoch" stylename="CondensedThinSansGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -627,7 +531,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="CondensedThinSans">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -635,7 +539,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="CondensedThinSansGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -643,7 +547,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="CondensedThinSerifGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -651,7 +555,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="CondensedThinSerif">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -659,7 +563,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="CondensedThinSerifGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="75"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -667,7 +571,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSansGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -675,7 +579,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSans">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -683,7 +587,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSansGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="0"/>
         <dimension name="GRAD" xvalue="50"/>
@@ -691,7 +595,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSerifGradeLow">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="-50"/>
@@ -699,7 +603,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSerif">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="0"/>
@@ -707,7 +611,7 @@
     </instance>
     <instance familyname="Azrienoch" stylename="NormalThinSerifGradeHigh">
       <location>
-        <dimension name="wght" xvalue="100"/>
+        <dimension name="wght" xvalue="180"/>
         <dimension name="wdth" xvalue="100"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>

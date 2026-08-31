@@ -61,30 +61,31 @@ UPM = 2048  # Roboto Flex's unitsPerEm; Azrienoch keeps it to avoid rescaling.
 # prominent as the stroke even under the heaviest weight -- is the
 # point: Azrienoch's counters are a considered shape, not leftover space.
 _HEIGHT_AXES_AT_WGHT = {
-    # XOPQ=45, not Roboto Flex's own floor of 27: at 27, the exclamation
-    # mark's dot balloons into an oversized oval while every other dot
-    # (i/j tittles, period, colon, question mark) stays a small fleck --
-    # confirmed (via a headless-browser render, and a per-axis bisection
-    # that isolated XOPQ as the only one of the eight axes responsible)
-    # to be a bad interpolation corner in Roboto Flex's own exclam glyph
-    # at its most extreme XOPQ value, not something Azrienoch's other
-    # axis choices caused. 45 is comfortably clear of that corner (it
-    # stays broken through ~40) while changing the overall Thin stroke
-    # weight by an imperceptible amount -- verified side by side.
-    100: dict(XOPQ=45, YOPQ=25, XTRA=420, YTUC=528, YTLC=416, YTAS=649, YTDE=-98, YTFI=560),
-    # 175 and 250 each land exactly on the straight line the two points
-    # bracketing them already defined (250 is the 100->400 segment's own
-    # midpoint; once 250 existed, 175 is the 100->250 segment's own
-    # midpoint in turn) -- neither is a separately-tuned design point,
-    # both exist only so params.py::WGHT_MASTERS has explicit masters for
-    # rotation_align.py/taper_align.py to anchor shorter Roboto Flex
-    # extraction jumps to (see those modules' docstrings, and
-    # params.py::WGHT_INSTANCE_MASTERS). Landing exactly on the
-    # pre-existing line at each step means adding them changes nothing
-    # about this curve's own shape -- `_lerp_piecewise` still returns the
-    # same value anywhere from 100 to 400 it did before either entry
-    # existed, including at 175 and 250 themselves.
-    175: dict(XOPQ=58, YOPQ=38, XTRA=450, YTUC=574, YTLC=440, YTAS=674, YTDE=-124, YTFI=604),
+    # This used to be keyed 100 (Roboto Flex's own floor) with an extra
+    # 175 entry between it and 250, back when params.py::WGHT_AXIS's own
+    # minimum was 100. It's keyed 180 now -- see that axis's own comment
+    # for why: every weight below 180 was confirmed, repeatedly, to self-
+    # intersect somewhere (v/V/w/W and others), a real edge-edge crossing
+    # inherent to Roboto Flex's own gvar deltas at Azrienoch's specific
+    # combination of axes there, not fixable by retuning this table. 180
+    # itself lands exactly on the straight line the original 100 and 400
+    # points already defined (this table's values are otherwise
+    # unchanged) -- `_lerp_piecewise` still returns the same value
+    # anywhere from 180 to 900 it always did, this only moves where the
+    # curve now starts. The original XOPQ=45 floor (not Roboto Flex's own
+    # 27) is moot at 180 -- comfortably clear of the bad interpolation
+    # corner that constant was chosen to avoid at the exclamation mark's
+    # dot (see git history for the original investigation) -- but the
+    # same underlying curve is what produces XOPQ=59 here.
+    180: dict(XOPQ=59, YOPQ=39, XTRA=452, YTUC=577, YTLC=442, YTAS=676, YTDE=-126, YTFI=607),
+    # 250 lands exactly on the straight line the two points bracketing it
+    # already define (the 180->400 segment) -- not a separately-tuned
+    # design point, it exists only so params.py::WGHT_MASTERS has an
+    # explicit master for rotation_align.py/taper_align.py to anchor a
+    # shorter Roboto Flex extraction jump to (see those modules'
+    # docstrings, and params.py::WGHT_INSTANCE_MASTERS). Landing exactly
+    # on the pre-existing line means adding it changes nothing about this
+    # curve's own shape.
     250: dict(XOPQ=70, YOPQ=52, XTRA=480, YTUC=620, YTLC=465, YTAS=700, YTDE=-150, YTFI=649),
     400: dict(XOPQ=96, YOPQ=79, XTRA=540, YTUC=712, YTLC=514, YTAS=750, YTDE=-203, YTFI=738),
     700: dict(XOPQ=145, YOPQ=113, XTRA=565, YTUC=748, YTLC=555, YTAS=820, YTDE=-270, YTFI=772),
