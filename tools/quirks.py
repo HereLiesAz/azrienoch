@@ -167,11 +167,189 @@ def _sharpen_baseline_notches(glyph) -> None:
         b.x = mid_x
 
 
+_APEX_MAX_WIDTH = 60.0  # units; how wide a flat run can be and still count
+# as a vestigial connector rather than a real, intentionally flat design edge
+# (a stem cap or serif foot runs several hundred units wide; every notch this
+# was written against -- w's own middle peak, v/w's own counter tips -- is
+# under 10 units at every weight tested)
+_APEX_Y_TOL = 3.0  # units; how close in y the run's two ends must be
+_APEX_BLEND = 0.75  # how far to move each point toward the shared midpoint
+# (1.0 = the midpoint exactly) -- see _sharpen_apex_notches's own docstring
+# for why less than 1.0, confirmed necessary, is used instead
+
+
+def _sharpen_apex_notches(glyph) -> None:
+    """Collapse the same species of vestigial flat notch
+    `_sharpen_baseline_notches` fixes at v/w's own OUTER bottom point,
+    generalized to every OTHER place it turns up: w's own middle upward
+    point, and v/w's own counter tip(s) (the point where the counter --
+    the negative-space notch cut up between the two strokes -- comes to
+    what should be its own sharp vertex). Point inspection at every
+    weight confirms the identical pattern: Roboto Flex approaches each
+    of these spots via a curve, lands two separate on-curve points a few
+    units apart at (almost exactly) the same height, then curves back
+    away -- never one true vertex. Barely visible at Thin, but at
+    heavier weights the stroke around it is thick enough that the flat
+    plateau reads as an unmistakably blunt, chopped-off tip instead of a
+    point -- confirmed this is also the direct cause of the counter's
+    own tip looking asymmetric/"wonky" relative to the outer silhouette's
+    sharp bottom vertex right next to it (the outer already reads as a
+    clean point via `_sharpen_baseline_notches`; the counter tip, left
+    unfixed, didn't).
+
+    `_sharpen_baseline_notches` doesn't already catch these: it requires
+    BOTH the flat run's own points AND the segment immediately before it
+    to be straight lines (true at v/w's outer bottom, where a straight
+    diagonal leg runs directly into the notch), but every spot this
+    function targets is approached by a CURVE, not a straight stem, so
+    that stricter match correctly leaves it alone. Found generically --
+    a short (`_APEX_MAX_WIDTH`), near-flat (`_APEX_Y_TOL`) 'line' run
+    whose two ends are BOTH strictly higher or BOTH strictly lower than
+    their own outside neighbors (a genuine local peak or valley, not
+    merely two points that happen to share a height along an otherwise
+    flat edge) -- rather than hardcoded per letter, so it applies
+    equally to a single run (v's one counter tip) or several (w's
+    middle peak plus its own two counter tips) without needing to know
+    which is which.
+
+    Solving for where the flat run's own immediate control-point
+    tangents cross (the same trick `_sharpen_w_middle_peak` uses,
+    anchored on the much longer, more stable straight legs either side
+    of ITS OWN curve run) was tried here too, and rejected: confirmed
+    directly on 'v' that it makes the fix ITSELF weight-dependent in an
+    uneven way -- Roboto Flex's own local curve steepness at this one
+    small notch varies enough between adjacent real masters that the
+    extrapolated corner can land a visibly different relative distance
+    from the two on-curve points at, say, wght 250 versus wght 400, and
+    that unevenness was enough to reopen a self-intersection in the
+    compiled font's own gvar interpolation between those two masters,
+    even though every individual real master still tested clean in
+    isolation (the same species of failure `stabilize_diagonal_strokes`
+    exists to prevent, just introduced fresh here by an over-eager
+    per-master correction).
+
+    Moving all the way to the plain midpoint turned out to have the
+    identical problem, just a smaller version of it -- confirmed by
+    bisecting exactly how far is safe to move: fully collapsing v's own
+    counter tip onto its midpoint (`_APEX_BLEND = 1.0`) still reopens
+    that same 250-400 crossing, but stopping at `_APEX_BLEND` of the
+    way there doesn't, with comfortable margin either side of that
+    value in direct testing. So this moves each point most, but not
+    all, of the way to the midpoint -- still reads as a clean, sharp
+    point at every weight tested (the residual gap is a few units, far
+    below what's visible at any of v/w's own weights) while leaving
+    enough of the notch's own original position untouched that its
+    effect on neighboring masters stays small enough not to reopen the
+    interpolation crossing `stabilize_diagonal_strokes` already exists
+    to prevent."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    n = len(pts)
+    for i in range(n):
+        a, b = pts[i], pts[(i + 1) % n]
+        if b.type != "line":
+            continue
+        if a.x == b.x:
+            continue  # already a point, or a degenerate zero-length edge
+        if abs(a.y - b.y) > _APEX_Y_TOL:
+            continue
+        if abs(a.x - b.x) > _APEX_MAX_WIDTH:
+            continue
+        lo, hi = min(a.y, b.y), max(a.y, b.y)
+        prev_y = pts[(i - 1) % n].y
+        next_y = pts[(i + 2) % n].y
+        is_local_max = prev_y < lo and next_y < lo
+        is_local_min = prev_y > hi and next_y > hi
+        if not (is_local_max or is_local_min):
+            continue
+        mid_x = (a.x + b.x) / 2.0
+        mid_y = (a.y + b.y) / 2.0
+        a.x += (mid_x - a.x) * _APEX_BLEND
+        a.y += (mid_y - a.y) * _APEX_BLEND
+        b.x += (mid_x - b.x) * _APEX_BLEND
+        b.y += (mid_y - b.y) * _APEX_BLEND
+
+
+def _line_intersection(p1, p2, p3, p4):
+    """Where line (p1,p2) crosses line (p3,p4), extended as needed.
+    None if the two lines are parallel. Pure geometry -- callers decide
+    which points are meaningful to pass in."""
+    x1, y1, x2, y2 = p1.x, p1.y, p2.x, p2.y
+    x3, y3, x4, y4 = p3.x, p3.y, p4.x, p4.y
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-9:
+        return None
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+
+def _sharpen_w_middle_peak(glyph) -> None:
+    """Straighten w's own middle upward point into a genuine sharp
+    vertex, the same way its two counter tips already read after
+    `_sharpen_apex_notches`. Roboto Flex draws this one differently
+    from the counter tips, though (confirmed by point inspection, and
+    that `_sharpen_apex_notches`'s own 2-point collapse -- correct for
+    the counter tips -- left an obvious extra bump beside the real
+    apex here): the whole run from where the leg's own straight outer
+    edge ends (index 3) to where the next straight outer edge begins
+    (index 10) is SIX points of curve, not a simple symmetric dip
+    around one flat 2-point run, so collapsing only the flattest pair
+    in the middle still leaves the OTHER four points bulging out to
+    one side, which is exactly the extra shoulder-bump a plain 2-point
+    fix can't reach.
+
+    The fix: both straight legs (index 2->3, and 10->11) are already
+    aimed at where a sharp point belongs -- find where those two lines
+    actually cross, and move every point strictly between them (4
+    through 9) onto that single spot. A quadratic curve whose own
+    control and end points all collapse onto the same location is
+    geometrically just the straight line into it, so this turns the
+    whole 3-to-10 run into what it always wanted to be: two straight
+    edges meeting at one clean vertex, matching the sharp,
+    Akzidenz-style corners the rest of v/w already has.
+
+    Guarded on every point's own on/off-curve type along the way, the
+    same defensive pattern `quirks.py`'s other per-glyph, per-index
+    edits already use -- silently no-ops (including for 'v', which
+    doesn't have this run at all) if Roboto Flex's own point layout
+    here isn't exactly what this was written against, rather than risk
+    moving the wrong points."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) < 12:
+        return
+    entry_line, entry_corner = pts[2], pts[3]
+    exit_corner, exit_line = pts[10], pts[11]
+    expected_types = ["line", "line", None, None, "qcurve", "line", None, None, "qcurve", "line"]
+    actual_types = [pts[k].type for k in range(2, 12)]
+    if actual_types != expected_types:
+        return
+    apex = _line_intersection(entry_line, entry_corner, exit_corner, exit_line)
+    if apex is None:
+        return
+    for k in range(4, 10):
+        pts[k].x, pts[k].y = apex
+
+
+def _sharpen_v_w(glyph) -> None:
+    """Every one of v/w's own vestigial-flat-notch fixes -- see
+    `_sharpen_baseline_notches` (the outer bottom point),
+    `_sharpen_apex_notches` (v/w's own counter tips), and
+    `_sharpen_w_middle_peak` (w's own middle upward point, which needs
+    a wider fix than the other two) for what each one targets and why
+    they're separate checks."""
+    _sharpen_baseline_notches(glyph)
+    _sharpen_apex_notches(glyph)
+    _sharpen_w_middle_peak(glyph)
+
+
 _QUIRKS = {
     "G": _spur_G,
     "R": _kick_R,
     "e": _horizontal_terminal_e,
     "g": _horizontal_terminal_g,
-    "v": _sharpen_baseline_notches,
-    "w": _sharpen_baseline_notches,
+    "v": _sharpen_v_w,
+    "w": _sharpen_v_w,
 }
