@@ -408,11 +408,10 @@ def _recenter_w_counters(glyph) -> None:
     _recenter_counter_span(pts, 24, 33, left_axis)
 
 
-def _realign_tip_depth(pts, tip_a, tip_b, vertex_idx, outer_far_idx, ref_idx, axis_x) -> None:
-    """Move the counter tip (points `tip_a`/`tip_b`, already coincident
-    and centered on `axis_x`) to the height constant-stroke-width
-    geometry actually predicts for it, instead of wherever Roboto
-    Flex's own curve happened to leave it.
+def _realign_tip_depth(pts, entry_idx, tip_a, tip_b, exit_idx, vertex_idx, outer_far_idx, ref_idx, axis_x) -> None:
+    """Move the counter tip (points `tip_a`/`tip_b`) to the height
+    constant-stroke-width geometry actually predicts for it, instead of
+    wherever Roboto Flex's own curve happened to leave it.
 
     Confirmed by the user, and by directly measuring both angles, that
     the mismatch this module's earlier fixes (sharpening, recentering)
@@ -438,7 +437,21 @@ def _realign_tip_depth(pts, tip_a, tip_b, vertex_idx, outer_far_idx, ref_idx, ax
     exactly the distance (width / sin(half-angle)) standard miter-join
     geometry says a constant-width stroke's own inner corner belongs --
     the same construction a vector-graphics stroke-outliner uses to
-    turn a centerline + width into a matching pair of offset edges."""
+    turn a centerline + width into a matching pair of offset edges.
+
+    Moving ONLY the tip point was tried first and rejected: confirmed
+    by rendering that whenever the new depth lands closer to the entry/
+    exit corners than the curve's own NEIGHBORING points already were
+    (a real case -- Roboto Flex's own curve doesn't always descend
+    monotonically toward the tip), the tip ends up sitting on the wrong
+    side of its own neighbors, and the untouched curve between them
+    reads as a small but distinct spike instead of a smooth point. This
+    scales EVERY point strictly between `entry_idx` and `exit_idx`
+    (which sit at the same y, cap height) by the same ratio -- new tip
+    depth over old tip depth -- applied to each point's own existing
+    depth below that shared baseline, so the whole curve's shape
+    stretches or compresses smoothly to the new tip position instead of
+    only the tip itself moving independently of its neighbors."""
     vertex, outer_far, ref = pts[vertex_idx], pts[outer_far_idx], pts[ref_idx]
     dx, dy = outer_far.x - vertex.x, outer_far.y - vertex.y
     length = math.hypot(dx, dy)
@@ -449,34 +462,42 @@ def _realign_tip_depth(pts, tip_a, tip_b, vertex_idx, outer_far_idx, ref_idx, ax
         return
     width = abs((ref.x - vertex.x) * dy - (ref.y - vertex.y) * dx) / length
     depth = width / math.sin(half_angle)
-    new_y = vertex.y + depth if dy > 0 else vertex.y - depth
-    pts[tip_a].x, pts[tip_a].y = axis_x, new_y
-    pts[tip_b].x, pts[tip_b].y = axis_x, new_y
+    new_tip_y = vertex.y + depth if dy > 0 else vertex.y - depth
+
+    baseline_y = pts[entry_idx].y
+    old_tip_y = (pts[tip_a].y + pts[tip_b].y) / 2.0
+    old_span = baseline_y - old_tip_y
+    if abs(old_span) < 1e-6:
+        return
+    scale = (baseline_y - new_tip_y) / old_span
+    for i in range(entry_idx + 1, exit_idx):
+        pts[i].y = baseline_y - (baseline_y - pts[i].y) * scale
+    pts[tip_a].x = pts[tip_b].x = axis_x
 
 
 def _realign_v_counter_depth(glyph) -> None:
-    """`_realign_tip_depth` for v's own single counter tip (index 8/9),
-    using its right-hand outer leg (vertex index 1/2 to corner index 3)
-    as the reference edge and index 5 (well clear of the tip's own
-    curve rounding) as the width sample."""
+    """`_realign_tip_depth` for v's own single counter (span index
+    4-13, tip at 8/9), using its right-hand outer leg (vertex index 1/2
+    to corner index 3) as the reference edge and index 5 (well clear of
+    the tip's own curve rounding) as the width sample."""
     if not glyph.contours:
         return
     pts = glyph.contours[0].points
     if len(pts) != 14:
         return
-    if pts[1].type != "line" or pts[3].type != "line":
+    if pts[1].type != "line" or pts[3].type != "line" or pts[4].type != "line" or pts[13].type != "line":
         return
     axis_x = (pts[1].x + pts[2].x) / 2.0
-    _realign_tip_depth(pts, 8, 9, 1, 3, 5, axis_x)
+    _realign_tip_depth(pts, 4, 8, 9, 13, 1, 3, 5, axis_x)
 
 
 def _realign_w_counter_depths(glyph) -> None:
-    """`_realign_tip_depth` for each of w's own two counter tips (index
-    18/19 for the right counter, 28/29 for the left), each against its
-    own nearby outer leg and valley vertex -- see `_realign_v_counter_depth`,
-    and `_recenter_w_counters` for why each of w's two counters is
-    always handled independently rather than assumed symmetric with
-    the other."""
+    """`_realign_tip_depth` for each of w's own two counters (span index
+    14-23 with tip at 18/19, and span index 24-33 with tip at 28/29),
+    each against its own nearby outer leg and valley vertex -- see
+    `_realign_v_counter_depth`, and `_recenter_w_counters` for why each
+    of w's two counters is always handled independently rather than
+    assumed symmetric with the other."""
     if not glyph.contours:
         return
     pts = glyph.contours[0].points
@@ -484,10 +505,57 @@ def _realign_w_counter_depths(glyph) -> None:
         return
     if pts[1].type != "line" or pts[11].type != "line" or pts[0].type != "line" or pts[13].type != "line":
         return
+    if pts[14].type != "line" or pts[23].type != "line" or pts[24].type != "line" or pts[33].type != "line":
+        return
     right_axis = (pts[11].x + pts[12].x) / 2.0
     left_axis = (pts[1].x + pts[2].x) / 2.0
-    _realign_tip_depth(pts, 18, 19, 11, 13, 15, right_axis)
-    _realign_tip_depth(pts, 28, 29, 1, 0, 32, left_axis)
+    _realign_tip_depth(pts, 14, 18, 19, 23, 11, 13, 15, right_axis)
+    _realign_tip_depth(pts, 24, 28, 29, 33, 1, 0, 32, left_axis)
+
+
+def _merge_w_counter_bridge(glyph) -> None:
+    """Open up w's own middle peak into a genuinely standalone point,
+    the way a pure geometric "double-V" w (Jost's own construction is
+    the reference this was checked against directly, point for point --
+    see this module's own docstring) draws it, instead of leaving it
+    fused to a solid mass of ink at the top.
+
+    Roboto Flex draws w's two counters (the negative-space notch above
+    each half of the letter) as two SEPARATE dips, both reaching cap
+    height, joined by a wide FLAT run at cap height between them
+    (index 23 to 24 -- confirmed a genuine, deliberately wide design
+    edge, not a vestigial notch: `_sharpen_apex_notches`'s own
+    tolerance correctly leaves it alone, since collapsing it was never
+    what that generic fix was for). That flat run is a solid bridge of
+    ink connecting the tops of both counters, which is exactly what
+    buries the middle peak: everything above the peak's own apex stays
+    filled in all the way to cap height, so the peak itself only ever
+    reads as a small notch cut into the BOTTOM of that mass, never as
+    an isolated point the way the two outer legs' own tips already are.
+
+    Jost's own "w" doesn't have this bridge at all -- point inspection
+    (fetched directly from Google Fonts) shows its two counters meet at
+    a SINGLE shared vertex instead, which in its own case pokes slightly
+    ABOVE the letter's own flat-top line, so the middle peak stands
+    alone against open space on every side, the same way its own outer
+    bottom points already do.
+
+    Collapsing index 23 and 24 onto their own shared midpoint recreates
+    that directly: it removes the bridge (there's no longer any run of
+    ink between them at all) and gives the two counters a single shared
+    apex, exactly Jost's own construction -- still only ever moving
+    existing points, never adding or removing one."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 34:
+        return
+    if pts[23].type != "line" or pts[24].type != "line":
+        return
+    mid_x = (pts[23].x + pts[24].x) / 2.0
+    mid_y = (pts[23].y + pts[24].y) / 2.0
+    pts[23].x, pts[23].y = mid_x, mid_y
+    pts[24].x, pts[24].y = mid_x, mid_y
 
 
 def _sharpen_v_w(glyph) -> None:
@@ -497,12 +565,16 @@ def _sharpen_v_w(glyph) -> None:
     `_sharpen_w_middle_peak` (w's own middle upward point, which needs
     a wider fix than the other two), `_recenter_v_counter` /
     `_recenter_w_counters` (the counter's own left-right centering),
-    and `_realign_v_counter_depth` / `_realign_w_counter_depths` (the
+    `_realign_v_counter_depth` / `_realign_w_counter_depths` (the
     counter tip's own HEIGHT, so its angle actually matches the outer
-    vertex's) for what each one targets and why they're separate
-    checks. Depth realignment runs last, after everything else has
-    settled the tip's other coordinates, so it's the final word on
-    where the tip actually sits."""
+    vertex's), and `_merge_w_counter_bridge` (opening the middle peak
+    up into a genuinely standalone point, Jost-style, instead of
+    leaving it fused to solid ink at the top) for what each one targets
+    and why they're separate checks. The bridge merge runs last,
+    deliberately overriding whatever `_recenter_w_counters` set for
+    just its own two boundary points (14<->23's own mirror pairing) --
+    merging them is a different operation than mirror-symmetrizing
+    them within their own span, and takes precedence."""
     _sharpen_baseline_notches(glyph)
     _sharpen_apex_notches(glyph)
     _sharpen_w_middle_peak(glyph)
@@ -510,6 +582,7 @@ def _sharpen_v_w(glyph) -> None:
     _recenter_w_counters(glyph)
     _realign_v_counter_depth(glyph)
     _realign_w_counter_depths(glyph)
+    _merge_w_counter_bridge(glyph)
 
 
 _QUIRKS = {
