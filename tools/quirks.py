@@ -28,6 +28,8 @@ no such invariant of its own beyond "don't change the point count."
 
 from __future__ import annotations
 
+import math
+
 
 def apply_quirks(char: str, glyph) -> None:
     """Mutate glyph's points in place for the handful of characters that
@@ -406,22 +408,108 @@ def _recenter_w_counters(glyph) -> None:
     _recenter_counter_span(pts, 24, 33, left_axis)
 
 
+def _realign_tip_depth(pts, tip_a, tip_b, vertex_idx, outer_far_idx, ref_idx, axis_x) -> None:
+    """Move the counter tip (points `tip_a`/`tip_b`, already coincident
+    and centered on `axis_x`) to the height constant-stroke-width
+    geometry actually predicts for it, instead of wherever Roboto
+    Flex's own curve happened to leave it.
+
+    Confirmed by the user, and by directly measuring both angles, that
+    the mismatch this module's earlier fixes (sharpening, recentering)
+    didn't touch is real: the OUTER vertex's own angle (measured off
+    its two straight legs) is roughly 2x the counter's own angle at its
+    tip -- for two strokes of genuinely constant width crossing to form
+    a V, those two angles have to be equal, because the inner boundary
+    is just the outer boundary's own two lines, shifted inward by the
+    stroke's own width, and shifting a line doesn't change its slope.
+    That's the actual mechanism behind the "bell bottom jeans" look:
+    the outer silhouette flares open at one angle while the counter
+    stays narrow at another.
+
+    Whichever of the two vertices is "wrong" isn't obvious from the
+    geometry alone -- the outer legs are simple, reliable 2-point
+    straight lines, while the counter is Roboto Flex's own curve, so
+    this keeps the outer edge exactly as drawn and moves the counter
+    tip to match it instead: measures the outer leg's own half-angle
+    from vertical (`outer_far_idx` relative to `vertex_idx`) and the
+    TRUE perpendicular stroke width at a stable reference point well
+    away from the tip's own curve rounding (`ref_idx`), then places the
+    tip back on the SAME bisector the vertex already sits on, at
+    exactly the distance (width / sin(half-angle)) standard miter-join
+    geometry says a constant-width stroke's own inner corner belongs --
+    the same construction a vector-graphics stroke-outliner uses to
+    turn a centerline + width into a matching pair of offset edges."""
+    vertex, outer_far, ref = pts[vertex_idx], pts[outer_far_idx], pts[ref_idx]
+    dx, dy = outer_far.x - vertex.x, outer_far.y - vertex.y
+    length = math.hypot(dx, dy)
+    if length < 1e-6:
+        return
+    half_angle = math.atan2(abs(dx), abs(dy))
+    if half_angle < 1e-6:
+        return
+    width = abs((ref.x - vertex.x) * dy - (ref.y - vertex.y) * dx) / length
+    depth = width / math.sin(half_angle)
+    new_y = vertex.y + depth if dy > 0 else vertex.y - depth
+    pts[tip_a].x, pts[tip_a].y = axis_x, new_y
+    pts[tip_b].x, pts[tip_b].y = axis_x, new_y
+
+
+def _realign_v_counter_depth(glyph) -> None:
+    """`_realign_tip_depth` for v's own single counter tip (index 8/9),
+    using its right-hand outer leg (vertex index 1/2 to corner index 3)
+    as the reference edge and index 5 (well clear of the tip's own
+    curve rounding) as the width sample."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 14:
+        return
+    if pts[1].type != "line" or pts[3].type != "line":
+        return
+    axis_x = (pts[1].x + pts[2].x) / 2.0
+    _realign_tip_depth(pts, 8, 9, 1, 3, 5, axis_x)
+
+
+def _realign_w_counter_depths(glyph) -> None:
+    """`_realign_tip_depth` for each of w's own two counter tips (index
+    18/19 for the right counter, 28/29 for the left), each against its
+    own nearby outer leg and valley vertex -- see `_realign_v_counter_depth`,
+    and `_recenter_w_counters` for why each of w's two counters is
+    always handled independently rather than assumed symmetric with
+    the other."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 34:
+        return
+    if pts[1].type != "line" or pts[11].type != "line" or pts[0].type != "line" or pts[13].type != "line":
+        return
+    right_axis = (pts[11].x + pts[12].x) / 2.0
+    left_axis = (pts[1].x + pts[2].x) / 2.0
+    _realign_tip_depth(pts, 18, 19, 11, 13, 15, right_axis)
+    _realign_tip_depth(pts, 28, 29, 1, 0, 32, left_axis)
+
+
 def _sharpen_v_w(glyph) -> None:
     """Every one of v/w's own vestigial-flat-notch fixes -- see
     `_sharpen_baseline_notches` (the outer bottom point),
     `_sharpen_apex_notches` (v/w's own counter tips),
     `_sharpen_w_middle_peak` (w's own middle upward point, which needs
-    a wider fix than the other two), and `_recenter_v_counter` /
-    `_recenter_w_counters` (the counter's own left-right centering,
-    a separate defect from any of the above) for what each one targets
-    and why they're separate checks. Recentering runs last, after the
-    tips are already sharpened, so it's correcting the final tip
-    position, not one `_sharpen_apex_notches` is about to move again."""
+    a wider fix than the other two), `_recenter_v_counter` /
+    `_recenter_w_counters` (the counter's own left-right centering),
+    and `_realign_v_counter_depth` / `_realign_w_counter_depths` (the
+    counter tip's own HEIGHT, so its angle actually matches the outer
+    vertex's) for what each one targets and why they're separate
+    checks. Depth realignment runs last, after everything else has
+    settled the tip's other coordinates, so it's the final word on
+    where the tip actually sits."""
     _sharpen_baseline_notches(glyph)
     _sharpen_apex_notches(glyph)
     _sharpen_w_middle_peak(glyph)
     _recenter_v_counter(glyph)
     _recenter_w_counters(glyph)
+    _realign_v_counter_depth(glyph)
+    _realign_w_counter_depths(glyph)
 
 
 _QUIRKS = {
