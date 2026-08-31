@@ -151,6 +151,64 @@ def _is_e_counter_char(ch: str) -> bool:
 # weights, need nothing done).
 _DIAGONAL_STROKE_CHARS = {"v", "V", "w", "W"}
 
+
+def _diagonal_stroke_candidates(ch, gname, wght, wdth, grad, reference_contours) -> list:
+    """This glyph's own outer-contour points at each of Azrienoch's OTHER
+    real wght masters (`params.WGHT_MASTERS` -- only six ever get
+    built), nearest weight first -- donor shapes for
+    `taper_align.stabilize_diagonal_strokes` to borrow from when the
+    master actually being built self-intersects. Nearest weight first
+    because a donor's own stroke-to-bbox proportions are what actually
+    get copied in (a bbox-relative reshape, see that function's own
+    docstring): the closer the donor's weight is to the broken master's
+    own, the closer its native proportions already are to what that
+    master's own correct proportions would have been, which is what
+    keeps a fixed-up master from reading heavier/lighter than its own
+    neighbors at the same nominal wght -- confirmed this was exactly the
+    failure of an earlier version that always borrowed from the fixed
+    Regular (400) reference regardless of how far away it was.
+
+    Run through the SAME `align_to_reference` / `align_taper_signs` /
+    `apply_quirks` / `round_off_waists` steps the actual target glyph
+    already went through before this is ever consulted (everything
+    `build_master_ufo`'s own main loop does up to, but not including,
+    `stabilize_diagonal_strokes` itself) -- not left raw. Confirmed this
+    match matters, not just tidiness: `quirks.py`'s own
+    `_sharpen_baseline_notches` measurably moves points in exactly the
+    bottom-vertex region this module's whole fix is about, so a donor
+    extracted raw is a DIFFERENT shape (in exactly the crossing-prone
+    area) than what a neighboring master's own points actually are once
+    fully built -- confirmed directly: reshaping strictly from a raw
+    donor still left the compiled font self-intersecting across a wide
+    band of intermediate (interpolated, not-a-real-master) wght values
+    even though every real master's own contour tested clean in
+    isolation, because a fixed master's points were then only an affine
+    copy of the RAW donor, not of what that donor's OWN real master
+    (also carrying its own quirks pass) actually equals -- the two
+    differ by exactly quirks' own edit, which is enough to break the
+    would-be-simple affine relationship between adjacent masters that
+    keeps gvar's own straight-line interpolation between them from ever
+    crossing itself."""
+    donor_wghts = sorted((w for w in P.WGHT_MASTERS if w != wght), key=lambda w: abs(w - wght))
+    candidates = []
+    for donor_wght in donor_wghts:
+        inst = R.instantiate(donor_wght, wdth, grad)
+        glyphset = inst.getGlyphSet()
+        hmtx = inst["hmtx"]
+        cmap = R.cmap_for(donor_wght, wdth, grad)
+        donor_gname = cmap.get(ord(ch))
+        if donor_gname is None:
+            continue
+        donor_glyph = _extract_glyph(donor_gname, glyphset, hmtx, None)
+        if gname in reference_contours:
+            RA.align_to_reference(donor_glyph, reference_contours[gname])
+            TA.align_taper_signs(donor_glyph, reference_contours[gname])
+        Q.apply_quirks(ch, donor_glyph)
+        CS.round_off_waists(donor_glyph)
+        if donor_glyph.contours:
+            candidates.append(donor_glyph.contours[0].points)
+    return candidates
+
 UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 LOWER = "abcdefghijklmnopqrstuvwxyz"
 DIGITS = "0123456789"
@@ -448,7 +506,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
         if ch in _DIAGONAL_STROKE_CHARS and gname in reference_contours:
-            TA.stabilize_diagonal_strokes(glyph, reference_contours[gname])
+            candidates = _diagonal_stroke_candidates(ch, gname, wght, wdth, grad, reference_contours)
+            TA.stabilize_diagonal_strokes(glyph, candidates)
         if _is_arch_char(ch):
             AS.symmetrize(glyph)
             ASH.reshape_arch_counters(glyph, template_contour)

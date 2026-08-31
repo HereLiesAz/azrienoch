@@ -78,6 +78,28 @@ outer silhouette's own lowest point right next to it. A whole-contour
 bbox-relative copy doesn't have that problem -- every point moves
 together, preserving the whole shape's own internal angles exactly as
 Roboto Flex drew them at the reference master, just rescaled.
+
+A first version of the whole-contour fix always copied from the fixed
+Regular (wght=400) reference, the same fixed master `align_to_reference`
+et al. use. Confirmed via direct bbox comparison this looks visibly
+wrong whenever the master actually needing the fix is far from 400 in
+weight (caught by the user at wght=250: 'v'/'w' rendered noticeably
+BOLDER than sibling letters -- n/x/o -- at that same wght): a
+bbox-relative copy preserves the DONOR's own stroke-to-counter ratio,
+just rescaled to fit the current bbox, so copying Regular's own
+(comparatively thick, since 400 sits well above 250 on Azrienoch's
+weight curve) proportions into a lighter master's smaller bbox produces
+"Regular's own boldness, shrunk" rather than that lighter master's own
+genuinely thinner strokes. `stabilize_diagonal_strokes` now sources the
+donor from whichever of Azrienoch's OTHER real wght masters
+(`params.WGHT_MASTERS` -- only six ever get built) is NEAREST in weight
+to the one actually being fixed, trying progressively farther ones only
+if a nearer one doesn't exist, isn't itself clean, or doesn't clear the
+crossing -- a nearby master's own native stroke-to-size ratio is much
+closer to what the broken master's own correct ratio would have been
+than Regular's always is, so borrowing its shape (still just a
+bbox-relative copy, same mechanism as before) reads as genuinely
+weight-appropriate instead of a rescaled Regular.
 """
 
 from __future__ import annotations
@@ -165,13 +187,25 @@ def contour_self_intersects(points) -> bool:
     return False
 
 
-def stabilize_diagonal_strokes(glyph, reference_contours) -> bool:
+def stabilize_diagonal_strokes(glyph, candidate_donors) -> bool:
     """If `glyph`'s own first contour actually self-intersects, replace
-    it wholesale with an affine-scaled copy of this same glyph's own
-    reference-master shape (`canonical_counter._reshape_contour_to_reference`
-    -- the same bbox-relative, independent-X/Y-scale primitive that
-    fixes 'o' and its own family), fit to this master's own current
-    bounding box. Returns whether the contour is (now) clean.
+    it wholesale with an affine-scaled copy of one of `candidate_donors`
+    (`canonical_counter._reshape_contour_to_reference` -- the same
+    bbox-relative, independent-X/Y-scale primitive that fixes 'o' and
+    its own family), fit to this master's own current bounding box.
+    Returns whether the contour is (now) clean.
+
+    `candidate_donors` is an ordered list of point-lists -- this same
+    glyph's own contour at Azrienoch's OTHER real wght masters, nearest
+    weight first (see `ufo_build.py::_diagonal_stroke_candidates`, and
+    this module's own docstring for why nearest-weight, not always
+    Regular, is what keeps the fixed-up master's stroke weight looking
+    right next to its neighbors). Each candidate is tried in order and
+    skipped -- without mutating anything -- if it doesn't match this
+    contour's own point count, is itself self-intersecting (never borrow
+    a shape that's broken itself), or, after being copied in, still
+    doesn't clear the crossing; the first candidate that actually works
+    wins. Returns False (uncorrected) if every candidate was exhausted.
 
     A no-op, by design, on the large majority of masters where Roboto
     Flex's own native curve is already fine (most of the weight range,
@@ -197,8 +231,15 @@ def stabilize_diagonal_strokes(glyph, reference_contours) -> bool:
     points = contour.points
     if not contour_self_intersects(points):
         return True
-    ref_points = reference_contours[0]
-    if len(ref_points) != len(points):
-        return True
-    CC._reshape_contour_to_reference(contour, ref_points)
-    return not contour_self_intersects(points)
+    for ref_points in candidate_donors:
+        if len(ref_points) != len(points):
+            continue
+        if contour_self_intersects(ref_points):
+            continue
+        saved = [(p.x, p.y) for p in points]
+        CC._reshape_contour_to_reference(contour, ref_points)
+        if not contour_self_intersects(points):
+            return True
+        for p, (x, y) in zip(points, saved):
+            p.x, p.y = x, y
+    return False
