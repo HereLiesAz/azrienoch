@@ -2,9 +2,10 @@ name: Publish release
 
 # Builds the variable font from source and publishes it as a GitHub
 # Release every time the default branch changes -- so there's always a
-# downloadable, versioned Azrienoch-VF.ttf that doesn't require cloning
-# the repo or running the Python build pipeline. `tools/validate_build`
-# (run as part of `designspace_build.py`) gates this: a build that fails
+# downloadable, versioned Azrienoch-VF.ttf (plus a WOFF2 of the same
+# font, for @font-face use) that doesn't require cloning the repo or
+# running the Python build pipeline. `tools/validate_build` (run as
+# part of `designspace_build.py`) gates this: a build that fails
 # validation fails the workflow before anything is published.
 #
 # The release is tagged with a real semantic version, computed by
@@ -59,4 +60,6 @@ jobs:
           tag_name: v${{ steps.release_info.outputs.version }}
           name: Azrienoch v${{ steps.release_info.outputs.version }} (${{ steps.release_info.outputs.sha }})
           generate_release_notes: true
-          files: fonts/variable/Azrienoch-VF.ttf
+          files: |
+            fonts/variable/Azrienoch-VF.ttf
+            fonts/variable/Azrienoch-VF.woff2

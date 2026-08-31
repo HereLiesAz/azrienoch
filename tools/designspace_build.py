@@ -20,6 +20,7 @@ from tools import ufo_build as U
 HERE = pathlib.Path(__file__).resolve().parent.parent
 DESIGNSPACE_PATH = HERE / "sources" / "Azrienoch.designspace"
 OUTPUT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
+OUTPUT_WOFF2 = HERE / "fonts" / "variable" / "Azrienoch-VF.woff2"
 
 # STAT axis-value stops for each axis, keyed by the same values used in the
 # master grid -- feeds both the STAT table (so design apps show a proper
@@ -101,11 +102,27 @@ def compile_variable_font():
     print("compiled", OUTPUT_TTF)
 
 
+def compile_woff2():
+    """Wrap the already-compiled variable TTF's own outlines and tables
+    in a WOFF2 container -- brotli-compressed, the format browsers
+    expect for @font-face -- rather than building a second font from
+    scratch. Same font, different envelope: keeping this a
+    post-process of OUTPUT_TTF (not a separate fontmake invocation)
+    guarantees the two files can never drift apart from each other."""
+    from fontTools.ttLib import TTFont
+
+    font = TTFont(str(OUTPUT_TTF))
+    font.flavor = "woff2"
+    font.save(str(OUTPUT_WOFF2))
+    print("compiled", OUTPUT_WOFF2)
+
+
 if __name__ == "__main__":
     paths = U.build_all()
     ds_path = write_designspace(paths)
     print("wrote", ds_path)
     compile_variable_font()
+    compile_woff2()
 
     from tools import validate_build
 

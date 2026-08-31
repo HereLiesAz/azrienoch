@@ -1,6 +1,7 @@
 fontTools>=4.63.0
 ufoLib2>=0.18.1
 fontmake>=3.12.1
+brotli>=1.1.0  # fontTools' WOFF2 compression backend
 
 # tools/preview.py only (visual QA during development, not needed to build)
 matplotlib>=3.0
