@@ -119,14 +119,91 @@ def _is_closed_counter_char(ch: str) -> bool:
 # just get overwritten by that more specific handling; every OTHER
 # glyph whose NFD base is 'o' still needs this call, since none of them
 # get that dedicated treatment.
-_ROUND_STABILIZE_BASE_LETTERS = {"o", "O", "0", "6", "9", "D"}
+_ROUND_STABILIZE_BASE_LETTERS = {"o", "O", "0", "D"}
+# '6'/'9' used to be in this set too: the collapse it exists to prevent
+# (see this function's own docstring, and _split_fused_digit_contour's)
+# happened in the wght~130-150 range -- unreachable now that
+# params.py::WGHT_AXIS's own floor is 180 (see that axis's own comment
+# for why). Kept on for '0'/'O'/'D' (real double-contour glyphs Roboto
+# Flex itself extracts that way, unaffected by the digit split below),
+# but confirmed directly it now does active HARM on '6'/'9' specifically:
+# run on the counter contour _split_fused_digit_contour just created,
+# `stabilize_round_glyph`'s own affine-fit-and-rotate machinery picks a
+# rotation that scrambles that contour's own point order at the Thin
+# master (a real, confirmed self-intersection -- not the harmless
+# unflattened-control-point false positive a naive check can also
+# produce), where the natural, untouched split order was already clean.
+# Removing '6'/'9' from this set leaves that split counter exactly as
+# `_split_fused_digit_contour` built it -- which needed no further
+# stabilizing in the first place, now that the range this fix was for
+# is gone.
+_DIGIT_ROUND_STABILIZE_EXCLUDE = {"6", "9"}
 
 
 def _needs_round_stabilization(ch: str) -> bool:
-    if ch == "o":
+    if ch == "o" or ch in _DIGIT_ROUND_STABILIZE_EXCLUDE:
         return False
     base = unicodedata.normalize("NFD", ch)[:1] or ch
     return base in _ROUND_STABILIZE_BASE_LETTERS
+
+
+# '6'/'9' are also in `_ROUND_STABILIZE_BASE_LETTERS` above, but unlike
+# every other glyph there (0/O/D), Roboto Flex's own raw extraction
+# never gives them a separate counter contour -- it fuses the outer
+# silhouette and the inner counter into ONE path: outer boundary, a
+# two-point "bridge" cutting IN to trace the counter (in the opposite
+# winding direction, so nonzero fill still punches a hole), then another
+# two-point bridge back OUT to close the outer. Confirmed this single-
+# contour fusion is exactly why `stabilize_round_glyph` -- which reshapes
+# each contour independently, fit to THAT SAME contour's own current
+# bbox (see canonical_counter.py's own docstring) -- can't preserve 6/9's
+# actual stroke-to-counter ratio at a given weight the way it correctly
+# does for double-contour glyphs: fused into one path, the counter's own
+# bbox is dominated by (and barely shrinks independently of) the outer
+# silhouette's, so fitting the Regular-weight reference into that
+# barely-shrunk bbox reproduces something close to Regular's own,
+# comparatively bold proportions at every weight. Measured directly on
+# the compiled Thin master: 6/9 came out with nearly Regular's own
+# ink-to-bbox ratio (0.398 either way) while 0/O/D -- whose outer and
+# inner contours each fit their own independent bbox -- correctly thinned
+# to match.
+#
+# The fix is structural, not a per-master patch: split Roboto Flex's own
+# fused path into two independent contours -- an OUTER (silhouette plus
+# stem/ascender) and an INNER (the counter, closed on itself) -- once,
+# right after extraction, before any of the reference-fit machinery ever
+# sees it. Confirmed by direct comparison that this changes nothing about
+# the shape itself: filling the split two ways produces the identical
+# result the original fused path did at every weight tested (each
+# "bridge" pair simply becomes its own new contour's own closing edge
+# instead of a literal cut-and-return) -- this only changes how the ink
+# is bookkept across contours, never the ink itself. Never adds or
+# removes a point, so the topology invariant every other master-building
+# step in this file already depends on stays intact -- this only
+# reassigns which of the SAME 36 (or 37) point objects belong to which of
+# now two contours instead of one.
+#
+# Point indices found by direct inspection of Roboto Flex's own raw
+# extraction (stable across weight and across the tabular/proportional-
+# figure variant pair, confirmed on both): (inner_start, outer_start).
+# `points[inner_start:outer_start]` is the counter, closed on itself;
+# `points[outer_start:] + points[:inner_start]` is everything else,
+# closed on itself the same way.
+_DIGIT_SPLIT_POINTS = {"6": (13, 26), "9": (7, 20)}
+
+
+def _split_fused_digit_contour(glyph, ch: str) -> None:
+    split = _DIGIT_SPLIT_POINTS.get(ch)
+    if split is None or len(glyph.contours) != 1:
+        return
+    inner_start, outer_start = split
+    pts = glyph.contours[0].points
+    if len(pts) <= outer_start:
+        return  # not the outline shape this was written against
+    inner_pts = pts[inner_start:outer_start]
+    outer_pts = pts[outer_start:] + pts[:inner_start]
+    glyph.contours[0].points = outer_pts
+    glyph.contours.append(ufoLib2.objects.Contour(points=inner_pts))
 
 
 def _is_e_counter_char(ch: str) -> bool:
@@ -414,6 +491,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         if gname is None or gname in feet_by_glyph:
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
+        _split_fused_digit_contour(glyph, ch)
         reference_contours[gname] = RA.snapshot(glyph)
         Q.apply_quirks(ch, glyph)
         CS.round_off_waists(glyph)
@@ -421,7 +499,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             AS.symmetrize(glyph)
             ASH.reshape_arch_counters(glyph, template_contour)
         if _is_e_counter_char(ch):
-            ASH.reshape_named_span(glyph, template_contour, 14, 21, "line", "line")
+            ASH.reshape_named_span(glyph, template_contour, 16, 23, "line", "line")
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         if _is_closed_counter_char(ch):
@@ -433,6 +511,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None and prop_name not in feet_by_glyph:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            _split_fused_digit_contour(prop_glyph, ch)
             reference_contours[prop_name] = RA.snapshot(prop_glyph)
             feet_by_glyph[prop_name] = S.detect_feet(prop_glyph, guides)
             dots_by_glyph[prop_name] = D.detect_dot_contours(prop_glyph)
@@ -498,6 +577,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         if gname is None:
             continue
         glyph = _extract_char_glyph(ch, gname, glyphset, hmtx, cmap, guides["xheight"])
+        _split_fused_digit_contour(glyph, ch)
         if gname in reference_contours:
             RA.align_to_reference(glyph, reference_contours[gname])
             TA.align_taper_signs(glyph, reference_contours[gname])
@@ -518,7 +598,7 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
             # this goes through `reshape_named_span` with hardcoded
             # indices instead of `reshape_arch_counters`'s structural
             # spring-pair search.
-            ASH.reshape_named_span(glyph, template_contour, 14, 21, "line", "line")
+            ASH.reshape_named_span(glyph, template_contour, 16, 23, "line", "line")
         if ch in ROUND_CONTRAST_CHARS:
             RC.thin_round(glyph)
         if ch == "o" and ref_outer_pts is not None:
@@ -564,8 +644,10 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         prop_name = _prop_glyph_name(gname, glyphset)
         if prop_name is not None:
             prop_glyph = _extract_glyph(prop_name, glyphset, hmtx, None)
+            _split_fused_digit_contour(prop_glyph, ch)
             if prop_name in reference_contours:
                 RA.align_to_reference(prop_glyph, reference_contours[prop_name])
+            Q.apply_quirks(ch, prop_glyph)
             D.boost_dots(prop_glyph, dots_by_glyph.get(prop_name, []), dot_factor)
             S.apply_feet(prop_glyph, feet_by_glyph.get(prop_name, []), guides, serf)
             ufo[prop_name] = prop_glyph
