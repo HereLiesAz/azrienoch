@@ -162,6 +162,22 @@ def extract_kerning(font: TTFont) -> dict[tuple[str, str], float]:
     actually stored) -- expanded out to a plain (left, right) -> value
     dict, which ``ufo_build.py`` then filters down to the glyphs Azrienoch
     actually imports and hands to a UFO's ``kerning`` mapping.
+
+    A DESIGN PRINCIPLE TO HOLD ONTO, stated directly by the project
+    owner, extending the same "one shared construction per shape family"
+    idea recorded in `quirks.py`'s own top-of-file docstring (the
+    alphabet's sharp-apex families) and `canonical_counter.py`'s own
+    docstring (its round families) to spacing itself: how far apart two
+    letters sit should also be decided by which SHAPE CLASSES their
+    facing sides belong to (round-against-round, stem-against-stem,
+    diagonal-against-stem, and so on), consistently across the whole
+    alphabet, rather than -- as this function currently does -- simply
+    inheriting whatever per-pair (or per-class) value Roboto Flex's own
+    `kern` feature happens to already contain for that specific pair of
+    letters. Not yet designed or implemented as of this note; this
+    function's own present behavior (a straight extraction, no shape-
+    class reasoning of Azrienoch's own) is the starting point it would
+    replace or wrap, not an example of the principle already applied.
     """
     kerning: dict[tuple[str, str], float] = {}
     if "GPOS" not in font:

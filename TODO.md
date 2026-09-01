@@ -186,3 +186,27 @@ build on.
       opening it via `file://` let the browser guess the wrong encoding
       and mangled every accented/Greek/Cyrillic character into mojibake.
       Re-verified with a headless-browser render after the fix.
+
+## Known issues
+
+- [ ] Capital 'A'/'M' have a genuine, pre-existing self-intersection at
+      Thin/ExtraLight (`wght` 180-245ish for 'A', 180-240ish for 'M'),
+      confirmed present even in the already-merged build with no
+      Azrienoch-specific quirk touching either glyph at all -- not
+      something introduced by any quirk, a same-master bug in Roboto
+      Flex's own low-weight extraction near where each glyph's counter
+      meets its outer silhouette. `tools/quirks.py::_sharpen_A_apex`'s
+      own docstring works through the exact geometry: at this weight,
+      no single placement of the counter's own inner-apex points (12/13
+      for 'A'; the analogous notches for 'M') satisfies both "stay clear
+      of the outer leg's own edge" and "stay clear of the curve leading
+      to the outer apex" at once, given the current point topology --
+      fixing it for real needs a topology change (a new point, the same
+      kind of deliberate exception `_square_off_terminal` already uses
+      for e/g/6/9's terminal), not another point-position guess.
+      'A's own OUTER apex (the visible tip) IS fixed and verified safe
+      across the full 180-900 `wght` range (a plain full collapse, safe
+      the same way `_sharpen_baseline_notches` already relies on for
+      v/w's baseline vertex) -- only the counter's own inner apex, and
+      all of 'M's vertex-sharpening, are left at Roboto Flex's own raw
+      shape pending this fix.

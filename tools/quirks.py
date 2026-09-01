@@ -36,6 +36,43 @@ addresses this glyph's own points by a hardcoded absolute index AFTER
 Applied identically to every master (not axis-conditional), so it needs
 no such invariant of its own beyond "don't change the point count or
 type sequence in a way that differs between masters."
+
+A DESIGN PRINCIPLE TO HOLD ONTO, stated directly by the project owner:
+every sharp apex in the alphabet where two DIAGONAL strokes meet --
+v/w's own outer bottom point, w's own middle peak, capital A's own top
+apex, capital M's own middle vertex, and any other the alphabet turns
+out to have -- is the SAME geometric shape, and should all be built
+from one shared construction rather than each solved independently
+letter by letter. Likewise, every point where ONE side is flat
+(vertical or horizontal) and the other diagonal -- M's own two
+symmetric notches, where each outer stem's own inner edge kinks
+against a diagonal, being the first confirmed member -- is its own
+second shared family, distinct from the two-diagonal one.
+
+This matters beyond tidiness: it's the direct explanation for why an
+independent per-letter, per-master full point collapse (move this
+letter's own two flat-run endpoints to THEIR OWN shared midpoint, done
+fresh at every master with no reference to how any other letter's
+matching apex was built) is NOT a safe general technique, even though
+`_merge_w_counter_bridge` below shows it can work for one specific
+case. `_sharpen_apex_notches`'s own docstring already documents this
+failure mode directly: a full local collapse at each master can look
+like a clean sharp point in every SINGLE master's own isolated
+rendering, while still reopening a self-intersection in the compiled
+font's own gvar interpolation BETWEEN adjacent masters, because the
+correction's own magnitude (how far each master's own flat run had to
+move to reach ITS OWN midpoint) differs unevenly master to master --
+exactly what happened when this same full-collapse technique was first
+tried on capital A's own apex. The fix isn't "collapse more gently"
+(that's `_APEX_BLEND`'s own partial fallback, a stopgap) so much as
+"stop computing the target independently per letter/master at all" --
+every member of a shared family should resolve to the SAME reference
+construction (this project's convention throughout is to check that
+construction directly against Jost, point for point, the way
+`_sharpen_A_apex`/`_sharpen_M_vertex`'s own docstrings already do),
+the same way `canonical_counter.py` already gives every round counter
+one shared reference shape instead of letting each letter's own
+counter drift independently.
 """
 
 from __future__ import annotations
@@ -396,6 +433,120 @@ def _sharpen_apex_notches(glyph) -> None:
         b.y += (mid_y - b.y) * _APEX_BLEND
 
 
+def _sharpen_A_apex(glyph) -> None:
+    """Give capital 'A' the genuine sharp outer apex Jost draws (checked
+    directly, point for point, against a real Jost TTF: both legs' own
+    outer edges meet at exactly one point, (367, 744) at Bold), instead
+    of Roboto Flex's own flattened one -- and ONLY that; a separate,
+    deeper, pre-existing bug in this same glyph (see below) means the
+    counter's own inner apex is deliberately left untouched here, not
+    yet safely fixable by a point-position change alone.
+
+    Point-by-point inspection shows 'A's single 14-point contour is NOT
+    "an outer silhouette with the counter as a separate hole": it's ONE
+    path that climbs the counter's own INNER edge first (points 0-1,
+    the left foot, up through 2-3-4 to the TRUE outer apex at 5-6),
+    comes back down the other inner edge (7-8-9, right foot at 10-11),
+    then returns via the OUTER edges (11-12, the counter's own ceiling
+    at 12-13, 13-0) to close. So points 5/6 -- not 12/13 -- are 'A's
+    own OUTER apex; 12/13 is the COUNTER's own separate inner apex, the
+    same role as v/w's own counter tip. 5/6 already sit at the
+    identical Y (a purely horizontal flat run), so collapsing them is
+    safe the same way `_sharpen_baseline_notches` already relies on for
+    v/w's own bottom point -- only X moves, nothing else.
+
+    12/13 is a genuinely different, harder problem, confirmed by
+    exhaustive analysis (not just testing) after two earlier, wrong
+    attempts here (a full collapse reasoned safe by width/simplicity
+    alone; a partial collapse to match Jost's own single shared axis)
+    both still failed a self-intersection sweep (flattened curves,
+    every 5 units of `wght`, 180-900) at Thin/ExtraLight. The actual
+    bug -- present even in the original merged build with no 'A' quirk
+    at all, so not something either attempt introduced -- is that the
+    counter's own inner-left edge (point 0 -> point 13) can cross the
+    outer silhouette's own lower-left edge (point 1 -> point 2,
+    mirrored on the right) at low weight. Solving the exact geometry:
+    the X range that keeps point 13 clear of that leg-crossing
+    (roughly <= 526 at Thin) and the X range that keeps the counter's
+    OWN flat ceiling clear of crossing the curve leading up to the
+    apex (roughly 533-611 at Thin) don't overlap with the mirrored
+    range point 12 needs -- there is NO single placement of 12/13 that
+    satisfies both constraints at once, for either point, at this
+    weight, given the current 14-point topology (two dead-straight
+    lines from each foot up to the notch, plus the existing curve
+    shape). Fixing it for real needs either a new point (the same kind
+    of deliberate, documented topology exception `_square_off_terminal`
+    already uses for e/g/6/9's terminal) to give the outer leg edge
+    some flexibility near the top, or a genuinely different curve
+    construction for the apex approach -- out of scope to rush through
+    safely here. Left as a tracked follow-up rather than shipped as a
+    fix that only moves the same bug to a different pair of edges."""
+    if not glyph.contours:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) != 14 or pts[5].type != "qcurve" or pts[6].type != "line":
+        return  # not the outline shape this was written against
+    outer_x = (pts[5].x + pts[6].x) / 2.0
+    outer_y = (pts[5].y + pts[6].y) / 2.0
+    pts[5].x, pts[5].y = outer_x, outer_y
+    pts[6].x, pts[6].y = outer_x, outer_y
+
+
+def _sharpen_A(glyph) -> None:
+    """Capital 'A's own outer apex -- see `_sharpen_A_apex`'s own
+    docstring both for that fix and for why its counter's own inner
+    apex is deliberately left alone for now (a genuinely deeper,
+    pre-existing bug, not yet safely fixable by a point-position
+    change). `_sharpen_apex_notches` still runs after it as a safety
+    net for any OTHER flat run this glyph might carry -- a no-op on the
+    outer apex once `_sharpen_A_apex` has already fully collapsed it
+    (`a.x == b.x`, which that function's own scan already skips), and
+    already a no-op on the untouched inner apex too, since that run is
+    wider than its own vestigial-notch budget (`_APEX_MAX_WIDTH`)."""
+    _sharpen_A_apex(glyph)
+    _sharpen_apex_notches(glyph)
+
+
+def _sharpen_M_vertex(glyph) -> None:
+    """Deliberately a no-op for now -- see this docstring for why, since
+    the obvious fix (collapse the flattened vertices, the same
+    Jost-referenced idea as `_sharpen_A_apex`) turned out unsafe here
+    for the identical reason `_sharpen_A_apex`'s own docstring documents
+    in detail for 'A's counter apex, just with more interacting points.
+
+    'M's single 34-point contour interleaves INNER and OUTER edges the
+    same way 'A's does: it climbs the left stem's own INNER edge, kinks
+    into the diagonal at a notch (5/6), descends to the V's own bottom,
+    crosses to the right stem's INNER edge, kinks at a second notch
+    (15/16), then -- after the right stem's own OUTER edge -- comes
+    back down as the OUTER diagonal to the V's own OUTER-path bottom
+    vertex (27/28), and closes via the left stem's own OUTER edge,
+    kinking at a THIRD notch (32/33, mirrored at 22/23).
+
+    Every attempt tried here -- full collapse of just 5/6/15/16/27/28;
+    the same with `_APEX_BLEND`'s partial collapse instead; full
+    collapse of all five pairs including the two previously-untouched
+    OUTER notches -- was confirmed unsafe by an actual self-intersection
+    sweep (flattened curves, `wght` 180-900), and each fix attempt didn't
+    just fail to help, it relocated the crossing to a different pair of
+    edges rather than removing it: collapsing 5/6/15/16/27/28 alone left
+    the INNER curve approaching each notch free to cross the untouched
+    OUTER notch right next to it; collapsing the OUTER notches too then
+    made THEM cross the stem's own inner edge instead. This is the same
+    root cause `_sharpen_A_apex`'s own docstring works through in detail
+    for 'A': the crossing is present even in the original merged build
+    with no 'M' quirk at all (confirmed directly), it's a same-master
+    bug baked into Roboto Flex's own low-weight extraction, and there is
+    no single placement of these on-curve points, within the current
+    34-point topology, that clears every nearby edge at once -- fixing
+    it for real needs a topology change (a new point, the same kind of
+    deliberate exception `_square_off_terminal` already uses elsewhere
+    in this module), not another point-position guess. Left as a
+    tracked follow-up rather than shipped as a fix that only moves the
+    bug around."""
+    return
+
+
 def _line_intersection(p1, p2, p3, p4):
     """Where line (p1,p2) crosses line (p3,p4), extended as needed.
     None if the two lines are parallel. Pure geometry -- callers decide
@@ -717,4 +868,6 @@ _QUIRKS = {
     "w": _sharpen_v_w,
     "6": _notch_terminal_6,
     "9": _notch_terminal_9,
+    "A": _sharpen_A,
+    "M": _sharpen_M_vertex,
 }
