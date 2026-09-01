@@ -189,24 +189,33 @@ build on.
 
 ## Known issues
 
-- [ ] Capital 'A'/'M' have a genuine, pre-existing self-intersection at
-      Thin/ExtraLight (`wght` 180-245ish for 'A', 180-240ish for 'M'),
-      confirmed present even in the already-merged build with no
-      Azrienoch-specific quirk touching either glyph at all -- not
-      something introduced by any quirk, a same-master bug in Roboto
-      Flex's own low-weight extraction near where each glyph's counter
-      meets its outer silhouette. `tools/quirks.py::_sharpen_A_apex`'s
-      own docstring works through the exact geometry: at this weight,
-      no single placement of the counter's own inner-apex points (12/13
-      for 'A'; the analogous notches for 'M') satisfies both "stay clear
-      of the outer leg's own edge" and "stay clear of the curve leading
-      to the outer apex" at once, given the current point topology --
-      fixing it for real needs a topology change (a new point, the same
-      kind of deliberate exception `_square_off_terminal` already uses
-      for e/g/6/9's terminal), not another point-position guess.
-      'A's own OUTER apex (the visible tip) IS fixed and verified safe
-      across the full 180-900 `wght` range (a plain full collapse, safe
-      the same way `_sharpen_baseline_notches` already relies on for
-      v/w's baseline vertex) -- only the counter's own inner apex, and
-      all of 'M's vertex-sharpening, are left at Roboto Flex's own raw
-      shape pending this fix.
+- [x] Capital 'A' had a genuine, pre-existing self-intersection at
+      Thin/ExtraLight (`wght` 180-245ish), confirmed present even in the
+      already-merged build with no Azrienoch-specific quirk touching the
+      glyph at all -- a same-master bug in Roboto Flex's own low-weight
+      extraction near where the counter met the outer silhouette. Fixed
+      for real with the topology change flagged below as needed: both
+      of 'A's apexes are now genuinely sharp, single points --
+      `tools/quirks.py::_sharpen_A_apex` for the outer (visible) apex, a
+      plain full collapse; `_rebuild_A_counter_apex` for the counter's
+      own inner apex, a real topology exception (2 points become
+      `2 * _A_COUNTER_SAMPLE_COUNT + 1`) that builds a genuinely
+      constant-width, parallel edge alongside the apex-approach curve,
+      sized to match the terminal's own inner/outer gap wherever the
+      apex angle allows it (`_largest_safe_width`), instead of moving
+      the old flat notch's two points and hoping. Verified both ways:
+      a self-intersection sweep (flattened curves, every 5 units of
+      `wght`, 180-900) is clean at every weight, and the new edge
+      measures as genuinely constant-width against the apex-approach
+      curve, not just non-crossing.
+- [ ] Capital 'M' has the same species of pre-existing self-intersection
+      'A' had, at the same weight range (`wght` 180-240ish), for the
+      same reason -- a same-master bug in Roboto Flex's own low-weight
+      extraction, not introduced by any quirk here. Not yet fixed:
+      `tools/quirks.py::_sharpen_M_vertex` remains a deliberate no-op;
+      its own docstring works through why a plain point-position
+      collapse doesn't work here either, for the same reason 'A's
+      didn't. 'A's own fix above proves the right general technique
+      (a genuinely constant-width topology exception, not a
+      point-position guess) -- extending it to 'M's three vertices is
+      the next step, tracked separately.

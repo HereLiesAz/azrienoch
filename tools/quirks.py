@@ -22,15 +22,20 @@ guarantees is identical across every master, so they don't touch the
 topology invariant the SERF axis (and gvar interpolation generally)
 depends on.
 
-`_square_off_terminal` is the one deliberate exception: 'e'/'g's own
-open terminal (see that function's own docstring for why matching 'c's
-genuinely flat, squared-off cut needs it) inserts two new on-curve
-points, the same way `serifs.py` adds foot contours -- INVARIANT-SAFE
-as long as it's applied identically, adding the exact same count/type of
-point at the exact same relative position, on every master, which it is
-(this whole module runs once per master, unconditionally). Any code that
-addresses this glyph's own points by a hardcoded absolute index AFTER
-`apply_quirks` has run needs to already account for that shift -- see
+`_square_off_terminal` and `_rebuild_A_counter_apex` are the deliberate
+exceptions: 'e'/'g's own open terminal (see `_square_off_terminal`'s own
+docstring for why matching 'c's genuinely flat, squared-off cut needs
+it) inserts two new on-curve points, and capital 'A's own counter apex
+(see `_rebuild_A_counter_apex`'s own docstring for why its old flat
+notch can never be made safe by moving its existing two points alone)
+replaces 2 points with `2 * _A_COUNTER_SAMPLE_COUNT + 1` new ones --
+both the same way `serifs.py` adds
+foot contours: INVARIANT-SAFE as long as it's applied identically,
+adding the exact same count/type of point(s) at the exact same relative
+position, on every master, which it is (this whole module runs once per
+master, unconditionally). Any code that addresses either glyph's own
+points by a hardcoded absolute index AFTER `apply_quirks` has run needs
+to already account for that shift -- see
 `ufo_build.py::_is_e_counter_char`'s own call to `reshape_named_span`.
 
 Applied identically to every master (not axis-conditional), so it needs
@@ -490,19 +495,330 @@ def _sharpen_A_apex(glyph) -> None:
     outer_y = (pts[5].y + pts[6].y) / 2.0
     pts[5].x, pts[5].y = outer_x, outer_y
     pts[6].x, pts[6].y = outer_x, outer_y
+    _rebuild_A_counter_apex(glyph)
+
+
+def _flatten_qcurve_pts(start, off_curve_pts, end, n=8):
+    """The same TrueType-style quadratic-spline flattening `_square_off_terminal`'s
+    own callers rely on elsewhere in this pipeline (a chain of quadratics,
+    consecutive off-curve points implicitly joined by their own shared
+    midpoint) -- reimplemented here, self-contained, purely as ANALYSIS to
+    find where two hypothetical curves would cross; nothing this returns
+    is written back into the glyph."""
+    pts = []
+    cur = start
+    m = len(off_curve_pts)
+    for i, ctrl in enumerate(off_curve_pts):
+        nxt_on = end if i == m - 1 else ((off_curve_pts[i][0] + off_curve_pts[i + 1][0]) / 2.0, (off_curve_pts[i][1] + off_curve_pts[i + 1][1]) / 2.0)
+        for step in range(1, n + 1):
+            t = step / n
+            ax = cur[0] + (ctrl[0] - cur[0]) * t
+            ay = cur[1] + (ctrl[1] - cur[1]) * t
+            bx = ctrl[0] + (nxt_on[0] - ctrl[0]) * t
+            by = ctrl[1] + (nxt_on[1] - ctrl[1]) * t
+            pts.append((ax + (bx - ax) * t, ay + (by - ay) * t))
+        cur = nxt_on
+    return pts
+
+
+def _segments_cross(a, b, c, d):
+    def ccw(p, q, r):
+        return (r[1] - p[1]) * (q[0] - p[0]) > (q[1] - p[1]) * (r[0] - p[0])
+
+    return ccw(a, c, d) != ccw(b, c, d) and ccw(a, b, c) != ccw(a, b, d)
+
+
+def _segment_intersection(a, b, c, d):
+    x1, y1 = a; x2, y2 = b; x3, y3 = c; x4, y4 = d
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    if abs(denom) < 1e-9:
+        return None
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+
+
+def _polyline_crossing(poly_a, poly_b):
+    """Where `poly_a` and `poly_b` first cross, AND the index into each
+    (the crossing sits between that index and the next) -- both are
+    needed by `_resample_polyline` to know which portion of each
+    original polyline is still valid to sample from."""
+    for i in range(len(poly_a) - 1):
+        for j in range(len(poly_b) - 1):
+            if _segments_cross(poly_a[i], poly_a[i + 1], poly_b[j], poly_b[j + 1]):
+                point = _segment_intersection(poly_a[i], poly_a[i + 1], poly_b[j], poly_b[j + 1])
+                if point is not None:
+                    return point, i, j
+    return None, None, None
+
+
+def _offset_curve(poly, sign, w):
+    """Every point of `poly` (an already-flattened curve), offset by a
+    CONSTANT perpendicular distance `w` from its own local tangent at
+    that point (estimated from its immediate neighbors) -- a genuine,
+    uniform-width parallel copy of `poly`, not merely a shape that
+    happens not to cross it. `sign` picks which of the two perpendicular
+    directions."""
+    out = []
+    n = len(poly)
+    for i, p in enumerate(poly):
+        if i == 0:
+            dx, dy = poly[1][0] - poly[0][0], poly[1][1] - poly[0][1]
+        elif i == n - 1:
+            dx, dy = poly[-1][0] - poly[-2][0], poly[-1][1] - poly[-2][1]
+        else:
+            dx, dy = poly[i + 1][0] - poly[i - 1][0], poly[i + 1][1] - poly[i - 1][1]
+        length = math.hypot(dx, dy)
+        ux, uy = dx / length, dy / length
+        nx, ny = -uy * sign, ux * sign
+        out.append((p[0] + nx * w, p[1] + ny * w))
+    return out
+
+
+def _resample_polyline(poly, crossing_idx, tip, count, from_tip):
+    """`count` points, evenly spaced by ARC LENGTH (not by index), along
+    the portion of `poly` that's still valid once truncated at `tip`
+    (the point `_polyline_crossing` found between `poly[crossing_idx]`
+    and `poly[crossing_idx + 1]`) -- from `poly`'s own start up to
+    `tip` when `from_tip` is False, or from `tip` onward to `poly`'s own
+    end when `from_tip` is True.
+
+    Which direction to keep matters, and isn't arbitrary: right where
+    two curves meet at a shared point (a CUSP -- here, 'A's own true
+    outer apex, where the left and right apex-approach curves meet),
+    the tangent direction is discontinuous, so `_offset_curve`'s own
+    per-point local-tangent estimate is unreliable in the curve's own
+    few points nearest that cusp. Whichever side of `tip` sits close to
+    the cusp has to be the side that's DISCARDED here -- confirmed
+    directly: keeping it produced a spurious crossing against the
+    apex's own true curve, an artifact of the bad tangent estimate
+    right at the cusp, not a real safety problem.
+
+    A FIXED `count`, not "however many samples happen to fall before
+    the crossing" -- the crossing's own position (an index into a
+    fixed-resolution sample array) varies smoothly with the master's
+    own geometry, but which ARRAY INDEX it lands nearest can jump
+    around between masters. Re-parametrizing by the truncated path's
+    own arc length and sampling a fixed count from that is what keeps
+    the point count identical at every master, the invariant this
+    whole construction depends on."""
+    if from_tip:
+        chain = [tip] + poly[crossing_idx + 1 :]
+    else:
+        chain = poly[: crossing_idx + 1] + [tip]
+    cumulative = [0.0]
+    for i in range(1, len(chain)):
+        cumulative.append(cumulative[-1] + math.hypot(chain[i][0] - chain[i - 1][0], chain[i][1] - chain[i - 1][1]))
+    total = cumulative[-1]
+    out = []
+    for s in range(count):
+        target = total * s / (count - 1)
+        for i in range(1, len(cumulative)):
+            if cumulative[i] >= target or i == len(cumulative) - 1:
+                span = cumulative[i] - cumulative[i - 1]
+                t = (target - cumulative[i - 1]) / span if span > 1e-9 else 0.0
+                out.append((chain[i - 1][0] + (chain[i][0] - chain[i - 1][0]) * t, chain[i - 1][1] + (chain[i][1] - chain[i - 1][1]) * t))
+                break
+    return out
+
+
+def _offset_along(p_start, p_end, w, sign, t):
+    """The point `t` of the way from `p_start` to `p_end`, offset
+    perpendicular to that segment's own direction by `w`. Used for the
+    short straight-line "taper" zone (see `_rebuild_A_counter_apex`'s
+    own docstring) where a genuinely constant `w` isn't the right call
+    -- right at the foot, the two edges are already nearly coincident
+    (Roboto Flex draws this leg with a near-pointed foot), so forcing
+    the FULL counter width there would itself reopen the leg-crossing
+    bug this whole construction exists to fix."""
+    dx, dy = p_end[0] - p_start[0], p_end[1] - p_start[1]
+    length = math.hypot(dx, dy)
+    ux, uy = dx / length, dy / length
+    nx, ny = -uy * sign, ux * sign
+    return (p_start[0] + dx * t + nx * w, p_start[1] + dy * t + ny * w)
+
+
+def _perpendicular_distance(p, line_a, line_b):
+    dx, dy = line_b[0] - line_a[0], line_b[1] - line_a[1]
+    length = math.hypot(dx, dy)
+    return abs((p[0] - line_a[0]) * dy - (p[1] - line_a[1]) * dx) / length
+
+
+_A_COUNTER_SAMPLE_COUNT = 6  # points sampled per side, evenly spaced by
+# arc length -- see `_resample_polyline`'s own docstring for why this
+# has to be a FIXED count rather than "however many happen to fall
+# before the crossing"
+
+
+def _largest_safe_width(curve1, curve2, w_cap, iterations=40):
+    """The largest constant offset width, up to `w_cap`, for which the
+    two apex-approach curves' own constant-width offsets (`_offset_curve`)
+    still cross within their own real, flattened extent -- see
+    `_rebuild_A_counter_apex`'s own docstring for why `w_cap` (the
+    terminal's own inner/outer gap) isn't always itself achievable.
+
+    Shrinking the width always eventually works: as it shrinks toward
+    zero, each offset curve shrinks toward the ORIGINAL, un-offset
+    curve, and the two original curves already share one point (the true
+    apex itself) -- so their crossing point converges toward the apex,
+    which is always within both curves' own sampled range. And the
+    relationship is monotonic (confirmed directly): a narrower width's
+    own corresponding corner always sits closer to the apex than a wider
+    width's does, never further. So a plain bisection between 0 and
+    `w_cap` -- first checking whether `w_cap` itself already works, the
+    common case at Thin/ExtraLight -- finds the largest safe width
+    directly, no guessing needed."""
+    if _polyline_crossing(_offset_curve(curve1, -1, w_cap), _offset_curve(curve2, -1, w_cap))[0] is not None:
+        return w_cap
+    lo, hi = 0.0, w_cap
+    best = None
+    for _ in range(iterations):
+        mid = (lo + hi) / 2.0
+        tip, _, _ = _polyline_crossing(_offset_curve(curve1, -1, mid), _offset_curve(curve2, -1, mid))
+        if tip is not None:
+            best = mid
+            lo = mid
+        else:
+            hi = mid
+    return best
+
+
+def _rebuild_A_counter_apex(glyph) -> None:
+    """Give capital 'A's own counter a genuine inner apex, replacing its
+    two flat-notch points (12/13) with a real, genuinely PARALLEL curve
+    -- the actual fix for the self-intersection `_sharpen_A_apex`'s own
+    docstring proves is impossible to solve by moving 12/13 alone,
+    given the topology that fix left untouched.
+
+    Exhaustive analysis (searching every notch height, width, and even
+    single-point placements, documented in `_sharpen_A_apex`'s own
+    docstring) proved the counter's own ceiling can never be a flat,
+    two-point notch here: at every height, the boundary that keeps it
+    clear of the outer leg's own straight edge and the boundary that
+    keeps it clear of the curve leading to the outer apex don't
+    overlap. The reason is structural, not a tuning problem: the
+    counter's own straight edge (0->13, 11->12) runs dead straight all
+    the way from the foot, while the curve it has to stay clear of
+    (2->3->4->apex) genuinely curves -- two edges with different shapes
+    can't maintain a safe, consistent separation.
+
+    A first attempt here built the new edge by offsetting the
+    apex-approach curve INWARD, TAPERING linearly from zero (at the
+    foot) all the way up to the tip. It passed the self-intersection
+    sweep, but was wrong regardless -- confirmed directly (measuring the
+    perpendicular distance between the new edge and the true
+    apex-approach curve at several points) that a LINEAR taper all the
+    way to the tip means the stroke's own width is never constant
+    anywhere: the two edges are never actually parallel, which is not
+    how a real stroke is drawn, self-intersection-free or not.
+
+    Told directly by the project owner, after that first attempt, what
+    the right target actually is: the counter's own inner apex and the
+    outer apex should sit the SAME DISTANCE apart as the terminal's own
+    inner and outer points already do (`p0`/`p1` at the left foot,
+    `p11`/`p10` at the right) -- i.e. this counter, like `v`/`w`'s own,
+    should read as one genuinely constant-width stroke from foot to tip,
+    not a stroke that tapers away near the point. `foot_w_left`/
+    `foot_w_right` measure that terminal gap directly (perpendicular
+    distance from the OUTER foot corner to the line through the INNER
+    foot corner and the curve's own next point) -- `w_cap`, the smaller
+    of the two, is the target width this construction tries to hold
+    constant all the way to the tip.
+
+    Holding it EXACTLY, though, isn't always geometrically possible:
+    checked directly (see `_largest_safe_width`'s own docstring) that at
+    some masters -- Regular and heavier, where Roboto Flex's own
+    original apex angle is shallow enough that a stroke of the
+    terminal's own full width would need to converge to a point further
+    down than the apex-approach curve even reaches, past where the
+    straight leg below it begins -- the terminal's own width has no
+    valid single-point apex within this curve at all. Since a NARROWER
+    constant width's own corresponding apex sits closer to the true tip
+    (confirmed directly, monotonically), `_largest_safe_width` finds the
+    largest width, up to that terminal target, that still has a real,
+    genuine corner within the curve -- so the construction holds the
+    terminal's own exact width whenever geometry allows it (confirmed
+    this is every master at Thin/ExtraLight), and gets as close to it as
+    the apex angle actually permits everywhere else, rather than
+    picking an arbitrary smaller width or silently falling back to
+    Roboto Flex's own broken notch.
+
+    The two constant-width offset curves (`_offset_curve`, one from each
+    side, at that width) genuinely cross below the true apex --
+    `_polyline_crossing` finds that point, the counter's own new, real,
+    single-point apex. Building each side is `_resample_polyline`'s own
+    job: a FIXED count of points, evenly spaced by arc length, from the
+    real terminal corner (`p1`/`p10`, offset by the same width so the
+    new edge starts exactly parallel to the terminal's own foot -- see
+    `_offset_along`) up to that shared apex point.
+
+    This is a deliberate topology exception, the same kind
+    `_square_off_terminal` already is for e/g/6/9's terminal (see this
+    module's own top-of-file docstring): it replaces 2 points (12/13)
+    with `2 * _A_COUNTER_SAMPLE_COUNT + 1` new ones, applied identically
+    -- the same computation, unconditionally -- on every master, so the
+    point count/type sequence stays identical across the whole design
+    space even though it's different from Roboto Flex's own original
+    count. Verified both ways: a real self-intersection sweep (flattened
+    curves, every 5 units of `wght`, 180-900) is clean at every weight
+    tested, AND the new edge measures as genuinely constant-width
+    (parallel) against the apex-approach curve, not just non-crossing."""
+    pts = glyph.contours[0].points
+    if len(pts) != 14 or pts[12].type != "line" or pts[13].type != "line":
+        return  # not the outline shape this was written against, or
+        # already rebuilt by a previous pass -- either way, leave alone
+    p0, p1, p2 = (pts[0].x, pts[0].y), (pts[1].x, pts[1].y), (pts[2].x, pts[2].y)
+    p3, p4 = (pts[3].x, pts[3].y), (pts[4].x, pts[4].y)
+    apex = (pts[5].x, pts[5].y)
+    p7, p8, p9 = (pts[7].x, pts[7].y), (pts[8].x, pts[8].y), (pts[9].x, pts[9].y)
+    p10, p11 = (pts[10].x, pts[10].y), (pts[11].x, pts[11].y)
+    if apex[1] <= p2[1] or apex[1] <= p9[1]:
+        return  # degenerate proportions this construction wasn't built for
+
+    curve1 = [p2] + _flatten_qcurve_pts(p2, [p3, p4], apex)
+    curve2 = [apex] + _flatten_qcurve_pts(apex, [p7, p8], p9)
+
+    foot_w_left = _perpendicular_distance(p0, p1, p2)
+    foot_w_right = _perpendicular_distance(p11, p10, p9)
+    w_cap = min(foot_w_left, foot_w_right)
+
+    w = _largest_safe_width(curve1, curve2, w_cap)
+    if w is None:
+        return  # no safe width found at all -- leave the glyph as-is
+        # rather than guess (checked by the self-intersection sweep at
+        # every real master; if this ever fires, the sweep catches it
+        # immediately rather than silently shipping a bug)
+
+    off1 = _offset_curve(curve1, -1, w)
+    off2 = _offset_curve(curve2, -1, w)
+    tip, i, j = _polyline_crossing(off1, off2)
+    if tip is None:
+        return  # _largest_safe_width already confirmed this width works;
+        # this only guards against floating-point edge cases at its own
+        # boundary
+
+    left_pts = _resample_polyline(off1, i, tip, _A_COUNTER_SAMPLE_COUNT, from_tip=False)
+    right_pts = _resample_polyline(off2, j, tip, _A_COUNTER_SAMPLE_COUNT, from_tip=True)
+
+    foot_left = _offset_along(p1, p2, w, -1, 0.0)
+    foot_right = _offset_along(p10, p9, w, 1, 0.0)
+
+    outer_points = [foot_right] + list(reversed(right_pts)) + list(reversed(left_pts))[1:] + [foot_left]
+    new_points = [Point(x, y, type="line") for x, y in outer_points]
+    pts[12:14] = new_points
 
 
 def _sharpen_A(glyph) -> None:
-    """Capital 'A's own outer apex -- see `_sharpen_A_apex`'s own
-    docstring both for that fix and for why its counter's own inner
-    apex is deliberately left alone for now (a genuinely deeper,
-    pre-existing bug, not yet safely fixable by a point-position
-    change). `_sharpen_apex_notches` still runs after it as a safety
-    net for any OTHER flat run this glyph might carry -- a no-op on the
-    outer apex once `_sharpen_A_apex` has already fully collapsed it
-    (`a.x == b.x`, which that function's own scan already skips), and
-    already a no-op on the untouched inner apex too, since that run is
-    wider than its own vestigial-notch budget (`_APEX_MAX_WIDTH`)."""
+    """Capital 'A's own two genuine points -- see `_sharpen_A_apex`'s own
+    docstring for the outer apex (a plain full collapse), and
+    `_rebuild_A_counter_apex`'s own docstring for the counter's own
+    inner apex (a real, genuinely parallel curve replacing the old flat
+    notch, a deliberate topology exception). `_sharpen_apex_notches`
+    still runs after both as a safety net for any OTHER flat run this
+    glyph might carry -- a no-op on the outer apex (already fully
+    collapsed, `a.x == b.x`, which that function's own scan already
+    skips); the counter apex's own new points are ordinary 'line'
+    points along a real curve, none of them a flat run at all, so that
+    scan has nothing there to find."""
     _sharpen_A_apex(glyph)
     _sharpen_apex_notches(glyph)
 
