@@ -16,19 +16,33 @@ Each edit moves a small number of *existing* points by index, computed
 relative to the glyph's own local geometry (a fraction of its own stem
 width or bar thickness) rather than by an absolute constant -- so it
 scales sensibly across weights and widths instead of needing separate
-tuning per master. Critically, it never adds or removes a point: point
+tuning per master. Most edits never add or remove a point at all: point
 count and order stay exactly what Roboto Flex's own gvar already
-guarantees is identical across every master, so this doesn't touch the
+guarantees is identical across every master, so they don't touch the
 topology invariant the SERF axis (and gvar interpolation generally)
 depends on.
 
+`_square_off_terminal` is the one deliberate exception: 'e'/'g's own
+open terminal (see that function's own docstring for why matching 'c's
+genuinely flat, squared-off cut needs it) inserts two new on-curve
+points, the same way `serifs.py` adds foot contours -- INVARIANT-SAFE
+as long as it's applied identically, adding the exact same count/type of
+point at the exact same relative position, on every master, which it is
+(this whole module runs once per master, unconditionally). Any code that
+addresses this glyph's own points by a hardcoded absolute index AFTER
+`apply_quirks` has run needs to already account for that shift -- see
+`ufo_build.py::_is_e_counter_char`'s own call to `reshape_named_span`.
+
 Applied identically to every master (not axis-conditional), so it needs
-no such invariant of its own beyond "don't change the point count."
+no such invariant of its own beyond "don't change the point count or
+type sequence in a way that differs between masters."
 """
 
 from __future__ import annotations
 
 import math
+
+from ufoLib2.objects import Point
 
 
 def apply_quirks(char: str, glyph) -> None:
@@ -93,43 +107,128 @@ def _kick_R(glyph) -> None:
     outer.x += leg_w * 0.18
 
 
+_STEP_FRACTION = 0.06  # how long each new step segment is, as a fraction
+# of the cut's own length -- matched to 'c'/'s's own ratio (their step
+# segments run 5-6% of their own cut's length at every weight checked)
+
+
 def _square_off_terminal(pts, right_idx, left_idx) -> None:
-    """Make a 2-point horizontal cut (`right_idx` -> `left_idx`, walking
-    backward through the contour) actually READ as 'c's flat, squared-off
-    terminal instead of the tip of a long diagonal taper.
+    """Give a 2-point horizontal cut (`right_idx` -> `left_idx`, walking
+    backward through the contour) 's's own genuinely flat, squared-off
+    terminal construction -- curve end, a short PURELY VERTICAL 'step
+    in', the horizontal cut itself, a short purely vertical 'step out',
+    curve resumes -- instead of leaving it the tip of a long diagonal
+    taper. Literally 's's own construction, mirrored where 'e'/'g's own
+    approach curve runs the opposite way 's's does -- checked directly
+    against BOTH of 's's own terminals (point inspection, every weight):
+    every one of its four step segments is dx=0, exactly vertical,
+    regardless of which direction the curve on either side of it happens
+    to be heading -- not extrapolated along that curve's own tangent (an
+    earlier version of this function's own mistake: 'vertical' is 's's
+    own rule, not merely a byproduct of whatever angle a given curve
+    happens to leave on).
 
-    Flattening the cut segment itself (`pts[left_idx].y = pts[right_idx].y`,
-    this module's original fix) makes the very last unit of the cut
-    technically horizontal, but confirmed by direct comparison against a
-    real render (not just point inspection) that this alone isn't what
-    makes 'c's own opening read as flat: 'c' gets there with FOUR
-    dedicated on-curve points at each of its own two terminals -- curve
-    end, a short vertical 'step in', the horizontal cut itself, a short
-    vertical 'step out', curve resumes -- so the ink stays at close to
-    full stroke width right up to a sharp, near-perpendicular corner.
-    'e'/'g' only ever had the two on-curve points bounding the cut itself
-    (no budget for 'c's own extra step points without adding one, which
-    the topology invariant forbids), so the curves on EITHER side of the
-    cut taper gradually all the way in, and the flat unit at the very tip
-    reads as the point of a diagonal hook, not a flat chop.
+    Confirmed by direct comparison against a real render (not just point
+    inspection) that merely flattening the cut segment itself (this
+    function's own first version, `pts[left_idx].y = pts[right_idx].y`)
+    isn't enough to read as 's'/'c's own flat opening: both get there
+    with FOUR dedicated on-curve points at each of their own terminals,
+    not two, so the ink stays at close to full stroke width right up to
+    a sharp, near-perpendicular corner. 'e'/'g' only ever had the two
+    on-curve points bounding the cut itself.
 
-    The fix: without adding a point, steepen the tangent each curve
-    already has AT the cut, by moving that curve's own nearest off-curve
-    control point (one step further into the curve, at `right_idx - 1`
-    and `left_idx + 1`) so it shares its neighboring on-curve point's x.
-    A quadratic curve's tangent at an endpoint runs straight through its
-    own nearest control point, so this makes both curves arrive at (and
-    leave from) the cut close to vertical -- the same near-perpendicular
-    corner 'c's own dedicated step points produce, built from a curve's
-    existing control point instead of a fourth on-curve point."""
+    So this inserts the two missing points, the same way `serifs.py`
+    adds foot contours: point-count-safe as long as it's applied
+    identically on every master, which it is (this whole module runs
+    once per master, unconditionally) -- see this module's own docstring.
+    Each new point sits directly below/above (or, for a cut closer to
+    vertical than horizontal -- see `_square_off_digit_notch`, the same
+    species of defect turned 90 degrees -- directly beside) its own
+    neighboring corner, stepping a fraction of the cut's own length in
+    whichever direction continues that side's own existing approach/
+    departure trend, so the two terminals this fixes each come out as
+    their own mirror image of 's's, not a copy-pasted single direction.
+    The corner point every reader actually sees (where Roboto Flex's own
+    curve used to land) doesn't move at all; only its neighbor gets
+    pulled back to make room for a real straight run into it."""
     right, left = pts[right_idx], pts[left_idx]
-    left.y = right.y
     entry_ctrl = pts[right_idx - 1]
-    if entry_ctrl.type is None:
-        entry_ctrl.x = right.x
     exit_ctrl = pts[(left_idx + 1) % len(pts)]
-    if exit_ctrl.type is None:
-        exit_ctrl.x = left.x
+
+    horizontal_cut = abs(right.x - left.x) >= abs(right.y - left.y)
+    if horizontal_cut:
+        left.y = right.y
+        cut_a, cut_b = (right.x, right.y), (left.x, left.y)
+        step = abs(right.x - left.x) * _STEP_FRACTION
+        entry_sign = 1.0 if right.y >= entry_ctrl.y else -1.0
+        right.y += entry_sign * step
+        exit_sign = 1.0 if exit_ctrl.y >= left.y else -1.0
+        resume = (left.x, left.y + exit_sign * step)
+    else:
+        left.x = right.x
+        cut_a, cut_b = (right.x, right.y), (left.x, left.y)
+        step = abs(right.y - left.y) * _STEP_FRACTION
+        entry_sign = 1.0 if right.x >= entry_ctrl.x else -1.0
+        right.x += entry_sign * step
+        exit_sign = 1.0 if exit_ctrl.x >= left.x else -1.0
+        resume = (left.x + exit_sign * step, left.y)
+
+    insertions = sorted(
+        [
+            (right_idx + 1, Point(*cut_a, type="line")),
+            (left_idx + 1, Point(*resume, type="line")),
+        ],
+        key=lambda item: -item[0],
+    )
+    for pos, pt in insertions:
+        pts.insert(pos, pt)
+
+
+def _square_off_digit_notch(glyph, right_idx, left_idx) -> None:
+    """'6'/'9's own version of `_square_off_terminal`, at the notch
+    where the counter (split into its own contour by
+    `ufo_build.py::_split_fused_digit_contour`) meets the ascender/
+    descender stem -- the exact same defect, one contour later:
+    Roboto Flex's own raw extraction connects them with a plain 2-point
+    cut, no dedicated step points, so splitting the fused path into two
+    clean contours (needed to fix 6/9's own weight-interpolation bug --
+    see that function's own docstring) leaves that cut's own two
+    endpoints as the new contour's closing edge, unrepaired -- confirmed
+    directly (a real render) that it reads as a sharp wedge poking into
+    the counter, the same diagonal-taper defect 'e'/'g' had, just this
+    time closer to vertical than horizontal. `_square_off_terminal`
+    itself already picks whichever axis a cut is closer to before
+    deciding which way to flatten it and step, so the same call handles
+    both without any extra branching here -- this wrapper only exists to
+    find the OUTER contour's own closing edge after the digit split."""
+    if len(glyph.contours) < 1:
+        return
+    pts = glyph.contours[0].points
+    if len(pts) <= max(right_idx, left_idx):
+        return  # not the outline shape this was written against
+    _square_off_terminal(pts, right_idx, left_idx)
+
+
+def _notch_terminal_6(glyph) -> None:
+    """'6's own counter/stem notch -- see `_square_off_digit_notch`.
+    23 points in the outer contour after `_split_fused_digit_contour`
+    (indices 26..35, 0..12 of the original fused 36-point contour);
+    the closing edge runs from its own last point (22) back to its
+    first (0)."""
+    if len(glyph.contours) != 2 or len(glyph.contours[0].points) != 23:
+        return  # not the outline shape this was written against
+    _square_off_digit_notch(glyph, 22, 0)
+
+
+def _notch_terminal_9(glyph) -> None:
+    """'9's own counter/stem notch -- see `_square_off_digit_notch`.
+    24 points in the outer contour after `_split_fused_digit_contour`
+    (indices 20..36, 0..6 of the original fused 37-point contour); the
+    closing edge runs from its own last point (23) back to its first
+    (0)."""
+    if len(glyph.contours) != 2 or len(glyph.contours[0].points) != 24:
+        return  # not the outline shape this was written against
+    _square_off_digit_notch(glyph, 23, 0)
 
 
 def _horizontal_terminal_e(glyph) -> None:
@@ -616,4 +715,6 @@ _QUIRKS = {
     "g": _horizontal_terminal_g,
     "v": _sharpen_v_w,
     "w": _sharpen_v_w,
+    "6": _notch_terminal_6,
+    "9": _notch_terminal_9,
 }
