@@ -285,6 +285,105 @@ def _horizontal_terminal_e(glyph) -> None:
     _square_off_terminal(pts, 6, 7)
 
 
+def _rigid_align_points(src_points, src_a, src_b, dst_a, dst_b):
+    """Map every `(x, y)` in `src_points` through the single
+    translate+rotate+uniform-scale transform that takes `src_a` -> `dst_a`
+    and `src_b` -> `dst_b` exactly -- the same construction the point
+    editor's own "paste over selection, aligned to neighbors" button
+    uses, so a glyph built this way reproduces what hand-editing it there
+    would give. Returns a list of `(x, y)` tuples, same length/order as
+    `src_points`."""
+    sv = (src_b[0] - src_a[0], src_b[1] - src_a[1])
+    dv = (dst_b[0] - dst_a[0], dst_b[1] - dst_a[1])
+    s_len = math.hypot(*sv) or 1.0
+    d_len = math.hypot(*dv) or 1.0
+    scale = d_len / s_len
+    rot = math.atan2(dv[1], dv[0]) - math.atan2(sv[1], sv[0])
+    cos_r, sin_r = math.cos(rot), math.sin(rot)
+    out = []
+    for x, y in src_points:
+        rx, ry = (x - src_a[0]) * scale, (y - src_a[1]) * scale
+        out.append((rx * cos_r - ry * sin_r + dst_a[0], rx * sin_r + ry * cos_r + dst_a[1]))
+    return out
+
+
+def graft_e_terminal_from_c(e_glyph, c_glyph) -> None:
+    """Replace 'e's own terminal -- built by `_horizontal_terminal_e`
+    into a plain squared-off, 5-point flat notch -- with a rigid-aligned
+    copy of 'c's own REAL terminal curve (the 8-point bulge-then-flat-cut
+    hook every 'c'/'s'-family letter actually has), instead of just
+    matching its flatness.
+
+    `_horizontal_terminal_e`'s squaring was a real improvement over
+    Roboto Flex's own raw diagonal taper, but it was never actually the
+    same shape as 'c's own terminal, just a flat cut in the same style
+    -- confirmed directly by the project owner, hand-editing 'e' against
+    an overlay of 'c' in the point editor at Thin/Regular/Black, that a
+    flat cut isn't what "e's tail comes from c" means: it means this
+    curve, literally, scaled to fit.
+
+    Runs as a POST-pass, after every glyph in this master is fully
+    built (see `ufo_build.py`'s own call site) -- not from inside
+    `apply_quirks`, which only ever sees one glyph at a time and has no
+    way to reach 'c's own final shape. It needs 'c' to be completely
+    finished (through its own full quirks/counter-shape pipeline, not a
+    raw extraction) or it copies the wrong curve.
+
+    The anchors are `e_pts[3]`/`e_pts[12]` and `c_pts[3]`/`c_pts[12]` --
+    on each glyph, the on-curve, smooth "shoulder" points immediately
+    outside the whole arm/terminal structure (confirmed directly: both
+    sit right at the point the main bowl curve stops and the terminal's
+    own approach begins/ends, at the same role on both letters, not just
+    the same index by coincidence -- `e`/`c` share that much of Roboto
+    Flex's own point layout). A first version anchored on `e_pts[4]`/
+    `e_pts[10]` (off-curve neighbors a step further in) instead --
+    checked directly and confirmed wrong: those two sit much further
+    apart, at a very different angle, than the true shoulder points do,
+    so the rigid transform computed from them carried a huge, badly
+    skewed scale (over 2x, confirmed by hand-checking the arithmetic
+    against the actual built output) that blew the whole terminal miles
+    outside the glyph's own bounding box. On-curve shoulder-to-shoulder
+    anchors instead give a transform that's close to a plain, modest
+    uniform scale (confirmed: under 1.5x at every real master, near-zero
+    rotation) -- proportional, not distorting.
+
+    Mapping `c_pts[3]` -> `e_pts[3]` and `c_pts[12]` -> `e_pts[12]` with
+    `_rigid_align_points` is exactly the same move as the editor's own
+    "paste over selection, aligned to its neighbors" -- 'c's own
+    terminal (`c_pts[4:12]`, 8 points) lands scaled and rotated to fit
+    the gap between 'e's own shoulders, replacing `e_pts[4:12]` (8
+    points: the squared corner from `_horizontal_terminal_e` and its own
+    step-in/cut/step-out, plus the curve either side of it) 1-for-1, no
+    net point-count change, applied identically -- unconditionally,
+    every master -- so point count/type sequence stays uniform across
+    the whole design space, same as every other topology exception in
+    this module."""
+    if not e_glyph.contours or not c_glyph.contours:
+        return
+    e_pts = e_glyph.contours[0].points
+    c_pts = c_glyph.contours[0].points
+    if len(e_pts) != 34 or len(c_pts) != 32:
+        return  # not the outline shapes this was written against
+    if e_pts[3].type is None or e_pts[12].type is None:
+        return
+    if c_pts[3].type is None or c_pts[12].type is None:
+        return
+
+    e_anchor_a = (e_pts[3].x, e_pts[3].y)
+    e_anchor_b = (e_pts[12].x, e_pts[12].y)
+    c_anchor_a = (c_pts[3].x, c_pts[3].y)
+    c_anchor_b = (c_pts[12].x, c_pts[12].y)
+
+    graft_src = c_pts[4:12]
+    aligned = _rigid_align_points(
+        [(p.x, p.y) for p in graft_src], c_anchor_a, c_anchor_b, e_anchor_a, e_anchor_b
+    )
+    new_points = [
+        Point(x, y, type=p.type, smooth=p.smooth) for (x, y), p in zip(aligned, graft_src)
+    ]
+    e_pts[4:12] = new_points
+
+
 def _horizontal_terminal_g(glyph) -> None:
     """Square off 'g's descender-loop tail -- the same defect and fix as
     'e's (see `_horizontal_terminal_e`, `_square_off_terminal`), at the

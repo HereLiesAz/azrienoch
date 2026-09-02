@@ -269,3 +269,31 @@ build on.
       the sweep, not by eye: `wght` 525 and 735 (both off the 5-unit
       sweep step elsewhere) still cross. Not yet root-caused -- next
       step if picked back up.
+- [x] 'e's own terminal only ever matched 'c's terminal in FLATNESS
+      (`_horizontal_terminal_e`'s plain squaring), never its actual
+      curve -- confirmed directly by the project owner, hand-editing
+      'e' against an overlay of 'c' at Thin/Regular/Black in the point
+      editor, that "e's tail comes from c" means literally that shape,
+      scaled to fit, not just a flat cut in the same style.
+      `tools/quirks.py::graft_e_terminal_from_c` replaces it with a
+      rigid-aligned (translate+rotate+uniform-scale) copy of 'c's own
+      real terminal curve, anchored on the on-curve "shoulder" points
+      both letters share the same role for (`e_pts[3]`/`e_pts[12]`,
+      `c_pts[3]`/`c_pts[12]`) -- 8-for-8 point swap, no net count
+      change. Runs as a post-pass in `ufo_build.py`, after every glyph
+      in the master is built, since it needs 'c's own FINAL shape, not
+      a raw extraction. A first version anchored one step further in
+      (`e_pts[4]`/`e_pts[10]`, both off-curve) instead and was badly
+      wrong -- confirmed by hand-checking the transform's own arithmetic
+      that those two anchors sit far enough apart, at a different
+      enough angle, from 'c's own true shoulders that the computed
+      scale came out over 2x too large, blowing the grafted terminal
+      miles past the rest of the glyph's own bounding box.
+
+      Found, NOT yet fixed, while checking this: 'e' has a real,
+      pre-existing self-intersection near its own upper-left eye
+      opening (roughly where `ASH.reshape_named_span`'s own span 16-23
+      sits) -- confirmed present in the pipeline's output from BEFORE
+      this graft touched anything, unrelated to it. Tracked here since
+      nothing else in this file mentions it yet; next step if picked
+      back up.

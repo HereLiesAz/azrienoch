@@ -698,6 +698,10 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
             imported_names.add(prop_name)
             prop_subs[gname] = prop_name
 
+    e_gname, c_gname = cmap.get(ord("e")), cmap.get(ord("c"))
+    if e_gname in ufo and c_gname in ufo:
+        Q.graft_e_terminal_from_c(ufo[e_gname], ufo[c_gname])
+
     if prop_subs:
         # Roboto Flex's own `pnum` (proportional figures) GSUB feature:
         # default figures are tabular (fixed-width, for columns of numbers),
