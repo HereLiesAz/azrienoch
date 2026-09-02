@@ -1,0 +1,534 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Azrienoch Point Editor</title>
+<style>
+  body { font: 13px -apple-system, sans-serif; margin: 0; background: #1e1e1e; color: #ddd; }
+  #toolbar { display: flex; gap: 12px; align-items: center; padding: 8px 12px; background: #262626; border-bottom: 1px solid #3a3a3a; flex-wrap: wrap; }
+  #toolbar label { display: flex; gap: 4px; align-items: center; }
+  select, button { background: #333; color: #ddd; border: 1px solid #555; border-radius: 4px; padding: 4px 8px; font: inherit; }
+  button:hover { background: #444; cursor: pointer; }
+  button.primary { background: #2d6cdf; border-color: #2d6cdf; }
+  button.primary:hover { background: #3a7bf0; }
+  #panels { display: flex; gap: 8px; padding: 8px; }
+  .panel { flex: 1; display: flex; flex-direction: column; background: #262626; border-radius: 6px; overflow: hidden; }
+  .panel-header { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: #2d2d2d; border-bottom: 1px solid #3a3a3a; }
+  .panel-header select { flex: 1; }
+  .panel svg { width: 100%; height: 70vh; background: #111; display: block; cursor: crosshair; }
+  .panel-footer { padding: 6px 10px; display: flex; gap: 6px; flex-wrap: wrap; background: #2d2d2d; border-top: 1px solid #3a3a3a; }
+  #status { padding: 4px 12px; color: #9a9; font-size: 12px; min-height: 1.2em; }
+  #status.err { color: #e77; }
+  .pt-on { fill: #4ea1ff; stroke: #fff; stroke-width: 0.5; cursor: grab; }
+  .pt-off { fill: none; stroke: #ff9d4e; stroke-width: 1.5; cursor: grab; }
+  .pt-selected { fill: #ffe14e !important; stroke: #fff; }
+  .ctrl-line { stroke: #555; stroke-width: 1; stroke-dasharray: 2,2; }
+  .outline { fill: #ddd; fill-opacity: 0.55; stroke: #888; stroke-width: 1; }
+  .baseline { stroke: #2a4; stroke-width: 1; }
+  .rubberband { fill: rgba(78,161,255,0.15); stroke: #4ea1ff; stroke-width: 1; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <label>Master <select id="master"></select></label>
+  <button id="reload">Reload both</button>
+  <span style="flex:1"></span>
+  <button id="copyBtn">Copy selected (from active panel)</button>
+  <button id="pasteNewBtn">Paste as new contour</button>
+  <button id="pasteReplaceBtn">Paste over selection</button>
+  <button id="undoBtn">Undo (active)</button>
+  <button id="saveLeftBtn" class="primary">Save left</button>
+  <button id="saveRightBtn" class="primary">Save right</button>
+</div>
+<div id="status"></div>
+<div id="panels">
+  <div class="panel" id="panel-left" data-side="left">
+    <div class="panel-header">
+      <span>Left:</span>
+      <select class="glyph-select"></select>
+    </div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="delete-selected">Delete selected points</button>
+      <button class="close-contour">Close contour (wrap last→first)</button>
+      <span class="hint" style="color:#888">click=select · shift-click=multi-select · drag=move · drag empty area=rubber-band</span>
+    </div>
+  </div>
+  <div class="panel" id="panel-right" data-side="right">
+    <div class="panel-header">
+      <span>Right:</span>
+      <select class="glyph-select"></select>
+    </div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="delete-selected">Delete selected points</button>
+      <button class="close-contour">Close contour (wrap last→first)</button>
+      <span class="hint" style="color:#888">click=select · shift-click=multi-select · drag=move · drag empty area=rubber-band</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const API = "";
+const state = {
+  left:  { master: null, name: null, glyph: null, sel: new Set(), history: [], viewBox: null },
+  right: { master: null, name: null, glyph: null, sel: new Set(), history: [], viewBox: null },
+  activeSide: "left",
+  clipboard: null, // array of {x,y,type,smooth}
+};
+
+function setStatus(msg, isErr) {
+  const el = document.getElementById("status");
+  el.textContent = msg || "";
+  el.className = isErr ? "err" : "";
+}
+
+async function api(path, opts) {
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+function sideEl(side) { return document.getElementById("panel-" + side); }
+function svgEl(side) { return sideEl(side).querySelector("svg"); }
+function glyphSelectEl(side) { return sideEl(side).querySelector(".glyph-select"); }
+
+async function loadMasters() {
+  const data = await api("/api/masters");
+  const sel = document.getElementById("master");
+  sel.innerHTML = "";
+  for (const m of data.masters) {
+    const opt = document.createElement("option");
+    opt.value = m; opt.textContent = m;
+    sel.appendChild(opt);
+  }
+  const preferred = data.masters.find(m => m === "Azrienoch-NormalRegularSans.ufo") || data.masters[0];
+  sel.value = preferred;
+}
+
+async function loadGlyphList(side) {
+  const master = document.getElementById("master").value;
+  const data = await api("/api/glyphs?master=" + encodeURIComponent(master));
+  const sel = glyphSelectEl(side);
+  sel.innerHTML = "";
+  for (const g of data.glyphs) {
+    const opt = document.createElement("option");
+    opt.value = g; opt.textContent = g;
+    sel.appendChild(opt);
+  }
+}
+
+// uniXXXX -> readable char label where possible
+function labelFor(name) {
+  const m = /^uni([0-9A-Fa-f]{4,6})$/.exec(name);
+  if (m) {
+    const cp = parseInt(m[1], 16);
+    try { return name + "  (" + String.fromCodePoint(cp) + ")"; } catch (e) { return name; }
+  }
+  return name;
+}
+
+async function loadGlyph(side, name, pushHistory) {
+  const master = document.getElementById("master").value;
+  const data = await api("/api/glyph?master=" + encodeURIComponent(master) + "&name=" + encodeURIComponent(name));
+  const st = state[side];
+  st.master = master;
+  st.name = name;
+  st.glyph = data;
+  st.sel = new Set();
+  if (pushHistory !== false) {
+    st.history = [JSON.parse(JSON.stringify(data))];
+  }
+  render(side);
+}
+
+function computeViewBox(glyph) {
+  let xs = [], ys = [0, 0];
+  for (const c of glyph.contours) for (const p of c.points) { xs.push(p.x); ys.push(p.y); }
+  if (xs.length === 0) { xs = [0, glyph.width || 1000]; }
+  const minX = Math.min(0, ...xs) - 100, maxX = Math.max(glyph.width || 0, ...xs) + 100;
+  const minY = Math.min(...ys) - 100, maxY = Math.max(...ys) + 200;
+  return { minX, minY, w: maxX - minX, h: maxY - minY };
+}
+
+// font space -> svg space (flip Y)
+function toSvg(vb, x, y) { return [x - vb.minX, vb.h - (y - vb.minY)]; }
+function fromSvg(vb, sx, sy) { return [sx + vb.minX, vb.h - sy + vb.minY]; }
+
+function pathForContour(vb, points) {
+  if (points.length === 0) return "";
+  let d = "";
+  let onPts = points.filter(p => p.type);
+  if (onPts.length === 0) return "";
+  // find starting on-curve index
+  let startIdx = points.findIndex(p => p.type);
+  const n = points.length;
+  const idx = i => (i + n) % n;
+  const [sx, sy] = toSvg(vb, points[startIdx].x, points[startIdx].y);
+  d += `M ${sx} ${sy} `;
+  let i = startIdx;
+  let offRun = [];
+  for (let step = 1; step <= n; step++) {
+    const p = points[idx(startIdx + step)];
+    if (!p.type) {
+      offRun.push(p);
+      continue;
+    }
+    const [ex, ey] = toSvg(vb, p.x, p.y);
+    if (offRun.length === 0) {
+      d += `L ${ex} ${ey} `;
+    } else if (offRun.length === 1) {
+      const [cx, cy] = toSvg(vb, offRun[0].x, offRun[0].y);
+      d += `Q ${cx} ${cy} ${ex} ${ey} `;
+    } else {
+      // TT-style run of multiple off-curve points: implied on-curve midpoints
+      let cur = null;
+      for (let k = 0; k < offRun.length; k++) {
+        const [cx, cy] = toSvg(vb, offRun[k].x, offRun[k].y);
+        if (k < offRun.length - 1) {
+          const nxt = offRun[k + 1];
+          const [mx, my] = toSvg(vb, (offRun[k].x + nxt.x) / 2, (offRun[k].y + nxt.y) / 2);
+          d += `Q ${cx} ${cy} ${mx} ${my} `;
+        } else {
+          d += `Q ${cx} ${cy} ${ex} ${ey} `;
+        }
+      }
+    }
+    offRun = [];
+  }
+  d += "Z";
+  return d;
+}
+
+function render(side) {
+  const st = state[side];
+  const svg = svgEl(side);
+  svg.innerHTML = "";
+  if (!st.glyph) return;
+  const vb = computeViewBox(st.glyph);
+  st.viewBox = vb;
+  svg.setAttribute("viewBox", `0 0 ${vb.w} ${vb.h}`);
+
+  const ns = "http://www.w3.org/2000/svg";
+
+  // baseline
+  const [bx0, by0] = toSvg(vb, -10000, 0);
+  const [bx1, by1] = toSvg(vb, 10000, 0);
+  const base = document.createElementNS(ns, "line");
+  base.setAttribute("x1", bx0); base.setAttribute("y1", by0);
+  base.setAttribute("x2", bx1); base.setAttribute("y2", by1);
+  base.setAttribute("class", "baseline");
+  svg.appendChild(base);
+
+  // filled outline (evenodd so counters/holes show)
+  const path = document.createElementNS(ns, "path");
+  let dAll = "";
+  for (const c of st.glyph.contours) dAll += pathForContour(vb, c.points) + " ";
+  path.setAttribute("d", dAll);
+  path.setAttribute("class", "outline");
+  path.setAttribute("fill-rule", "evenodd");
+  svg.appendChild(path);
+
+  // control-point dashed lines + point handles
+  st.glyph.contours.forEach((c, ci) => {
+    const n = c.points.length;
+    c.points.forEach((p, pi) => {
+      const [x, y] = toSvg(vb, p.x, p.y);
+      // dashed line to neighbor if this or neighbor is off-curve
+      const next = c.points[(pi + 1) % n];
+      if (!p.type || !next.type) {
+        const [nx, ny] = toSvg(vb, next.x, next.y);
+        const line = document.createElementNS(ns, "line");
+        line.setAttribute("x1", x); line.setAttribute("y1", y);
+        line.setAttribute("x2", nx); line.setAttribute("y2", ny);
+        line.setAttribute("class", "ctrl-line");
+        svg.appendChild(line);
+      }
+    });
+    c.points.forEach((p, pi) => {
+      const [x, y] = toSvg(vb, p.x, p.y);
+      const key = ci + "," + pi;
+      const circle = document.createElementNS(ns, "circle");
+      circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+      circle.setAttribute("r", p.type ? 5 : 3.5);
+      circle.setAttribute("class", (p.type ? "pt-on" : "pt-off") + (st.sel.has(key) ? " pt-selected" : ""));
+      circle.dataset.ci = ci; circle.dataset.pi = pi;
+      circle.addEventListener("mousedown", (ev) => onPointMouseDown(ev, side, ci, pi));
+      svg.appendChild(circle);
+    });
+  });
+}
+
+function pushHistory(side) {
+  const st = state[side];
+  st.history.push(JSON.parse(JSON.stringify(st.glyph)));
+  if (st.history.length > 50) st.history.shift();
+}
+
+function undo(side) {
+  const st = state[side];
+  if (st.history.length <= 1) return;
+  st.history.pop();
+  st.glyph = JSON.parse(JSON.stringify(st.history[st.history.length - 1]));
+  st.sel = new Set();
+  render(side);
+}
+
+// --- dragging / selection ---
+let drag = null; // {side, ci, pi, startFont:[x,y], startMouseSvg:[x,y], moved}
+let rubber = null; // {side, x0,y0, rectEl}
+
+function svgPoint(side, evt) {
+  const svg = svgEl(side);
+  const rect = svg.getBoundingClientRect();
+  const vb = state[side].viewBox;
+  const sx = (evt.clientX - rect.left) / rect.width * vb.w;
+  const sy = (evt.clientY - rect.top) / rect.height * vb.h;
+  return [sx, sy];
+}
+
+function onPointMouseDown(ev, side, ci, pi) {
+  ev.stopPropagation();
+  state.activeSide = side;
+  const st = state[side];
+  const key = ci + "," + pi;
+  if (!ev.shiftKey && !st.sel.has(key)) {
+    st.sel = new Set([key]);
+  } else if (ev.shiftKey) {
+    if (st.sel.has(key)) st.sel.delete(key); else st.sel.add(key);
+  }
+  render(side);
+  const [sx, sy] = svgPoint(side, ev);
+  drag = { side, keys: Array.from(st.sel), startSvg: [sx, sy], moved: false, orig: {} };
+  for (const k of drag.keys) {
+    const [dci, dpi] = k.split(",").map(Number);
+    drag.orig[k] = { x: st.glyph.contours[dci].points[dpi].x, y: st.glyph.contours[dci].points[dpi].y };
+  }
+}
+
+document.addEventListener("mousemove", (ev) => {
+  if (drag) {
+    const st = state[drag.side];
+    const vb = st.viewBox;
+    const [sx, sy] = svgPoint(drag.side, ev);
+    const dxSvg = sx - drag.startSvg[0], dySvg = sy - drag.startSvg[1];
+    // svg space delta -> font space delta (y flipped, same scale since viewBox unscaled)
+    const dxFont = dxSvg, dyFont = -dySvg;
+    if (Math.abs(dxSvg) > 0.5 || Math.abs(dySvg) > 0.5) drag.moved = true;
+    for (const k of drag.keys) {
+      const [ci, pi] = k.split(",").map(Number);
+      const o = drag.orig[k];
+      st.glyph.contours[ci].points[pi].x = o.x + dxFont;
+      st.glyph.contours[ci].points[pi].y = o.y + dyFont;
+    }
+    render(drag.side);
+    return;
+  }
+  if (rubber) {
+    const [sx, sy] = svgPoint(rubber.side, ev);
+    rubber.x1 = sx; rubber.y1 = sy;
+    drawRubber();
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  if (drag) {
+    if (drag.moved) pushHistory(drag.side);
+    drag = null;
+  }
+  if (rubber) {
+    finishRubber();
+    rubber = null;
+  }
+});
+
+function drawRubber() {
+  const svg = svgEl(rubber.side);
+  let rect = svg.querySelector(".rubberband");
+  if (!rect) {
+    rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("class", "rubberband");
+    svg.appendChild(rect);
+  }
+  const x = Math.min(rubber.x0, rubber.x1), y = Math.min(rubber.y0, rubber.y1);
+  const w = Math.abs(rubber.x1 - rubber.x0), h = Math.abs(rubber.y1 - rubber.y0);
+  rect.setAttribute("x", x); rect.setAttribute("y", y);
+  rect.setAttribute("width", w); rect.setAttribute("height", h);
+}
+
+function finishRubber() {
+  const side = rubber.side;
+  const st = state[side];
+  const vb = st.viewBox;
+  const x0 = Math.min(rubber.x0, rubber.x1), x1 = Math.max(rubber.x0, rubber.x1);
+  const y0 = Math.min(rubber.y0, rubber.y1), y1 = Math.max(rubber.y0, rubber.y1);
+  if (x1 - x0 < 2 && y1 - y0 < 2) { render(side); return; } // treat as empty click -> clear selection
+  const newSel = new Set();
+  st.glyph.contours.forEach((c, ci) => {
+    c.points.forEach((p, pi) => {
+      const [sx, sy] = toSvg(vb, p.x, p.y);
+      if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1) newSel.add(ci + "," + pi);
+    });
+  });
+  st.sel = newSel;
+  render(side);
+}
+
+for (const side of ["left", "right"]) {
+  svgEl(side).addEventListener("mousedown", (ev) => {
+    if (ev.target.tagName === "circle") return; // handled by point handler
+    state.activeSide = side;
+    const [sx, sy] = svgPoint(side, ev);
+    rubber = { side, x0: sx, y0: sy, x1: sx, y1: sy };
+    if (!ev.shiftKey) { state[side].sel = new Set(); render(side); }
+  });
+}
+
+// --- copy / paste ---
+function rigidAlign(clip, srcA, srcB, dstA, dstB) {
+  // similarity transform (translate+rotate+uniform scale) mapping srcA->dstA, srcB->dstB
+  const sv = [srcB[0] - srcA[0], srcB[1] - srcA[1]];
+  const dv = [dstB[0] - dstA[0], dstB[1] - dstA[1]];
+  const sLen = Math.hypot(sv[0], sv[1]) || 1;
+  const dLen = Math.hypot(dv[0], dv[1]) || 1;
+  const scale = dLen / sLen;
+  const sAng = Math.atan2(sv[1], sv[0]);
+  const dAng = Math.atan2(dv[1], dv[0]);
+  const rot = dAng - sAng;
+  const cosr = Math.cos(rot), sinr = Math.sin(rot);
+  return clip.map(p => {
+    const rx = p.x - srcA[0], ry = p.y - srcA[1];
+    const sx = rx * scale, sy = ry * scale;
+    const rxr = sx * cosr - sy * sinr, ryr = sx * sinr + sy * cosr;
+    return { x: rxr + dstA[0], y: ryr + dstA[1], type: p.type, smooth: p.smooth };
+  });
+}
+
+document.getElementById("copyBtn").addEventListener("click", () => {
+  const side = state.activeSide;
+  const st = state[side];
+  if (st.sel.size === 0) { setStatus("Nothing selected to copy.", true); return; }
+  // preserve contour order / point order among selected
+  const items = [];
+  st.glyph.contours.forEach((c, ci) => {
+    c.points.forEach((p, pi) => {
+      if (st.sel.has(ci + "," + pi)) items.push({ ci, pi, x: p.x, y: p.y, type: p.type, smooth: p.smooth });
+    });
+  });
+  items.sort((a, b) => a.ci - b.ci || a.pi - b.pi);
+  state.clipboard = items.map(({ x, y, type, smooth }) => ({ x, y, type, smooth }));
+  setStatus(`Copied ${state.clipboard.length} point(s) from ${side}.`);
+});
+
+function otherSide(side) { return side === "left" ? "right" : "left"; }
+
+document.getElementById("pasteNewBtn").addEventListener("click", () => {
+  if (!state.clipboard) { setStatus("Clipboard is empty.", true); return; }
+  const side = state.activeSide;
+  const st = state[side];
+  pushHistory(side);
+  st.glyph.contours.push({ points: state.clipboard.map(p => ({ ...p })) });
+  render(side);
+  setStatus(`Pasted ${state.clipboard.length} point(s) into ${side} as a new contour.`);
+});
+
+document.getElementById("pasteReplaceBtn").addEventListener("click", () => {
+  if (!state.clipboard || state.clipboard.length < 1) { setStatus("Clipboard is empty.", true); return; }
+  const side = state.activeSide;
+  const st = state[side];
+  if (st.sel.size === 0) { setStatus("Select a contiguous range of points to replace first.", true); return; }
+  // require all selected points share one contour
+  const cis = new Set(Array.from(st.sel).map(k => Number(k.split(",")[0])));
+  if (cis.size !== 1) { setStatus("Selection must be within a single contour to replace.", true); return; }
+  const ci = cis.values().next().value;
+  const pis = Array.from(st.sel).map(k => Number(k.split(",")[1])).sort((a, b) => a - b);
+  const i0 = pis[0], i1 = pis[pis.length - 1];
+  const pts = st.glyph.contours[ci].points;
+  const before = pts[(i0 - 1 + pts.length) % pts.length];
+  const after = pts[(i1 + 1) % pts.length];
+  const clip = state.clipboard;
+  const srcA = [clip[0].x, clip[0].y];
+  const srcB = [clip[clip.length - 1].x, clip[clip.length - 1].y];
+  const dstA = [before.x, before.y];
+  const dstB = [after.x, after.y];
+  const aligned = clip.length >= 2 ? rigidAlign(clip, srcA, srcB, dstA, dstB) : clip.map(p => ({ ...p }));
+  pushHistory(side);
+  pts.splice(i0, i1 - i0 + 1, ...aligned);
+  st.sel = new Set();
+  render(side);
+  setStatus(`Pasted ${aligned.length} point(s) over selection in ${side}, aligned to neighbors.`);
+});
+
+document.getElementById("undoBtn").addEventListener("click", () => undo(state.activeSide));
+
+for (const side of ["left", "right"]) {
+  sideEl(side).querySelector(".delete-selected").addEventListener("click", () => {
+    const st = state[side];
+    if (st.sel.size === 0) return;
+    pushHistory(side);
+    st.glyph.contours.forEach((c, ci) => {
+      c.points = c.points.filter((p, pi) => !st.sel.has(ci + "," + pi));
+    });
+    st.glyph.contours = st.glyph.contours.filter(c => c.points.length > 0);
+    st.sel = new Set();
+    render(side);
+  });
+  sideEl(side).querySelector(".close-contour").addEventListener("click", () => {
+    setStatus("Contours close automatically (last point wraps to first) -- nothing to do.");
+  });
+}
+
+// --- save ---
+async function saveSide(side) {
+  const st = state[side];
+  if (!st.glyph) return;
+  try {
+    await api("/api/glyph?master=" + encodeURIComponent(st.master) + "&name=" + encodeURIComponent(st.name), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ contours: st.glyph.contours }),
+    });
+    setStatus(`Saved ${st.name} in ${st.master}.`);
+  } catch (e) {
+    setStatus("Save failed: " + e.message, true);
+  }
+}
+document.getElementById("saveLeftBtn").addEventListener("click", () => saveSide("left"));
+document.getElementById("saveRightBtn").addEventListener("click", () => saveSide("right"));
+
+// --- wiring ---
+document.getElementById("master").addEventListener("change", async () => {
+  await Promise.all([loadGlyphList("left"), loadGlyphList("right")]);
+  await loadGlyph("left", glyphSelectEl("left").value);
+  await loadGlyph("right", glyphSelectEl("right").value);
+});
+
+for (const side of ["left", "right"]) {
+  glyphSelectEl(side).addEventListener("change", (ev) => loadGlyph(side, ev.target.value));
+}
+
+document.getElementById("reload").addEventListener("click", async () => {
+  await loadGlyph("left", state.left.name || glyphSelectEl("left").value);
+  await loadGlyph("right", state.right.name || glyphSelectEl("right").value);
+  setStatus("Reloaded both panels from disk.");
+});
+
+async function init() {
+  try {
+    await loadMasters();
+    await Promise.all([loadGlyphList("left"), loadGlyphList("right")]);
+    const leftDefault = "uni0065", rightDefault = "uni0063"; // e, c
+    if ([...glyphSelectEl("left").options].some(o => o.value === leftDefault)) glyphSelectEl("left").value = leftDefault;
+    if ([...glyphSelectEl("right").options].some(o => o.value === rightDefault)) glyphSelectEl("right").value = rightDefault;
+    await loadGlyph("left", glyphSelectEl("left").value);
+    await loadGlyph("right", glyphSelectEl("right").value);
+    setStatus("Ready.");
+  } catch (e) {
+    setStatus("Init failed: " + e.message, true);
+  }
+}
+init();
+</script>
+</body>
+</html>

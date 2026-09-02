@@ -247,17 +247,25 @@ build on.
       rectangles from this master's own real `p0`-`p1`/`p10`-`p11` span
       instead of the inherited fraction.
 
-      One real, deliberate cosmetic compromise remains from the width
-      fix: at Regular and heavier, the counter's own new inner boundary
-      dips a small amount below the baseline right at each foot (up to
-      roughly 150 units at Black) before climbing to the tip. A genuine
-      miter join with the foot cut's own offset line was tried
-      specifically to remove this and was reverted -- confirmed by an
-      actual self-intersection sweep (a render alone missed it) that it
-      moved the foot point far enough along the diagonal's own offset
-      line to cross back over the real `p1`/`p10` corner, breaking self-intersection
-      safety everywhere. A plain perpendicular offset of `p1`/`p10`
-      themselves doesn't have that failure mode, at the cost of this
-      small dip -- self-intersection safety took priority. Revisiting
-      this dip (without reopening the crossing) is a tracked follow-up,
-      not urgent.
+      What was previously written off here as a "small cosmetic dip
+      below baseline, up to ~150 units at Black" was wrong -- rendered
+      at actual size, it read as a real, visible gash cut into the
+      bottom of the counter, worse at every heavier weight, up to
+      ~190 units at Black. Fixed with `_A_COUNTER_MAX_FOOT_DIP` (30
+      units): `_largest_safe_width`'s own bisection now treats a foot
+      point dipping past that tolerance as unsafe, the same as a
+      genuine crossing, capping the width at heavy weights instead of
+      holding the terminal's own full target width all the way down.
+      (A hard `y >= 0` floor was tried first and was worse: `p1`/`p10`
+      themselves already sit exactly at y=0 in this source, so ANY
+      positive width fails that check, which silently skipped the
+      whole rebuild -- breaking the uniform 23-point topology every
+      other master needs for gvar interpolation, corrupting the
+      interpolated shape at every wght between the skipped master and
+      its rebuilt neighbors. Caught by the self-intersection sweep,
+      not the render.)
+
+      Two isolated, narrow self-intersections remain, found only by
+      the sweep, not by eye: `wght` 525 and 735 (both off the 5-unit
+      sweep step elsewhere) still cross. Not yet root-caused -- next
+      step if picked back up.

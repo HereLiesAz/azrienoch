@@ -606,6 +606,11 @@ _A_COUNTER_SAMPLE_COUNT = 6  # points sampled per side, evenly spaced by
 # has to be a FIXED count rather than "however many happen to fall
 # before the crossing"
 
+_A_COUNTER_MAX_FOOT_DIP = 30.0  # units (UPM 2048) the new inner-foot
+# point (`foot1`/`foot2` in `_largest_safe_width`) is allowed to sit
+# below the baseline -- see that function's own docstring for why this
+# can't be a hard 0.0 floor.
+
 
 def _offset_point(p, dx, dy, sign, w):
     """`p` offset by `w`, perpendicular to direction `(dx, dy)` (the
@@ -649,10 +654,14 @@ def _largest_safe_width(curve1, curve2, p0, p1, p2, p10, p9, p11, w_cap, iterati
     to `p0` crosses back OVER `p1`/`p10` itself -- a real point still in
     the contour, not something a later edge can route past. A plain
     perpendicular offset stays close enough to the real corner to avoid
-    that, at the cost of occasionally landing a little below the
-    baseline instead (a small, real cosmetic compromise, not a defect
-    the self-intersection sweep flags) -- `crossing_at` checks the
-    crossing directly (`_segments_cross`) rather than trusting either
+    that -- at the cost of the offset foot landing below the baseline
+    when the width pushed that far, which a first version of this
+    function let happen (writing it off as a small cosmetic
+    compromise); rendered, it's not small -- a visible gash cut into
+    the bottom of the counter at Regular and heavier, invisible to the
+    self-intersection sweep since nothing actually crosses. `crossing_at`
+    now checks both the crossing (`_segments_cross`) AND that `foot1`/
+    `foot2` stay at or above y=0, rather than trusting either
     construction to work out on its own.
 
     Shrinking the width always eventually works: as it shrinks toward
@@ -689,6 +698,33 @@ def _largest_safe_width(curve1, curve2, p0, p1, p2, p10, p9, p11, w_cap, iterati
         foot2 = _offset_point(p10, p9[0] - p10[0], p9[1] - p10[1], 1, w)
         if _segments_cross(p0, foot1, p1, p2) or _segments_cross(p11, foot2, p10, p9):
             return None
+        if foot1[1] < -_A_COUNTER_MAX_FOOT_DIP or foot2[1] < -_A_COUNTER_MAX_FOOT_DIP:
+            return None  # the earlier version let a wide-enough width push
+            # `foot1`/`foot2` below the baseline with NO limit at all -- at
+            # Regular and heavier, where the diagonal's own angle is
+            # shallow, that perpendicular offset is mostly VERTICAL, not
+            # horizontal, and the foot lands so far below y=0 (confirmed
+            # directly: ~150-190 units at Black) that it reads as a real,
+            # visible gash cut into the bottom of the counter (confirmed by
+            # rendering it, not just by the self-intersection sweep, which
+            # never flagged it since the two new edges don't cross anything
+            # -- they just dip below the glyph's own baseline). A hard
+            # floor at exactly y=0 is too strict, though -- confirmed
+            # directly that `p1`/`p10` themselves already sit AT y=0 in
+            # this source, so ANY positive width dips at least a little,
+            # and a strict >=0 floor made every bisection here return None,
+            # silently skipping the whole rebuild (a topology break far
+            # worse than the dip: it leaves that master's own point count
+            # at the raw, unrebuilt 14 instead of the uniform 23 every
+            # other master gets, which corrupts gvar interpolation for
+            # every wght between it and its rebuilt neighbors -- exactly
+            # the self-intersecting garbage the sweep then found at low
+            # wght, nothing to do with the counter construction itself).
+            # `_A_COUNTER_MAX_FOOT_DIP` allows the small, ordinary amount
+            # (comparable to a typographic overshoot) every safe width at
+            # light weights already produces, while still capping the
+            # runaway dip at heavy weights down to whatever width the
+            # shallow apex angle actually allows within that tolerance.
         off1 = [foot1] + _offset_curve(curve1, -1, w)
         off2 = _offset_curve(curve2, -1, w) + [foot2]
         tip, i, j = _polyline_crossing(off1, off2)
