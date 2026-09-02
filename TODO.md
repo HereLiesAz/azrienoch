@@ -219,3 +219,45 @@ build on.
       (a genuinely constant-width topology exception, not a
       point-position guess) -- extending it to 'M's three vertices is
       the next step, tracked separately.
+- [x] Capital 'A's own crossbar overhung the legs' own outer edge at
+      every weight (Roboto Flex's own raw crossbar is simply wider than
+      the legs at both of its own heights), and the counter-apex
+      construction above wasn't actually scaling its own width with
+      weight the way the terminal's own gap does (an earlier version of
+      `_largest_safe_width` searched only the short apex-adjacent curve,
+      which silently capped the width far below the terminal's own
+      target at Regular and heavier). Both fixed:
+      `tools/quirks.py::_fit_A_crossbar` pulls the crossbar's own
+      corners flush with the legs; `_largest_safe_width` now searches
+      all the way down to the real foot corners, so the width tracks
+      the terminal's own gap at every weight it geometrically can.
+      Fixing the crossbar also surfaced (and fixed) a real regression in
+      `serifs.py::detect_feet`'s own "does this foot border a counter"
+      heuristic: the new counter-apex construction's own last point,
+      right before wrapping to the foot corner, is close to that same
+      foot by construction (not far up near the apex the way Roboto
+      Flex's own original notch was), which flipped the heuristic and
+      grew the serif foot on only one side -- `tools/ufo_build.py::_fix_diagonal_apex_foot_extendability`
+      forces it back to symmetric. Separately, `detect_feet`'s own
+      fractional-width reproduction (one reference master's own run
+      length, scaled by each master's own overall glyph width) undershot
+      'A's own real foot span by nearly 90 units at Black, since the
+      legs splay outward with weight much faster than the advance width
+      grows -- `tools/quirks.py::fit_A_serif_feet` recomputes the foot
+      rectangles from this master's own real `p0`-`p1`/`p10`-`p11` span
+      instead of the inherited fraction.
+
+      One real, deliberate cosmetic compromise remains from the width
+      fix: at Regular and heavier, the counter's own new inner boundary
+      dips a small amount below the baseline right at each foot (up to
+      roughly 150 units at Black) before climbing to the tip. A genuine
+      miter join with the foot cut's own offset line was tried
+      specifically to remove this and was reverted -- confirmed by an
+      actual self-intersection sweep (a render alone missed it) that it
+      moved the foot point far enough along the diagonal's own offset
+      line to cross back over the real `p1`/`p10` corner, breaking self-intersection
+      safety everywhere. A plain perpendicular offset of `p1`/`p10`
+      themselves doesn't have that failure mode, at the cost of this
+      small dip -- self-intersection safety took priority. Revisiting
+      this dip (without reopening the crossing) is a tracked follow-up,
+      not urgent.

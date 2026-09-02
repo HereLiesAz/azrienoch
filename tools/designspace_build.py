@@ -127,3 +127,7 @@ if __name__ == "__main__":
     from tools import validate_build
 
     validate_build.main()
+
+    from tools import update_specimen
+
+    update_specimen.update_specimen()

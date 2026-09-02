@@ -442,10 +442,11 @@ def _sharpen_A_apex(glyph) -> None:
     """Give capital 'A' the genuine sharp outer apex Jost draws (checked
     directly, point for point, against a real Jost TTF: both legs' own
     outer edges meet at exactly one point, (367, 744) at Bold), instead
-    of Roboto Flex's own flattened one -- and ONLY that; a separate,
-    deeper, pre-existing bug in this same glyph (see below) means the
-    counter's own inner apex is deliberately left untouched here, not
-    yet safely fixable by a point-position change alone.
+    of Roboto Flex's own flattened one, then hand off to
+    `_rebuild_A_counter_apex` for the counter's own separate inner apex
+    -- a genuinely harder problem (see that function's own docstring),
+    not safely fixable by simply moving its existing two points, which
+    is why it gets its own dedicated construction instead.
 
     Point-by-point inspection shows 'A's single 14-point contour is NOT
     "an outer silhouette with the counter as a separate hole": it's ONE
@@ -458,34 +459,7 @@ def _sharpen_A_apex(glyph) -> None:
     same role as v/w's own counter tip. 5/6 already sit at the
     identical Y (a purely horizontal flat run), so collapsing them is
     safe the same way `_sharpen_baseline_notches` already relies on for
-    v/w's own bottom point -- only X moves, nothing else.
-
-    12/13 is a genuinely different, harder problem, confirmed by
-    exhaustive analysis (not just testing) after two earlier, wrong
-    attempts here (a full collapse reasoned safe by width/simplicity
-    alone; a partial collapse to match Jost's own single shared axis)
-    both still failed a self-intersection sweep (flattened curves,
-    every 5 units of `wght`, 180-900) at Thin/ExtraLight. The actual
-    bug -- present even in the original merged build with no 'A' quirk
-    at all, so not something either attempt introduced -- is that the
-    counter's own inner-left edge (point 0 -> point 13) can cross the
-    outer silhouette's own lower-left edge (point 1 -> point 2,
-    mirrored on the right) at low weight. Solving the exact geometry:
-    the X range that keeps point 13 clear of that leg-crossing
-    (roughly <= 526 at Thin) and the X range that keeps the counter's
-    OWN flat ceiling clear of crossing the curve leading up to the
-    apex (roughly 533-611 at Thin) don't overlap with the mirrored
-    range point 12 needs -- there is NO single placement of 12/13 that
-    satisfies both constraints at once, for either point, at this
-    weight, given the current 14-point topology (two dead-straight
-    lines from each foot up to the notch, plus the existing curve
-    shape). Fixing it for real needs either a new point (the same kind
-    of deliberate, documented topology exception `_square_off_terminal`
-    already uses for e/g/6/9's terminal) to give the outer leg edge
-    some flexibility near the top, or a genuinely different curve
-    construction for the apex approach -- out of scope to rush through
-    safely here. Left as a tracked follow-up rather than shipped as a
-    fix that only moves the same bug to a different pair of edges."""
+    v/w's own bottom point -- only X moves, nothing else."""
     if not glyph.contours:
         return
     pts = glyph.contours[0].points
@@ -621,22 +595,6 @@ def _resample_polyline(poly, crossing_idx, tip, count, from_tip):
     return out
 
 
-def _offset_along(p_start, p_end, w, sign, t):
-    """The point `t` of the way from `p_start` to `p_end`, offset
-    perpendicular to that segment's own direction by `w`. Used for the
-    short straight-line "taper" zone (see `_rebuild_A_counter_apex`'s
-    own docstring) where a genuinely constant `w` isn't the right call
-    -- right at the foot, the two edges are already nearly coincident
-    (Roboto Flex draws this leg with a near-pointed foot), so forcing
-    the FULL counter width there would itself reopen the leg-crossing
-    bug this whole construction exists to fix."""
-    dx, dy = p_end[0] - p_start[0], p_end[1] - p_start[1]
-    length = math.hypot(dx, dy)
-    ux, uy = dx / length, dy / length
-    nx, ny = -uy * sign, ux * sign
-    return (p_start[0] + dx * t + nx * w, p_start[1] + dy * t + ny * w)
-
-
 def _perpendicular_distance(p, line_a, line_b):
     dx, dy = line_b[0] - line_a[0], line_b[1] - line_a[1]
     length = math.hypot(dx, dy)
@@ -649,33 +607,107 @@ _A_COUNTER_SAMPLE_COUNT = 6  # points sampled per side, evenly spaced by
 # before the crossing"
 
 
-def _largest_safe_width(curve1, curve2, w_cap, iterations=40):
+def _offset_point(p, dx, dy, sign, w):
+    """`p` offset by `w`, perpendicular to direction `(dx, dy)` (the
+    same sign convention as `_offset_curve`'s own per-point step) --
+    the single-point version, used where the direction is already
+    known exactly (a straight segment's own two endpoints), not
+    estimated from neighbors."""
+    length = math.hypot(dx, dy)
+    ux, uy = dx / length, dy / length
+    nx, ny = -uy * sign, ux * sign
+    return (p[0] + nx * w, p[1] + ny * w)
+
+
+def _largest_safe_width(curve1, curve2, p0, p1, p2, p10, p9, p11, w_cap, iterations=40):
     """The largest constant offset width, up to `w_cap`, for which the
-    two apex-approach curves' own constant-width offsets (`_offset_curve`)
-    still cross within their own real, flattened extent -- see
-    `_rebuild_A_counter_apex`'s own docstring for why `w_cap` (the
-    terminal's own inner/outer gap) isn't always itself achievable.
+    two apex-approach curves' own constant-width offsets (`_offset_curve`,
+    extended down to the real foot corners -- see `_rebuild_A_counter_apex`'s
+    own docstring for why) still cross at a genuine corner, at or above
+    the baseline, without the new edge crossing back over the real
+    `p1`/`p10` corner it passes on its way down to `p0`/`p11`.
+
+    Extending all the way down to the foot -- not just offsetting the
+    curve's own short apex-adjacent run, tried first -- matters:
+    confirmed directly that the short-curve-only version silently capped
+    the width far below what the terminal's own gap actually allows at
+    Regular and heavier (the corner these masters' own true target width
+    needs sits BELOW where the short curve even starts, so a search
+    confined to it finds nothing and falls back to whatever narrower
+    width happens to fit, independent of how much wider the terminal
+    itself keeps getting) -- exactly backwards from a real stroke, whose
+    width should grow with weight, not plateau.
+
+    The foot point itself (`foot1`/`foot2`, inside `crossing_at`) is a
+    plain perpendicular offset of `p1`/`p10` (`_offset_point`) -- NOT a
+    genuine miter join with the foot cut's own offset line, tried next
+    and confirmed wrong by an actual self-intersection sweep (a render
+    alone missed it): walking the diagonal's own offset line up to meet
+    the foot cut's own offset (at Y=`w`, the mathematically "correct"
+    corner for two edges meeting at `p1`) moves the foot point far
+    enough along the diagonal's own offset that the closing edge back
+    to `p0` crosses back OVER `p1`/`p10` itself -- a real point still in
+    the contour, not something a later edge can route past. A plain
+    perpendicular offset stays close enough to the real corner to avoid
+    that, at the cost of occasionally landing a little below the
+    baseline instead (a small, real cosmetic compromise, not a defect
+    the self-intersection sweep flags) -- `crossing_at` checks the
+    crossing directly (`_segments_cross`) rather than trusting either
+    construction to work out on its own.
 
     Shrinking the width always eventually works: as it shrinks toward
     zero, each offset curve shrinks toward the ORIGINAL, un-offset
     curve, and the two original curves already share one point (the true
     apex itself) -- so their crossing point converges toward the apex,
-    which is always within both curves' own sampled range. And the
-    relationship is monotonic (confirmed directly): a narrower width's
-    own corresponding corner always sits closer to the apex than a wider
-    width's does, never further. So a plain bisection between 0 and
-    `w_cap` -- first checking whether `w_cap` itself already works, the
-    common case at Thin/ExtraLight -- finds the largest safe width
-    directly, no guessing needed."""
-    if _polyline_crossing(_offset_curve(curve1, -1, w_cap), _offset_curve(curve2, -1, w_cap))[0] is not None:
-        return w_cap
+    comfortably above the baseline. And the relationship is monotonic
+    (confirmed directly): a narrower width's own corresponding corner
+    always sits closer to the apex than a wider width's does, never
+    further. So a plain bisection between 0 and `w_cap` -- first
+    checking whether `w_cap` itself already works, the common case at
+    Thin/ExtraLight -- finds the largest safe width directly, no
+    guessing needed."""
+
+    def crossing_at(w):
+        # `foot1`/`foot2` anchor the new inner edge back to the REAL
+        # `p0`/`p11` corners, so they have to sit on `p0`/`p11`'s own
+        # side of the diagonal (`p1`->`p2`/`p10`->`p9`) -- otherwise the
+        # closing edge (`foot1`->`p0`) crosses that diagonal itself,
+        # since `p1` is a genuine, separate point still in the contour,
+        # not something this edge can route around. Two earlier
+        # versions got this wrong in opposite directions, both confirmed
+        # by a real self-intersection sweep (not just a render, which
+        # missed both): walking the diagonal's own offset line to
+        # exactly Y=0 (or to Y=`w`, a genuine miter join with the flat
+        # foot cut's own offset -- correct in isolation, but it walks
+        # far enough up the line to land on the WRONG side of `p1`
+        # relative to `p0`) both put `foot1`/`foot2` past that boundary.
+        # A plain perpendicular offset of `p1`/`p10` themselves doesn't
+        # have that failure mode -- it stays close to the real corner --
+        # so this checks it directly (`_segments_cross`) rather than
+        # trusting the geometry to work out.
+        foot1 = _offset_point(p1, p2[0] - p1[0], p2[1] - p1[1], -1, w)
+        foot2 = _offset_point(p10, p9[0] - p10[0], p9[1] - p10[1], 1, w)
+        if _segments_cross(p0, foot1, p1, p2) or _segments_cross(p11, foot2, p10, p9):
+            return None
+        off1 = [foot1] + _offset_curve(curve1, -1, w)
+        off2 = _offset_curve(curve2, -1, w) + [foot2]
+        tip, i, j = _polyline_crossing(off1, off2)
+        if tip is None or tip[1] < 0:
+            return None  # a genuine crossing has to exist, at or above
+            # the baseline -- checked directly (see this function's own
+            # docstring)
+        return tip, i, j, off1, off2
+
+    result = crossing_at(w_cap)
+    if result is not None:
+        return w_cap, result
     lo, hi = 0.0, w_cap
     best = None
     for _ in range(iterations):
         mid = (lo + hi) / 2.0
-        tip, _, _ = _polyline_crossing(_offset_curve(curve1, -1, mid), _offset_curve(curve2, -1, mid))
-        if tip is not None:
-            best = mid
+        result = crossing_at(mid)
+        if result is not None:
+            best = (mid, result)
             lo = mid
         else:
             hi = mid
@@ -728,28 +760,33 @@ def _rebuild_A_counter_apex(glyph) -> None:
     checked directly (see `_largest_safe_width`'s own docstring) that at
     some masters -- Regular and heavier, where Roboto Flex's own
     original apex angle is shallow enough that a stroke of the
-    terminal's own full width would need to converge to a point further
-    down than the apex-approach curve even reaches, past where the
-    straight leg below it begins -- the terminal's own width has no
-    valid single-point apex within this curve at all. Since a NARROWER
-    constant width's own corresponding apex sits closer to the true tip
-    (confirmed directly, monotonically), `_largest_safe_width` finds the
-    largest width, up to that terminal target, that still has a real,
-    genuine corner within the curve -- so the construction holds the
-    terminal's own exact width whenever geometry allows it (confirmed
-    this is every master at Thin/ExtraLight), and gets as close to it as
-    the apex angle actually permits everywhere else, rather than
-    picking an arbitrary smaller width or silently falling back to
-    Roboto Flex's own broken notch.
+    terminal's own full width would need to converge to a point below
+    the baseline -- the terminal's own width has no valid, physically
+    real single-point apex at all. `_largest_safe_width` extends the
+    search all the way down to the real foot corners (`_offset_point`,
+    not just the short apex-adjacent curve run an earlier version of
+    this function tried first and confirmed capped the width far too
+    aggressively -- see that function's own docstring) and finds the
+    largest width, up to the terminal target, whose corresponding
+    corner is still at or above the baseline, without crossing back
+    over `p1`/`p10` on its way to `p0`/`p11`. Since a
+    NARROWER constant width's own corresponding corner sits closer to
+    the true tip (confirmed directly, monotonically), this holds the
+    terminal's own exact width whenever geometry allows it (every master
+    at Thin/ExtraLight, and now Regular/Bold too, not just the two
+    lightest weights an earlier version of this construction managed),
+    and gets as close to it as the apex angle actually permits at the
+    very heaviest weights, rather than picking an arbitrary width that
+    doesn't track weight at all or silently falling back to Roboto
+    Flex's own broken notch.
 
     The two constant-width offset curves (`_offset_curve`, one from each
-    side, at that width) genuinely cross below the true apex --
-    `_polyline_crossing` finds that point, the counter's own new, real,
-    single-point apex. Building each side is `_resample_polyline`'s own
-    job: a FIXED count of points, evenly spaced by arc length, from the
-    real terminal corner (`p1`/`p10`, offset by the same width so the
-    new edge starts exactly parallel to the terminal's own foot -- see
-    `_offset_along`) up to that shared apex point.
+    side, at that width, extended down to the real foot corners) genuinely
+    cross at a real corner -- `_polyline_crossing` finds that point, the
+    counter's own new, real, single-point apex. Building each side is
+    `_resample_polyline`'s own job: a FIXED count of points, evenly
+    spaced by arc length, from that real foot corner up to the shared
+    apex point.
 
     This is a deliberate topology exception, the same kind
     `_square_off_terminal` already is for e/g/6/9's terminal (see this
@@ -781,30 +818,192 @@ def _rebuild_A_counter_apex(glyph) -> None:
     foot_w_right = _perpendicular_distance(p11, p10, p9)
     w_cap = min(foot_w_left, foot_w_right)
 
-    w = _largest_safe_width(curve1, curve2, w_cap)
-    if w is None:
+    result = _largest_safe_width(curve1, curve2, p0, p1, p2, p10, p9, p11, w_cap)
+    if result is None:
         return  # no safe width found at all -- leave the glyph as-is
         # rather than guess (checked by the self-intersection sweep at
         # every real master; if this ever fires, the sweep catches it
         # immediately rather than silently shipping a bug)
-
-    off1 = _offset_curve(curve1, -1, w)
-    off2 = _offset_curve(curve2, -1, w)
-    tip, i, j = _polyline_crossing(off1, off2)
-    if tip is None:
-        return  # _largest_safe_width already confirmed this width works;
-        # this only guards against floating-point edge cases at its own
-        # boundary
+    _w, (tip, i, j, off1, off2) = result
 
     left_pts = _resample_polyline(off1, i, tip, _A_COUNTER_SAMPLE_COUNT, from_tip=False)
     right_pts = _resample_polyline(off2, j, tip, _A_COUNTER_SAMPLE_COUNT, from_tip=True)
 
-    foot_left = _offset_along(p1, p2, w, -1, 0.0)
-    foot_right = _offset_along(p10, p9, w, 1, 0.0)
-
-    outer_points = [foot_right] + list(reversed(right_pts)) + list(reversed(left_pts))[1:] + [foot_left]
+    outer_points = list(reversed(right_pts)) + list(reversed(left_pts))[1:]
     new_points = [Point(x, y, type="line") for x, y in outer_points]
     pts[12:14] = new_points
+
+
+_A_CROSSBAR_MIN_HEIGHT = 2.0  # units; how tall a 4-point all-'line'
+# contour has to be to count as the real crossbar -- this runs as part
+# of `apply_quirks`, BEFORE `serifs.py::apply_feet` adds its own foot
+# rectangles (also 4-point, all-'line'), so the crossbar is the only
+# such contour that exists yet; this is a low floor purely against a
+# degenerate zero-height contour, not a filter against anything real.
+# Checked directly against every real master's own crossbar height,
+# including the smallest (Condensed Thin, ~6.7 units) -- an earlier,
+# much higher threshold (50.0) here silently skipped Thin/ExtraLight
+# entirely, since Roboto Flex's own crossbar is genuinely only a few
+# units tall at those weights, leaving their own overhang unfixed.
+
+
+def _fit_A_crossbar(glyph) -> None:
+    """Pull capital 'A's own crossbar in so its left/right corners land
+    exactly on the legs' own outer edge, instead of overhanging past it
+    -- confirmed directly (a real render, every weight checked) that
+    Roboto Flex's own raw crossbar is simply WIDER than the legs are at
+    both of its own heights, by a roughly constant horizontal amount on
+    each side (not proportional to the leg's own slope), so it visibly
+    pokes out past the leg's own diagonal edge on both ends instead of
+    meeting it flush -- worse at heavier weights, where the overhang is
+    large enough to read as its own little "wing" at each corner rather
+    than a subtle optical extension.
+
+    The legs' own outer edge, at the crossbar's own two heights, is
+    still the plain straight run from each foot corner (`pts[1]`/
+    `pts[10]`, the INNER-facing foot points, not `pts[0]`/`pts[11]`
+    themselves -- see `_rebuild_A_counter_apex`'s own docstring for why
+    `pts[1]`/`pts[10]` mark where that straight run actually begins) up
+    to where the curve to the apex begins (`pts[2]`/`pts[9]`) --
+    confirmed the crossbar's own height range sits well below where
+    that curve starts at every master, so this is always a single
+    straight-line lookup, never needing the curve itself. Finds the
+    crossbar itself structurally (a 4-point, all-'line' contour taller
+    than `_A_CROSSBAR_MIN_HEIGHT`) rather than assuming a fixed contour
+    index, the same defensive pattern `_kick_R` already uses -- this
+    runs before `serifs.py::apply_feet` adds any foot contours, but
+    matching by shape rather than position costs nothing and stays
+    correct even if that ever changes.
+
+    Only ever moves each corner along X, onto the leg's own existing
+    line -- never changes the crossbar's own height or Y positions, so
+    this can't interact with `arch_shape.py`/`counter_shape.py`'s own
+    handling of the crossbar-meets-leg counter above it."""
+    if len(glyph.contours) < 2:
+        return
+    outline = glyph.contours[0].points
+    if len(outline) < 12 or outline[2].type != "line" or outline[10].type != "line":
+        return  # not the outline shape this was written against -- a
+        # point's own `type` names the segment ARRIVING at it, so
+        # `outline[2]` (ending the straight 1->2 run) and `outline[10]`
+        # (ending the straight 9->10 run) are the ones that must read
+        # "line"; `outline[9]` legitimately reads "qcurve" instead (it
+        # ends the curve chain down from the apex), not a sign anything
+        # is wrong
+    left_a, left_b = (outline[1].x, outline[1].y), (outline[2].x, outline[2].y)
+    right_a, right_b = (outline[10].x, outline[10].y), (outline[9].x, outline[9].y)
+
+    crossbar = None
+    for contour in glyph.contours[1:]:
+        pts = contour.points
+        if len(pts) != 4 or any(p.type != "line" for p in pts):
+            continue
+        ys = [p.y for p in pts]
+        if max(ys) - min(ys) >= _A_CROSSBAR_MIN_HEIGHT:
+            crossbar = pts
+            break
+    if crossbar is None:
+        return
+
+    for p in crossbar:
+        left_x = _x_on_line_at_y(left_a, left_b, p.y)
+        right_x = _x_on_line_at_y(right_a, right_b, p.y)
+        if left_x is None or right_x is None:
+            continue
+        # whichever line's own X is closer to this corner's own existing
+        # X is the leg this particular corner belongs to -- left corners
+        # sit near the left leg, right corners near the right, without
+        # needing to assume a fixed point order
+        p.x = left_x if abs(p.x - left_x) <= abs(p.x - right_x) else right_x
+
+
+def _x_on_line_at_y(a, b, y):
+    if a[1] == b[1]:
+        return None
+    t = (y - a[1]) / (b[1] - a[1])
+    return a[0] + t * (b[0] - a[0])
+
+
+def fit_A_serif_feet(glyph, serif_amount: float) -> None:
+    """Resize `serifs.py::apply_feet`'s own two foot rectangles (already
+    added to `glyph` by the time this runs -- see this function's own
+    caller in `ufo_build.py`) so each one's own un-flared run spans
+    EXACTLY the real foot cut it belongs to (`p0`->`p1` on the left,
+    `p10`->`p11` on the right), instead of `detect_feet`'s own
+    fractional width -- confirmed directly (a real render, Black
+    weight) that the fractional width leaves a visible gap between the
+    foot rectangle's own top edge and the leg's own foot corner.
+
+    The gap is structural, not a tuning problem: `detect_feet` measures
+    the foot cut's own run length ONCE, as a fraction of ONE reference
+    master's own glyph width, and `apply_feet` reproduces it at every
+    OTHER master by multiplying that same fraction by THAT master's own
+    width -- correct only if the foot run's own width grows in the same
+    proportion the whole glyph's advance width does. Checked directly:
+    'A's own foot run grows roughly twice as fast, weight for weight,
+    as its own advance width does (the legs splay outward with weight
+    much faster than the sidebearings shrink to compensate), so the
+    fractional reproduction increasingly undershoots the real span at
+    heavier weights -- by nearly 90 units at Black.
+
+    Recomputes the SAME construction `apply_feet` itself uses (a run
+    width, grown by `serif_amount`-scaled `extra` on both sides, then a
+    height proportional to that run width) -- just sourced from this
+    master's own real `p0`-`p1`/`p10`-`p11` span instead of an inherited
+    fraction, so the two stay numerically identical at the one
+    reference weight `detect_feet` was measured from, and only diverge
+    (correctly) as weight moves away from it.
+
+    Finds the two foot rectangles structurally (a 4-point, all-'line'
+    contour whose own bottom edge sits at the baseline, `_A_CROSSBAR_MIN_HEIGHT`'s
+    own crossbar comfortably excluded by sitting well above it) rather
+    than by a fixed contour index, since `serifs.py::apply_feet` can
+    add other letters' own feet at different counts/positions -- this
+    only ever touches contours that are actually feet."""
+    if len(glyph.contours) < 3:
+        return
+    outline = glyph.contours[0].points
+    if len(outline) < 12:
+        return
+    p0 = (outline[0].x, outline[0].y)
+    p1 = (outline[1].x, outline[1].y)
+    p10 = (outline[10].x, outline[10].y)
+    p11 = (outline[11].x, outline[11].y)
+    left_span = tuple(sorted((p0[0], p1[0])))
+    right_span = tuple(sorted((p10[0], p11[0])))
+
+    feet = [
+        contour.points
+        for contour in glyph.contours[1:]
+        if len(contour.points) == 4
+        and all(p.type == "line" for p in contour.points)
+        and min(p.y for p in contour.points) <= 5.0
+    ]
+    if len(feet) != 2:
+        return  # not the shape this was written against -- either
+        # `apply_feet` didn't add exactly two baseline feet for this
+        # master, or something upstream changed; leave it alone
+
+    for pts in feet:
+        cx = sum(p.x for p in pts) / 4.0
+        left_mid = (left_span[0] + left_span[1]) / 2.0
+        right_mid = (right_span[0] + right_span[1]) / 2.0
+        x0, x1 = left_span if abs(cx - left_mid) <= abs(cx - right_mid) else right_span
+        run_w = x1 - x0
+        if run_w <= 0:
+            continue
+        extra = serif_amount * (run_w * 0.9) / 100.0
+        new_x0, new_x1 = x0 - extra / 2.0, x1 + extra / 2.0
+        foot_h = 1.0 + serif_amount * (run_w * 0.42) / 100.0
+        # `g.rect`'s own point order is always (x0,y0), (x1,y0),
+        # (x1,y1), (x0,y1) with y0 < y1 -- see `geometry.py::rect` --
+        # and every foot this function matches has y0 == 0 (the
+        # baseline itself), so writing by POSITION is safe here, not
+        # a guess at which corner is which.
+        pts[0].x, pts[0].y = new_x0, 0.0
+        pts[1].x, pts[1].y = new_x1, 0.0
+        pts[2].x, pts[2].y = new_x1, foot_h
+        pts[3].x, pts[3].y = new_x0, foot_h
 
 
 def _sharpen_A(glyph) -> None:
@@ -818,9 +1017,12 @@ def _sharpen_A(glyph) -> None:
     collapsed, `a.x == b.x`, which that function's own scan already
     skips); the counter apex's own new points are ordinary 'line'
     points along a real curve, none of them a flat run at all, so that
-    scan has nothing there to find."""
+    scan has nothing there to find. `_fit_A_crossbar` runs last, pulling
+    the crossbar's own corners flush with the legs -- see its own
+    docstring."""
     _sharpen_A_apex(glyph)
     _sharpen_apex_notches(glyph)
+    _fit_A_crossbar(glyph)
 
 
 def _sharpen_M_vertex(glyph) -> None:
