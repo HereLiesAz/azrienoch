@@ -76,7 +76,30 @@ resolve outer-vs-inner cleanly on a shape that doesn't properly nest, so
 `reshape_counter` safely does nothing for that one case rather than guess
 and risk reshaping the wrong contour -- `counter_shape.py::round_off_waists`
 (run earlier in the pipeline) is still applied there as a fallback.
-"""
+
+A DESIGN PRINCIPLE TO HOLD ONTO, stated directly by the project owner
+(the same one recorded in `quirks.py`'s own top-of-file docstring, for
+the alphabet's sharp-apex families -- this module is that same idea's
+first, and so far only, application to the alphabet's ROUND families):
+every circular letter's own round parts -- not just the closed inner
+counters this module already handles ('o'/'d'/'b'/'p'/'q'/'g'/'a'), but
+the OUTER curves too ('O'/'Q's own outer silhouette, 'C'/'G'/'c's open
+curve, 'e's own round portion, 'D's bowl, and so on) -- should read as
+the SAME round shape, genuinely fitting inside/against one another, not
+independently-drawn approximations of "roundness" that happen to look
+similar. The motivation stated directly for this: Azrienoch is meant to
+work in ANY setting, not just running text -- highly creative graphic
+design in particular, where letterforms get isolated, overlaid, scaled
+against each other, and otherwise treated as interchangeable geometric
+parts far more often than in ordinary typesetting, so a round part that
+only approximately matches its counterparts reads as a flaw under that
+use in a way it might not in a paragraph of body text. This module's own
+existing technique -- match a target contour's point-type sequence
+against one shared reference contour ('o's own outer, currently), then
+replace every matched point with the template's own point, affine-scaled
+to the target's own bounding box -- is the right mechanism to extend to
+the outer-curve half of this principle; it just hasn't been done yet
+beyond the inner counters. Not yet started as of this note."""
 
 from __future__ import annotations
 

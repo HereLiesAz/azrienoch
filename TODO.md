@@ -186,3 +186,86 @@ build on.
       opening it via `file://` let the browser guess the wrong encoding
       and mangled every accented/Greek/Cyrillic character into mojibake.
       Re-verified with a headless-browser render after the fix.
+
+## Known issues
+
+- [x] Capital 'A' had a genuine, pre-existing self-intersection at
+      Thin/ExtraLight (`wght` 180-245ish), confirmed present even in the
+      already-merged build with no Azrienoch-specific quirk touching the
+      glyph at all -- a same-master bug in Roboto Flex's own low-weight
+      extraction near where the counter met the outer silhouette. Fixed
+      for real with the topology change flagged below as needed: both
+      of 'A's apexes are now genuinely sharp, single points --
+      `tools/quirks.py::_sharpen_A_apex` for the outer (visible) apex, a
+      plain full collapse; `_rebuild_A_counter_apex` for the counter's
+      own inner apex, a real topology exception (2 points become
+      `2 * _A_COUNTER_SAMPLE_COUNT + 1`) that builds a genuinely
+      constant-width, parallel edge alongside the apex-approach curve,
+      sized to match the terminal's own inner/outer gap wherever the
+      apex angle allows it (`_largest_safe_width`), instead of moving
+      the old flat notch's two points and hoping. Verified both ways:
+      a self-intersection sweep (flattened curves, every 5 units of
+      `wght`, 180-900) is clean at every weight, and the new edge
+      measures as genuinely constant-width against the apex-approach
+      curve, not just non-crossing.
+- [ ] Capital 'M' has the same species of pre-existing self-intersection
+      'A' had, at the same weight range (`wght` 180-240ish), for the
+      same reason -- a same-master bug in Roboto Flex's own low-weight
+      extraction, not introduced by any quirk here. Not yet fixed:
+      `tools/quirks.py::_sharpen_M_vertex` remains a deliberate no-op;
+      its own docstring works through why a plain point-position
+      collapse doesn't work here either, for the same reason 'A's
+      didn't. 'A's own fix above proves the right general technique
+      (a genuinely constant-width topology exception, not a
+      point-position guess) -- extending it to 'M's three vertices is
+      the next step, tracked separately.
+- [x] Capital 'A's own crossbar overhung the legs' own outer edge at
+      every weight (Roboto Flex's own raw crossbar is simply wider than
+      the legs at both of its own heights), and the counter-apex
+      construction above wasn't actually scaling its own width with
+      weight the way the terminal's own gap does (an earlier version of
+      `_largest_safe_width` searched only the short apex-adjacent curve,
+      which silently capped the width far below the terminal's own
+      target at Regular and heavier). Both fixed:
+      `tools/quirks.py::_fit_A_crossbar` pulls the crossbar's own
+      corners flush with the legs; `_largest_safe_width` now searches
+      all the way down to the real foot corners, so the width tracks
+      the terminal's own gap at every weight it geometrically can.
+      Fixing the crossbar also surfaced (and fixed) a real regression in
+      `serifs.py::detect_feet`'s own "does this foot border a counter"
+      heuristic: the new counter-apex construction's own last point,
+      right before wrapping to the foot corner, is close to that same
+      foot by construction (not far up near the apex the way Roboto
+      Flex's own original notch was), which flipped the heuristic and
+      grew the serif foot on only one side -- `tools/ufo_build.py::_fix_diagonal_apex_foot_extendability`
+      forces it back to symmetric. Separately, `detect_feet`'s own
+      fractional-width reproduction (one reference master's own run
+      length, scaled by each master's own overall glyph width) undershot
+      'A's own real foot span by nearly 90 units at Black, since the
+      legs splay outward with weight much faster than the advance width
+      grows -- `tools/quirks.py::fit_A_serif_feet` recomputes the foot
+      rectangles from this master's own real `p0`-`p1`/`p10`-`p11` span
+      instead of the inherited fraction.
+
+      What was previously written off here as a "small cosmetic dip
+      below baseline, up to ~150 units at Black" was wrong -- rendered
+      at actual size, it read as a real, visible gash cut into the
+      bottom of the counter, worse at every heavier weight, up to
+      ~190 units at Black. Fixed with `_A_COUNTER_MAX_FOOT_DIP` (30
+      units): `_largest_safe_width`'s own bisection now treats a foot
+      point dipping past that tolerance as unsafe, the same as a
+      genuine crossing, capping the width at heavy weights instead of
+      holding the terminal's own full target width all the way down.
+      (A hard `y >= 0` floor was tried first and was worse: `p1`/`p10`
+      themselves already sit exactly at y=0 in this source, so ANY
+      positive width fails that check, which silently skipped the
+      whole rebuild -- breaking the uniform 23-point topology every
+      other master needs for gvar interpolation, corrupting the
+      interpolated shape at every wght between the skipped master and
+      its rebuilt neighbors. Caught by the self-intersection sweep,
+      not the render.)
+
+      Two isolated, narrow self-intersections remain, found only by
+      the sweep, not by eye: `wght` 525 and 735 (both off the 5-unit
+      sweep step elsewhere) still cross. Not yet root-caused -- next
+      step if picked back up.

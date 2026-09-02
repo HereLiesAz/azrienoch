@@ -89,6 +89,47 @@ def _is_closed_counter_char(ch: str) -> bool:
     return base in _COUNTER_BASE_LETTERS
 
 
+# Characters whose own quirk rebuilds a counter apex as a deliberate
+# topology exception (see quirks.py's own module docstring: the same
+# kind of exception `_square_off_terminal` already is) by replacing a
+# couple of points, up near the apex, with many new ones that trace all
+# the way back down to near a FOOT corner -- capital 'A's own
+# `_rebuild_A_counter_apex` is the first, 'M's own equivalent (not yet
+# built) would be next.
+_DIAGONAL_APEX_TOPOLOGY_CHARS = {"A"}
+
+
+def _fix_diagonal_apex_foot_extendability(ch: str, foot_specs: list[dict]) -> None:
+    """`serifs.py::detect_feet`'s own "does this side of the foot
+    border a counter" check (`_flat_runs`'s `a_ext`/`b_ext`) works by
+    measuring the distance from the foot corner to the very NEXT point
+    in the contour -- a reasonable proxy everywhere else, since a
+    contour's own neighboring points are normally also its nearest
+    NEIGHBORS in space. `_DIAGONAL_APEX_TOPOLOGY_CHARS`'s own quirks
+    break that assumption on purpose: the new topology's own last point
+    before wrapping back to the foot corner is, by construction, close
+    to that SAME foot (the new counter-apex construction's own
+    baseline-anchored end -- see `_rebuild_A_counter_apex`'s own
+    docstring), not a point far up the letter the way Roboto Flex's own
+    original flat-notch construction left there. That flips the
+    distance check from "far, so this side is a real stem, safe to grow
+    a foot into" to "close, so this must be a counter-adjacent
+    connector, leave it alone" -- backwards for 'A', whose foot has
+    open background on BOTH sides, not a counter (the counter is up at
+    the opposite end of the glyph entirely). Confirmed directly: this
+    produced a lopsided serif foot (grown on only one side) instead of
+    the properly balanced slab every other isolated stem cap gets.
+    Since this is a side effect of the topology exception itself, not a
+    fact about the letterform, force both sides back to extendable here
+    rather than adjust `_flat_runs`'s own general-purpose heuristic,
+    which the rest of the alphabet depends on unchanged."""
+    if ch not in _DIAGONAL_APEX_TOPOLOGY_CHARS:
+        return
+    for spec in foot_specs:
+        spec["left_ext"] = True
+        spec["right_ext"] = True
+
+
 # 'o' isn't the only round, roughly-symmetric shape Roboto Flex's own raw
 # extraction mishandles across weight the same way -- confirmed directly
 # on the compiled font (a signed-area sweep from wght 100 to 900) that
@@ -506,6 +547,7 @@ def compute_reference_specs() -> tuple[dict[str, list[dict]], dict[str, list[int
             CC.reshape_counter(glyph, template_contour)
             RA.align_to_reference(glyph, reference_contours[gname])
         feet_by_glyph[gname] = S.detect_feet(glyph, guides)
+        _fix_diagonal_apex_foot_extendability(ch, feet_by_glyph[gname])
         dots_by_glyph[gname] = D.detect_dot_contours(glyph)
 
         prop_name = _prop_glyph_name(gname, glyphset)
@@ -638,6 +680,8 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
         if ch in D.TITTLE_CHARS and ascender_height is not None:
             D.reposition_tittle(glyph, dots_by_glyph.get(gname, []), ascender_height)
         S.apply_feet(glyph, feet_by_glyph.get(gname, []), guides, serf)
+        if ch == "A":
+            Q.fit_A_serif_feet(glyph, serf)
         ufo[gname] = glyph
         imported_names.add(gname)
 
