@@ -82,7 +82,9 @@ counter drift independently.
 
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 
 from ufoLib2.objects import Point
 
@@ -382,6 +384,105 @@ def graft_e_terminal_from_c(e_glyph, c_glyph) -> None:
         Point(x, y, type=p.type, smooth=p.smooth) for (x, y), p in zip(aligned, graft_src)
     ]
     e_pts[4:12] = new_points
+
+
+# Indices into the post-graft, 34-point 'e' contour (same indexing at
+# every master -- see `graft_e_terminal_from_c`'s own docstring on why
+# that's topology-invariant) that the project owner's hand edit removed
+# entirely: {6,7} sits inside the grafted terminal itself, {22,23} is
+# the unrelated "eye" reentry point elsewhere on the same contour. Both
+# pairs are the confirmed source of the eye-opening self-intersection
+# this project's own TODO has tracked as open.
+_E_TRIM_INDICES = (6, 7, 22, 23)
+
+
+def trim_e_terminal_eye(e_glyph) -> None:
+    """Drop `_E_TRIM_INDICES` from 'e's contour, unconditionally, at
+    EVERY master -- not just the plain Normal/Sans/Grade0 combination
+    the point editor showed. gvar interpolates one glyph across the
+    WHOLE designspace at once (confirmed directly: fontmake's own
+    compatibility check rejected a first version of this fix that only
+    trimmed those 5 real wght masters, leaving the other 55 (wdth,
+    serf, grad) combinations at the old 34-point count), so the point
+    COUNT has to drop everywhere even though the owner's own
+    hand-repositioning (`apply_e_hand_edit`) only exists for 5 of the
+    60. Everywhere else, this only removes the exact same redundant
+    points; it doesn't reposition anything else, so it's a safe,
+    purely-structural trim of a known defect, not an invented redesign."""
+    if not e_glyph.contours:
+        return
+    pts = e_glyph.contours[0].points
+    if len(pts) != 34:
+        return  # not the outline shape this was written against
+    for i in sorted(_E_TRIM_INDICES, reverse=True):
+        del pts[i]
+    _fix_line_after_offcurve(pts)
+
+
+def _fix_line_after_offcurve(pts) -> None:
+    """A glif on-curve point typed `line` must be reached directly from
+    the PREVIOUS on-curve point, with no off-curve points in between --
+    `trim_e_terminal_eye` (and a hand edit that deletes points the same
+    way) can leave one stranded right after an off-curve run once its
+    own preceding on-curve neighbor is gone, which fontTools' own glif
+    writer rejects outright ("offcurve occurs before line point").
+    Promoting that point to `qcurve` is exactly what it already means to
+    end a curve segment with no visible curvature of its own -- the
+    right label for "on-curve point straight off an off-curve run",
+    not a shape change."""
+    for i, p in enumerate(pts):
+        if p.type == "line" and pts[i - 1].type is None:
+            p.type = "qcurve"
+
+
+_E_HAND_EDIT_PATH = Path(__file__).parent / "data_e_terminal_edit.json"
+_e_hand_edit_data = None
+
+
+def _e_hand_edit_masters():
+    global _e_hand_edit_data
+    if _e_hand_edit_data is None:
+        _e_hand_edit_data = json.loads(_E_HAND_EDIT_PATH.read_text())
+    return _e_hand_edit_data
+
+
+def apply_e_hand_edit(e_glyph, wght) -> None:
+    """Replace 'e's whole contour with the project owner's own direct
+    hand edit of the grafted terminal (see `graft_e_terminal_from_c`),
+    made in the point editor -- a further cleanup of that graft's own
+    eye-opening self-intersection (open TODO, confirmed present at
+    every real master) that removes 2 redundant points from the
+    terminal/eye region entirely, rather than just repositioning them.
+
+    Point data lives in `data_e_terminal_edit.json`, one already-uniform
+    30-point contour per real wght master (180/250/400/700/900) -- the
+    same topology at every entry, so gvar interpolation stays valid.
+    180/400/700's masters (Thin/Regular/Black) are the owner's own
+    edited coordinates, hand-placed against a live overlay of 'c' at
+    exactly those three weights; 250/700 (ExtraLight/Bold) don't have a
+    hand edit of their own -- there's no lower master below 180 to
+    extrapolate from either -- so they're a plain per-point linear
+    (gvar-style) blend between the nearest edited masters on each side,
+    matching how this project's own weight-slider preview already
+    interpolates between real masters.
+
+    Runs after `trim_e_terminal_eye` (which already drops the same 4
+    points everywhere, so every master's point count/type sequence
+    matches), and only for the plain Normal/Sans/Grade0 combination the
+    point editor itself showed -- the other 59 (wdth, serf, grad)
+    combinations keep the trimmed-but-otherwise-generated shape;
+    re-deriving this same manual repositioning for every one of them
+    isn't something a single hand edit at 3 weights can honestly stand
+    in for."""
+    if not e_glyph.contours:
+        return
+    masters = _e_hand_edit_masters()
+    key = str(wght)
+    if key not in masters:
+        return
+    data = masters[key]
+    new_points = [Point(p["x"], p["y"], type=p["type"], smooth=p["smooth"]) for p in data]
+    e_glyph.contours[0].points[:] = new_points
 
 
 def _horizontal_terminal_g(glyph) -> None:
