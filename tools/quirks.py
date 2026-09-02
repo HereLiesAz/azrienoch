@@ -285,6 +285,105 @@ def _horizontal_terminal_e(glyph) -> None:
     _square_off_terminal(pts, 6, 7)
 
 
+def _rigid_align_points(src_points, src_a, src_b, dst_a, dst_b):
+    """Map every `(x, y)` in `src_points` through the single
+    translate+rotate+uniform-scale transform that takes `src_a` -> `dst_a`
+    and `src_b` -> `dst_b` exactly -- the same construction the point
+    editor's own "paste over selection, aligned to neighbors" button
+    uses, so a glyph built this way reproduces what hand-editing it there
+    would give. Returns a list of `(x, y)` tuples, same length/order as
+    `src_points`."""
+    sv = (src_b[0] - src_a[0], src_b[1] - src_a[1])
+    dv = (dst_b[0] - dst_a[0], dst_b[1] - dst_a[1])
+    s_len = math.hypot(*sv) or 1.0
+    d_len = math.hypot(*dv) or 1.0
+    scale = d_len / s_len
+    rot = math.atan2(dv[1], dv[0]) - math.atan2(sv[1], sv[0])
+    cos_r, sin_r = math.cos(rot), math.sin(rot)
+    out = []
+    for x, y in src_points:
+        rx, ry = (x - src_a[0]) * scale, (y - src_a[1]) * scale
+        out.append((rx * cos_r - ry * sin_r + dst_a[0], rx * sin_r + ry * cos_r + dst_a[1]))
+    return out
+
+
+def graft_e_terminal_from_c(e_glyph, c_glyph) -> None:
+    """Replace 'e's own terminal -- built by `_horizontal_terminal_e`
+    into a plain squared-off, 5-point flat notch -- with a rigid-aligned
+    copy of 'c's own REAL terminal curve (the 8-point bulge-then-flat-cut
+    hook every 'c'/'s'-family letter actually has), instead of just
+    matching its flatness.
+
+    `_horizontal_terminal_e`'s squaring was a real improvement over
+    Roboto Flex's own raw diagonal taper, but it was never actually the
+    same shape as 'c's own terminal, just a flat cut in the same style
+    -- confirmed directly by the project owner, hand-editing 'e' against
+    an overlay of 'c' in the point editor at Thin/Regular/Black, that a
+    flat cut isn't what "e's tail comes from c" means: it means this
+    curve, literally, scaled to fit.
+
+    Runs as a POST-pass, after every glyph in this master is fully
+    built (see `ufo_build.py`'s own call site) -- not from inside
+    `apply_quirks`, which only ever sees one glyph at a time and has no
+    way to reach 'c's own final shape. It needs 'c' to be completely
+    finished (through its own full quirks/counter-shape pipeline, not a
+    raw extraction) or it copies the wrong curve.
+
+    The anchors are `e_pts[3]`/`e_pts[12]` and `c_pts[3]`/`c_pts[12]` --
+    on each glyph, the on-curve, smooth "shoulder" points immediately
+    outside the whole arm/terminal structure (confirmed directly: both
+    sit right at the point the main bowl curve stops and the terminal's
+    own approach begins/ends, at the same role on both letters, not just
+    the same index by coincidence -- `e`/`c` share that much of Roboto
+    Flex's own point layout). A first version anchored on `e_pts[4]`/
+    `e_pts[10]` (off-curve neighbors a step further in) instead --
+    checked directly and confirmed wrong: those two sit much further
+    apart, at a very different angle, than the true shoulder points do,
+    so the rigid transform computed from them carried a huge, badly
+    skewed scale (over 2x, confirmed by hand-checking the arithmetic
+    against the actual built output) that blew the whole terminal miles
+    outside the glyph's own bounding box. On-curve shoulder-to-shoulder
+    anchors instead give a transform that's close to a plain, modest
+    uniform scale (confirmed: under 1.5x at every real master, near-zero
+    rotation) -- proportional, not distorting.
+
+    Mapping `c_pts[3]` -> `e_pts[3]` and `c_pts[12]` -> `e_pts[12]` with
+    `_rigid_align_points` is exactly the same move as the editor's own
+    "paste over selection, aligned to its neighbors" -- 'c's own
+    terminal (`c_pts[4:12]`, 8 points) lands scaled and rotated to fit
+    the gap between 'e's own shoulders, replacing `e_pts[4:12]` (8
+    points: the squared corner from `_horizontal_terminal_e` and its own
+    step-in/cut/step-out, plus the curve either side of it) 1-for-1, no
+    net point-count change, applied identically -- unconditionally,
+    every master -- so point count/type sequence stays uniform across
+    the whole design space, same as every other topology exception in
+    this module."""
+    if not e_glyph.contours or not c_glyph.contours:
+        return
+    e_pts = e_glyph.contours[0].points
+    c_pts = c_glyph.contours[0].points
+    if len(e_pts) != 34 or len(c_pts) != 32:
+        return  # not the outline shapes this was written against
+    if e_pts[3].type is None or e_pts[12].type is None:
+        return
+    if c_pts[3].type is None or c_pts[12].type is None:
+        return
+
+    e_anchor_a = (e_pts[3].x, e_pts[3].y)
+    e_anchor_b = (e_pts[12].x, e_pts[12].y)
+    c_anchor_a = (c_pts[3].x, c_pts[3].y)
+    c_anchor_b = (c_pts[12].x, c_pts[12].y)
+
+    graft_src = c_pts[4:12]
+    aligned = _rigid_align_points(
+        [(p.x, p.y) for p in graft_src], c_anchor_a, c_anchor_b, e_anchor_a, e_anchor_b
+    )
+    new_points = [
+        Point(x, y, type=p.type, smooth=p.smooth) for (x, y), p in zip(aligned, graft_src)
+    ]
+    e_pts[4:12] = new_points
+
+
 def _horizontal_terminal_g(glyph) -> None:
     """Square off 'g's descender-loop tail -- the same defect and fix as
     'e's (see `_horizontal_terminal_e`, `_square_off_terminal`), at the
@@ -469,7 +568,37 @@ def _sharpen_A_apex(glyph) -> None:
     outer_y = (pts[5].y + pts[6].y) / 2.0
     pts[5].x, pts[5].y = outer_x, outer_y
     pts[6].x, pts[6].y = outer_x, outer_y
+    _straighten_A_leg_approach(pts)
     _rebuild_A_counter_apex(glyph)
+
+
+def _straighten_A_leg_approach(pts) -> None:
+    """Reposition the off-curve control points either side of the apex
+    (2/3/4 approaching it, 7/8/9 leaving it) so they sit exactly ON the
+    straight line from `pts[2]`/`pts[9]` to the now-sharp apex, instead
+    of wherever Roboto Flex's own slight curve left them -- degenerating
+    that curve to a dead-straight leg without touching point count or
+    type (still a `qcurve` chain, just a flat one; `_flatten_qcurve_pts`
+    reading it afterward produces points that all fall on one line).
+
+    Directly motivated by the project owner's own hand-edit in the point
+    editor: given a straight leg, `_rebuild_A_counter_apex`'s own
+    existing offset-and-intersect construction collapses to plain
+    line-line offsetting -- trivial, and the two offset lines meet at
+    ONE point with no risk of the baseline dip a curved approach forced
+    (see `_largest_safe_width`'s own docstring for that history) --
+    instead of writing a second, parallel construction to match the
+    hand-edit by hand. Confirmed by rendering the result: this alone
+    reproduces the same clean, sharp-counter look, at every real master,
+    without needing to also touch `_rebuild_A_counter_apex` itself."""
+    if len(pts) < 10:
+        return
+    apex = (pts[5].x, pts[5].y)
+    for a_idx, off1, off2 in ((2, 3, 4), (9, 8, 7)):
+        ax, ay = pts[a_idx].x, pts[a_idx].y
+        for off_idx, t in ((off1, 1.0 / 3.0), (off2, 2.0 / 3.0)):
+            pts[off_idx].x = ax + (apex[0] - ax) * t
+            pts[off_idx].y = ay + (apex[1] - ay) * t
 
 
 def _flatten_qcurve_pts(start, off_curve_pts, end, n=8):
@@ -606,10 +735,17 @@ _A_COUNTER_SAMPLE_COUNT = 6  # points sampled per side, evenly spaced by
 # has to be a FIXED count rather than "however many happen to fall
 # before the crossing"
 
-_A_COUNTER_MAX_FOOT_DIP = 30.0  # units (UPM 2048) the new inner-foot
+_A_COUNTER_MAX_FOOT_DIP = 5.0  # units (UPM 2048) the new inner-foot
 # point (`foot1`/`foot2` in `_largest_safe_width`) is allowed to sit
 # below the baseline -- see that function's own docstring for why this
-# can't be a hard 0.0 floor.
+# can't be a hard 0.0 floor. 30.0 (an earlier value here) technically
+# worked but still read wrong once the leg approach was straightened
+# (see `_straighten_A_leg_approach`): with a straight leg, the segment
+# from the OUTER foot corner down to this dipped point runs nearly
+# parallel to the baseline over a long span (confirmed directly: ~700
+# units at Black), so even a "small" 30-unit dip reads as a long,
+# visible underhang, not a subtle notch. 5.0 keeps that same segment
+# close enough to flush that it reads as sitting on the baseline.
 
 
 def _offset_point(p, dx, dy, sign, w):

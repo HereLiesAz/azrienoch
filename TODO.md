@@ -265,7 +265,59 @@ build on.
       its rebuilt neighbors. Caught by the self-intersection sweep,
       not the render.)
 
-      Two isolated, narrow self-intersections remain, found only by
-      the sweep, not by eye: `wght` 525 and 735 (both off the 5-unit
-      sweep step elsewhere) still cross. Not yet root-caused -- next
-      step if picked back up.
+      Superseded below by straightening the leg approach entirely --
+      the two isolated crossings this left (`wght` 525/735) no longer
+      apply to that construction.
+- [x] Straightened 'A's own outer leg approach (`_straighten_A_leg_approach`,
+      called from `_sharpen_A_apex`): the off-curve points either side
+      of the apex now sit exactly on the straight line from the foot to
+      the (already-sharp) apex tip, instead of wherever Roboto Flex's
+      own slight curve left them. Directly modeled on the project
+      owner's own hand-edit in the point editor (a dead-straight leg,
+      no curve at all) -- with a straight leg, `_rebuild_A_counter_apex`'s
+      existing offset-and-intersect construction degenerates to trivial
+      line-line offsetting, avoiding the curved-approach machinery's
+      own baseline-dip risk almost entirely on its own. Point count/type
+      sequence unchanged (still a qcurve chain, just a flat one), so no
+      topology change was needed.
+
+      Lowered `_A_COUNTER_MAX_FOOT_DIP` from 30.0 to 5.0 units at the
+      same time: with a straight leg, the segment from the OUTER foot
+      corner down to the dipped inner-foot point runs nearly parallel
+      to the baseline over a long span (confirmed: ~700 units at
+      Black), so even the old "small" 30-unit dip read as a long,
+      visible underhang rather than a subtle notch. 5.0 keeps it close
+      enough to flush to read as sitting on the baseline.
+
+      One isolated self-intersection remains, found only by the sweep:
+      `wght` 600 exactly (595/598/602/605 all clean) -- an
+      interpolation-only artifact between the real 400 and 700 masters,
+      not present at either. Not yet root-caused.
+- [x] 'e's own terminal only ever matched 'c's terminal in FLATNESS
+      (`_horizontal_terminal_e`'s plain squaring), never its actual
+      curve -- confirmed directly by the project owner, hand-editing
+      'e' against an overlay of 'c' at Thin/Regular/Black in the point
+      editor, that "e's tail comes from c" means literally that shape,
+      scaled to fit, not just a flat cut in the same style.
+      `tools/quirks.py::graft_e_terminal_from_c` replaces it with a
+      rigid-aligned (translate+rotate+uniform-scale) copy of 'c's own
+      real terminal curve, anchored on the on-curve "shoulder" points
+      both letters share the same role for (`e_pts[3]`/`e_pts[12]`,
+      `c_pts[3]`/`c_pts[12]`) -- 8-for-8 point swap, no net count
+      change. Runs as a post-pass in `ufo_build.py`, after every glyph
+      in the master is built, since it needs 'c's own FINAL shape, not
+      a raw extraction. A first version anchored one step further in
+      (`e_pts[4]`/`e_pts[10]`, both off-curve) instead and was badly
+      wrong -- confirmed by hand-checking the transform's own arithmetic
+      that those two anchors sit far enough apart, at a different
+      enough angle, from 'c's own true shoulders that the computed
+      scale came out over 2x too large, blowing the grafted terminal
+      miles past the rest of the glyph's own bounding box.
+
+      Found, NOT yet fixed, while checking this: 'e' has a real,
+      pre-existing self-intersection near its own upper-left eye
+      opening (roughly where `ASH.reshape_named_span`'s own span 16-23
+      sits) -- confirmed present in the pipeline's output from BEFORE
+      this graft touched anything, unrelated to it. Tracked here since
+      nothing else in this file mentions it yet; next step if picked
+      back up.
