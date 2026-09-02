@@ -984,17 +984,36 @@ def fit_A_serif_feet(glyph, serif_amount: float) -> None:
         # `apply_feet` didn't add exactly two baseline feet for this
         # master, or something upstream changed; leave it alone
 
+    left_run_w = left_span[1] - left_span[0]
+    right_run_w = right_span[1] - right_span[0]
+    if left_run_w <= 0 or right_run_w <= 0:
+        return
+    # Both feet share ONE height, from the narrower side's own run --
+    # confirmed directly (the project owner, looking at a render) that
+    # computing each foot's own height from only ITS OWN local run width
+    # left the two feet at visibly different heights, their own top
+    # edges not level with each other: Roboto Flex's own raw `p0`-`p1`
+    # and `p10`-`p11` spans aren't actually equal (roughly 150 units
+    # apart at Black), so two independently-sized feet faithfully reproduced
+    # that asymmetry instead of reading as one matched pair. A real
+    # slab-serif foot doesn't split into two different heights depending
+    # on which leg happens to be a little wider -- shared_run_w, the
+    # smaller of the two (the same conservative choice this module
+    # already makes wherever two candidate widths disagree -- see
+    # `_rebuild_A_counter_apex`'s own `w_cap`), is what both feet size
+    # their OWN height from; each foot still gets its OWN width, sized
+    # to its own real span, only the height is shared.
+    shared_run_w = min(left_run_w, right_run_w)
+    foot_h = 1.0 + serif_amount * (shared_run_w * 0.42) / 100.0
+
     for pts in feet:
         cx = sum(p.x for p in pts) / 4.0
         left_mid = (left_span[0] + left_span[1]) / 2.0
         right_mid = (right_span[0] + right_span[1]) / 2.0
         x0, x1 = left_span if abs(cx - left_mid) <= abs(cx - right_mid) else right_span
         run_w = x1 - x0
-        if run_w <= 0:
-            continue
         extra = serif_amount * (run_w * 0.9) / 100.0
         new_x0, new_x1 = x0 - extra / 2.0, x1 + extra / 2.0
-        foot_h = 1.0 + serif_amount * (run_w * 0.42) / 100.0
         # `g.rect`'s own point order is always (x0,y0), (x1,y0),
         # (x1,y1), (x0,y1) with y0 < y1 -- see `geometry.py::rect` --
         # and every foot this function matches has y0 == 0 (the
