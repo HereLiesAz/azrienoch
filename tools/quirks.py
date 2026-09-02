@@ -568,7 +568,37 @@ def _sharpen_A_apex(glyph) -> None:
     outer_y = (pts[5].y + pts[6].y) / 2.0
     pts[5].x, pts[5].y = outer_x, outer_y
     pts[6].x, pts[6].y = outer_x, outer_y
+    _straighten_A_leg_approach(pts)
     _rebuild_A_counter_apex(glyph)
+
+
+def _straighten_A_leg_approach(pts) -> None:
+    """Reposition the off-curve control points either side of the apex
+    (2/3/4 approaching it, 7/8/9 leaving it) so they sit exactly ON the
+    straight line from `pts[2]`/`pts[9]` to the now-sharp apex, instead
+    of wherever Roboto Flex's own slight curve left them -- degenerating
+    that curve to a dead-straight leg without touching point count or
+    type (still a `qcurve` chain, just a flat one; `_flatten_qcurve_pts`
+    reading it afterward produces points that all fall on one line).
+
+    Directly motivated by the project owner's own hand-edit in the point
+    editor: given a straight leg, `_rebuild_A_counter_apex`'s own
+    existing offset-and-intersect construction collapses to plain
+    line-line offsetting -- trivial, and the two offset lines meet at
+    ONE point with no risk of the baseline dip a curved approach forced
+    (see `_largest_safe_width`'s own docstring for that history) --
+    instead of writing a second, parallel construction to match the
+    hand-edit by hand. Confirmed by rendering the result: this alone
+    reproduces the same clean, sharp-counter look, at every real master,
+    without needing to also touch `_rebuild_A_counter_apex` itself."""
+    if len(pts) < 10:
+        return
+    apex = (pts[5].x, pts[5].y)
+    for a_idx, off1, off2 in ((2, 3, 4), (9, 8, 7)):
+        ax, ay = pts[a_idx].x, pts[a_idx].y
+        for off_idx, t in ((off1, 1.0 / 3.0), (off2, 2.0 / 3.0)):
+            pts[off_idx].x = ax + (apex[0] - ax) * t
+            pts[off_idx].y = ay + (apex[1] - ay) * t
 
 
 def _flatten_qcurve_pts(start, off_curve_pts, end, n=8):
@@ -705,10 +735,17 @@ _A_COUNTER_SAMPLE_COUNT = 6  # points sampled per side, evenly spaced by
 # has to be a FIXED count rather than "however many happen to fall
 # before the crossing"
 
-_A_COUNTER_MAX_FOOT_DIP = 30.0  # units (UPM 2048) the new inner-foot
+_A_COUNTER_MAX_FOOT_DIP = 5.0  # units (UPM 2048) the new inner-foot
 # point (`foot1`/`foot2` in `_largest_safe_width`) is allowed to sit
 # below the baseline -- see that function's own docstring for why this
-# can't be a hard 0.0 floor.
+# can't be a hard 0.0 floor. 30.0 (an earlier value here) technically
+# worked but still read wrong once the leg approach was straightened
+# (see `_straighten_A_leg_approach`): with a straight leg, the segment
+# from the OUTER foot corner down to this dipped point runs nearly
+# parallel to the baseline over a long span (confirmed directly: ~700
+# units at Black), so even a "small" 30-unit dip reads as a long,
+# visible underhang, not a subtle notch. 5.0 keeps that same segment
+# close enough to flush that it reads as sitting on the baseline.
 
 
 def _offset_point(p, dx, dy, sign, w):
