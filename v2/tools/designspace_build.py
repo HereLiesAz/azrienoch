@@ -8,7 +8,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from fontTools.designspaceLib import AxisDescriptor, DesignSpaceDocument, SourceDescriptor
+from fontTools.designspaceLib import (
+    AxisDescriptor,
+    AxisLabelDescriptor,
+    DesignSpaceDocument,
+    InstanceDescriptor,
+    SourceDescriptor,
+)
 
 from . import params
 from .ufo_build import SOURCES_DIR, build_all
@@ -17,6 +23,18 @@ ROOT = Path(__file__).resolve().parent.parent
 DESIGNSPACE_PATH = SOURCES_DIR / "AzrienochV2.designspace"
 FONTS_DIR = ROOT / "fonts" / "variable"
 OUTPUT_TTF = FONTS_DIR / "AzrienochV2-VF.ttf"
+
+# axis tag -> {axis value: name} for the STAT table's own axis-value
+# labels (params.py's WGHT_NAMES/WDTH_NAMES/SERF_NAMES, keyed the same
+# way as params.AXES's own tags).
+_AXIS_VALUE_NAMES = {"wght": params.WGHT_NAMES, "wdth": params.WDTH_NAMES, "SERF": params.SERF_NAMES}
+
+
+def _add_axis_labels(axis: AxisDescriptor, value_names: dict, default, elide_default: bool = True) -> None:
+    for value, name in value_names.items():
+        axis.axisLabels.append(
+            AxisLabelDescriptor(name=name, userValue=value, elidable=(elide_default and value == default))
+        )
 
 
 def write_designspace(ufo_paths: list[Path]) -> Path:
@@ -30,6 +48,20 @@ def write_designspace(ufo_paths: list[Path]) -> Path:
         a.minimum = axis["minimum"]
         a.default = axis["default"]
         a.maximum = axis["maximum"]
+        # wght's own default ("Regular") is never elided: fontTools
+        # derives each named instance's actual subfamily name from
+        # these STAT axis labels' elision rules, not from the
+        # InstanceDescriptor.styleName set below -- eliding wght's
+        # default the normal way (matching wdth/SERF, where it's
+        # correct: "Normal"/"Sans" should drop out of "Thin Condensed",
+        # not linger as "Thin Condensed Normal Sans") made "Regular"
+        # vanish from EVERY instance that shares its weight, not just
+        # the one truly-default instance -- "Condensed"/"Slab" instead
+        # of the intended "Condensed Regular"/"Slab Regular" (confirmed
+        # by dumping fvar's own instances after the first attempt).
+        _add_axis_labels(
+            a, _AXIS_VALUE_NAMES[axis["tag"]], axis["default"], elide_default=(axis["tag"] != "wght")
+        )
         doc.addAxis(a)
 
     for path, (wght, wdth, serf) in zip(ufo_paths, params.MASTER_GRID):
@@ -45,6 +77,22 @@ def write_designspace(ufo_paths: list[Path]) -> Path:
             s.copyGroups = True
             s.copyFeatures = True
         doc.addSource(s)
+
+        # Every master grid point is a real, deliberately-designed style
+        # here (unlike the repository root's own v1 designspace, which
+        # has an extra wght=250 master that only shortens an
+        # interpolation gap and isn't meant to be user-facing) -- so
+        # every one of them gets an fvar named instance, not just the
+        # default location. Without this, the font's full Thin-to-Black,
+        # Normal-to-Condensed, Sans-to-Slab range still interpolates
+        # correctly, but no style picker outside a raw axis-slider view
+        # can reach any of it except the implicit default ("Regular"),
+        # which was v2's actual bug: 12 real masters, one visible style.
+        inst = InstanceDescriptor()
+        inst.familyName = "Azrienoch V2"
+        inst.styleName = params.instance_style_name(wght, wdth, serf)
+        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf}
+        doc.addInstance(inst)
 
     doc.write(DESIGNSPACE_PATH)
     return DESIGNSPACE_PATH

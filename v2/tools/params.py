@@ -57,6 +57,40 @@ MASTER_GRID = [
 ]
 DEFAULT_LOCATION = (WGHT_DEFAULT, WDTH_DEFAULT, SERF_DEFAULT)
 
+# Human-facing names for each axis stop actually sampled as a master
+# (WGHT_SAMPLES/WDTH_SAMPLES/SERF_SAMPLES above) -- feeds both the STAT
+# table's axis-value labels (so a design app shows a real "Weight"/
+# "Width"/"Serif" style picker instead of a raw numeric slider) and the
+# fvar named instance generated at every master grid point below. A
+# variable font with no named instances still interpolates its full
+# range correctly, but most apps' style pickers list only the named
+# instances -- with none defined beyond the implicit default, that's
+# "Regular" and nothing else, regardless of how many masters the font
+# actually has (confirmed: this was v2's own bug -- MASTER_GRID already
+# had 12 real masters spanning Thin-to-Black, Normal-to-Condensed,
+# Sans-to-Slab, but `designspace_build.py` never turned any of them
+# into an `InstanceDescriptor`, so only Regular ever showed up outside
+# a raw axis-slider view).
+WGHT_NAMES = {WGHT_MIN: "Thin", WGHT_DEFAULT: "Regular", WGHT_MAX: "Black"}
+WDTH_NAMES = {WDTH_MAX: "Normal", WDTH_MIN: "Condensed"}
+SERF_NAMES = {SERF_MIN: "Sans", SERF_MAX: "Slab"}
+
 
 def style_name(wght: int, wdth: int, serf: int) -> str:
     return f"Wght{wght}_Wdth{wdth}_Serf{serf}"
+
+
+def instance_style_name(wght: int, wdth: int, serf: int) -> str:
+    """The public subfamily name for the fvar named instance at this
+    master grid point -- e.g. (900, 75, 100) -> 'Condensed Slab Black',
+    (400, 100, 0) -> 'Regular'. Width and Serif only appear when they're
+    off their default (Normal/Sans), same elision rule the STAT table's
+    own axis labels use, so the default corner of the grid is still
+    plain 'Regular' rather than 'Normal Sans Regular'."""
+    parts = []
+    if wdth != WDTH_DEFAULT:
+        parts.append(WDTH_NAMES[wdth])
+    if serf != SERF_DEFAULT:
+        parts.append(SERF_NAMES[serf])
+    parts.append(WGHT_NAMES[wght])
+    return " ".join(parts)
