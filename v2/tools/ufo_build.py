@@ -12,7 +12,7 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import jost_source, params
+from . import jost_source, params, quirks
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -25,6 +25,20 @@ CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
 
 def _glyph_name(ch: str) -> str:
     return _DIGIT_NAMES.get(ch, ch)
+
+
+def _contour_area(contour) -> float:
+    xs = [p.x for p in contour.points]
+    ys = [p.y for p in contour.points]
+    return (max(xs) - min(xs)) * (max(ys) - min(ys))
+
+
+def _o_inner_contour(o_glyph):
+    """'o's two contours are its outer silhouette and its inner counter;
+    the inner one is simply the smaller of the two by bounding-box area
+    -- true for any letter 'o' by construction, no need for a general
+    point-in-polygon test here."""
+    return min(o_glyph.contours, key=_contour_area)
 
 
 def build_master_ufo(wght: int, wdth: int) -> Path:
@@ -46,6 +60,13 @@ def build_master_ufo(wght: int, wdth: int) -> Path:
         glyph.unicodes = [ord(ch)]
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
+
+    for ch in CHARS:
+        quirks.apply_terminal_cuts(font[_glyph_name(ch)])
+
+    o_inner_points = _o_inner_contour(font["o"]).points
+    for name in quirks.ROUND_COUNTER_GLYPHS:
+        quirks.reshape_counter_to_o(font[name], o_inner_points)
 
     path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth)}.ufo"
     font.save(path, overwrite=True)

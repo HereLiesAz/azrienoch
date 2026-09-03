@@ -82,20 +82,55 @@ location (400, 100) is itself one of the six, as a designspace requires.
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied straight from Jost, unmodified, across all 6
-masters. Compiles to a variable TTF with both axes interpolating
-cleanly (verified: `fontmake` requires matching point topology across
-every master to compile at all, and it does; `tools/preview.py` renders
-a sample including `n`/`v`/`a`/`e`/`g`/`s`/`R`/`M` at four axis-space
-corners from the compiled font's own `glyf`/`gvar` data).
+(`0`-`9`) -- copied from Jost across all 6 masters, with a first pass of
+Azrienoch-specific modifications on top (`tools/quirks.py`):
+
+- **Horizontal terminal cuts** on `c`/`e`/`s` (Helvetica-style -- Jost's
+  own cut is vertical on `c`, diagonal on `e`/`s`). `g`'s own descender-
+  loop terminal was already a horizontal cut in Jost and needed no
+  change (confirmed by inspection, not assumed).
+- **Vertical terminal cuts** on `r`/`f`, matching each other (Jost draws
+  both with the same diagonal cut; both are now reoriented the same way
+  instead of one differing from the other).
+- **Every round-bowled lowercase letter's inner counter is now a true
+  affine-scaled copy of `o`'s own inner counter**: `b`, `d`, `p`, `q`,
+  `g`. Confirmed structurally (Jost's own `o`/`b`/`d`/`p`/`q`/`g` all
+  share an identical 16-point contour shape for exactly this reason) and
+  ported from the repository root's own `tools/canonical_counter.py`
+  technique. Not yet extended to `a` (its inner contour also carries the
+  points where the counter joins the stem, so it doesn't structurally
+  match as a whole contour the way the others do) or `c`/`e` (open
+  letterforms with no separate counter contour to replace) -- both are
+  the same class of gap the root project's own `canonical_counter.py`
+  documents as unfinished for its analogous cases.
+- **`a` is single-story** -- confirmed to already be true of Jost's own
+  `a` (its bbox top matches `o`'s exactly, `(_, _, _, 470)` at every
+  weight tested) rather than something this pass needed to build.
+
+The reorientation itself is a rigid transform (preserves the cut's
+length/stroke-thickness and its midpoint, only changes which axis it
+spans) applied to point indices identified once against Jost's own
+wght=400 instance and stable across every master (fontmake requires
+matching topology across masters to compile at all, and Jost's own
+`gvar` already interpolates across its native `wght` range, so a given
+glyph's point count/order doesn't change with weight).
+
+Compiles to a variable TTF with both axes interpolating cleanly, and
+`tools/preview.py`'s rendered sample confirms the modifications hold up
+at Thin/Regular/Black and Condensed alike, not just at the reference
+weight the point indices were found at.
 
 Not yet done, in order:
 
-- **The Helvetica-inspired modification pass.** Right now this is
-  Jost, full stop -- no terminal, aperture, or proportion changes yet.
+- **Serifs.** A variable `SERF` axis (0-100, sans by default) that grows
+  a slab foot the same way weight grows stroke thickness -- planned:
+  single-story lowercase letters get a foot top and bottom; two-story
+  lowercase (ascenders/descenders) and all uppercase get a foot only on
+  the end that terminates at a baseline or a descender depth, not at an
+  ascender/cap top.
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
-  tune real pairs against, which is next now that letterform
-  modifications are the remaining open question, not glyph coverage.
+  tune real pairs against.
+- **The round-counter treatment extended to `a`.**
 - **The `wdth` axis's uniform-scale placeholder** (see above).
 
 ## Building
