@@ -330,11 +330,33 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Kerning.** None yet -- needs the full glyph set (now in place) to
-  tune real pairs against.
-- **The `wdth` axis's uniform-scale placeholder** (see above).
+- **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
+  weighted compression (see above) keeps stems close to their full
+  width at heavy/condensed combinations instead of uniformly squishing
+  them, but it's still a global per-x warp with no counter actually
+  reshaped -- a real condensed cut redraws counters and adjusts
+  spacing by hand, which this project doesn't do.
 - **Capital `B`'s self-intersecting waist**, inherited from Jost --
   flagged by a Glee stability audit, not yet fixed (see "Status" above).
+
+## Kerning
+
+533 letter-pair corrections (`tools/kerning.py`), extracted from
+vendored Jost's own GPOS pair-positioning table rather than hand-tuned
+-- the same donor-kerning approach the repository root's own v1
+pipeline uses on Roboto Flex, for the same reason: several thousand
+pairs tuned by eye is its own multi-week type-design task, and Jost
+already did that work. Jost's own kerning is entirely static across its
+`wght` axis (confirmed by diffing the full extracted table at
+`wght`=100/400/900: zero pairs differ), so one extraction is reused at
+every master, scaled only by that master's own `wdth` fraction (kerning
+has no direct `SERF` dependence either). `c`/`e`/`s` (Arimo-sourced)
+keep Jost's own values for pairs involving them, a stand-in on the same
+donor-kerning logic the rest of the module rests on. `a` (built from
+`d`'s own contours, not Jost's separately-drawn `a`) gets `d`'s kerning,
+not Jost's native `a`'s -- Jost's own `d` happens to carry no
+class-kerning pairs at all, so `a` ends up unkerned too, the more
+consistent outcome given it now shares `d`'s exact shape.
 
 ## Building
 
@@ -364,6 +386,7 @@ v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
 v2/tools/arimo_source.py       extracts c/e/s from vendored Arimo (Helvetica-derived)
 v2/tools/condense.py           the wdth axis: ink-density weighted horizontal compression
+v2/tools/kerning.py            letter-pair kerning, extracted from vendored Jost's own GPOS
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
 v2/third_party/arimo/          vendored Arimo Regular/Bold + its own OFL.txt
 v2/sources/                    build output (UFOs + designspace)

@@ -24,7 +24,7 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import arimo_source, jost_source, params, quirks, serifs, single_story_a
+from . import arimo_source, jost_source, kerning, params, quirks, serifs, single_story_a
 
 _ARIMO_CHARS = {"c", "e", "s"}
 
@@ -148,6 +148,9 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     for ch in CHARS:
         specs, guides = reference[ch]
         serifs.apply_feet(font[_glyph_name(ch)], specs, guides, serf)
+
+    for (left, right), value in kerning.pairs_for(wdth).items():
+        font.kerning[(left, right)] = value
 
     path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth, serf)}.ufo"
     font.save(path, overwrite=True)
