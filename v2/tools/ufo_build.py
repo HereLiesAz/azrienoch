@@ -131,7 +131,16 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     font.info.capHeight = params.CAP_HEIGHT
     font.info.xHeight = params.X_HEIGHT
     font.info.familyName = "Azrienoch V2"
-    font.info.styleName = params.style_name(wght, wdth, serf)
+    # A human name ("Regular", "Black Slab", ...), not `style_name`'s
+    # technical `Wght900_Wdth75_Serf100` (still used for the UFO's own
+    # folder name below) -- the DEFAULT master's `font.info` gets copied
+    # into the compiled variable font's base name table (nameID 1/2/16/
+    # 17) via its SourceDescriptor's `copyInfo=True`, so a technical
+    # styleName here leaked straight into the font's actual family/style
+    # name -- confirmed by dumping the compiled font's name table and
+    # finding "Azrienoch V2 Wght400_Wdth100_Serf0" where "Azrienoch V2"/
+    # "Regular" belonged.
+    font.info.styleName = params.instance_style_name(wght, wdth, serf)
     font.info.versionMajor = 0
     font.info.versionMinor = 1
 

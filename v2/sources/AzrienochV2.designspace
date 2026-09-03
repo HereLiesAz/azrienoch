@@ -3,12 +3,25 @@
   <axes>
     <axis tag="wght" name="wght" minimum="100" maximum="900" default="400">
       <labelname xml:lang="en">Weight</labelname>
+      <labels>
+        <label uservalue="100" name="Thin"/>
+        <label uservalue="400" name="Regular"/>
+        <label uservalue="900" name="Black"/>
+      </labels>
     </axis>
     <axis tag="wdth" name="wdth" minimum="75" maximum="100" default="100">
       <labelname xml:lang="en">Width</labelname>
+      <labels>
+        <label uservalue="100" name="Normal" elidable="true"/>
+        <label uservalue="75" name="Condensed"/>
+      </labels>
     </axis>
     <axis tag="SERF" name="SERF" minimum="0" maximum="100" default="0">
       <labelname xml:lang="en">Serif</labelname>
+      <labels>
+        <label uservalue="0" name="Sans" elidable="true"/>
+        <label uservalue="100" name="Slab"/>
+      </labels>
     </axis>
   </axes>
   <sources>
@@ -101,4 +114,90 @@
       </location>
     </source>
   </sources>
+  <instances>
+    <instance familyname="Azrienoch V2" stylename="Condensed Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Condensed Slab Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Slab Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Condensed Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Condensed Slab Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Slab Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Condensed Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Condensed Slab Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch V2" stylename="Slab Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </instance>
+  </instances>
 </designspace>

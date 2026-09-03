@@ -107,6 +107,35 @@ samples x 2 serif samples = 12 masters. The default
 location (400, 100, 0) is itself one of the twelve, as a designspace
 requires.
 
+Every one of those 12 masters is also an `fvar` named instance --
+`designspace_build.py` gives each an `InstanceDescriptor` (Thin/
+Regular/Black x Normal/Condensed x Sans/Slab, e.g. "Black Condensed
+Slab") and a STAT table with a proper axis-value label per stop, so a
+style picker lists all 12 named styles instead of just interpolating
+silently along raw axis sliders. This was missing entirely through the
+font's first several revisions -- the compiled variable TTF always had
+the full range internally (any `wght`/`wdth`/`SERF` coordinate
+interpolates correctly), but with no named instances defined, apps that
+list a font's available styles rather than exposing its axes directly
+had only the implicit default ("Regular") to show, regardless of how
+many masters actually existed. Getting the naming right took two
+passes: STAT's own elision rule (`AxisLabelDescriptor.elidable`) turned
+out to override each instance's explicit `styleName`, not just decorate
+it -- marking `wght`'s default ("Regular") elidable the same way
+`wdth`/`SERF`'s defaults are (correctly dropping "Normal"/"Sans" when
+they don't apply) made "Regular" vanish from every instance that shared
+that weight, not just the one truly-default instance ("Condensed"
+instead of the intended "Condensed Regular"). Fixed by never eliding
+`wght`'s own labels. Separately, each master UFO's `font.info.styleName`
+had been set to the same technical identifier used for its own on-disk
+folder name (`Wght900_Wdth75_Serf100`) -- harmless for the 11 masters
+that only feed `gvar`, but the DEFAULT master's `font.info` is copied
+into the compiled font's actual name table (nameID 1/2/16/17) via its
+source's `copyInfo=True`, so that technical string leaked into the
+font's real family/style name until `font.info.styleName` was changed
+to the same human name (`params.instance_style_name`) the fvar instance
+uses.
+
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
