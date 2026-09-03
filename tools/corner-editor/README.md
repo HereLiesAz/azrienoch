@@ -47,27 +47,19 @@ Then open `http://localhost:8766/`.
    disagrees if they don't.
 5. The **Regular** panel's *Travel path* controls pick two corners (default
    Extra Thin -> Extra Black); for each node it overlays a dashed curve
-   from that node's position at the first corner, through Regular's own
-   position for that node, to its position at the second corner. Regular's
-   point is literally the control point of that quadratic Bezier -- so
-   dragging it (the same drag already used to edit Regular's outline)
-   visibly bends the node's travel between the two corners, instead of
-   moving it blind. Switch the pair to Condensed -> Wide to check the
-   width axis's travel the same way.
-6. The Regular panel's **Weight easing** / **Width easing** sliders (-1 to
-   1, 0 = linear) control the *rate* a node approaches Regular's shape as
-   its slider nears 0.5 -- not where it ends up. Every anchor still sits
-   exactly where it was drawn at every easing setting; only how quickly
-   the shape rushes toward (or lingers away from) Regular changes. This is
-   deliberately not a freely-draggable control: it's a single bounded
-   scalar per axis, anchored at the center, because letting it move
-   anywhere would mean it's no longer *only* about the dead center.
-7. The **Preview** panel interpolates live as you edit, read-only. Its two
+   from that node's position at the first corner, through its position at
+   the second corner, forced to pass exactly through Regular's own
+   position for that node at the midpoint. So dragging Regular's point
+   (the same drag already used to edit its outline) visibly bends the
+   node's travel between the two corners -- that drag *is* the only
+   control there is; the curve's shape is a forced consequence of it, not
+   a second, separate decision. Switch the pair to Condensed -> Wide to
+   check the width axis's travel the same way.
+6. The **Preview** panel interpolates live as you edit, read-only. Its two
    sliders are the weight axis (0 = extra thin, 1 = extra black) and the
    width axis (0 = condensed, 1 = wide); **Jump to regular** sets both to
    0.5, which is exactly where the hand-drawn Regular anchor sits.
-8. **Save glyph** writes all five anchors, plus the two easing values,
-   back to `data/<name>.json`.
+7. **Save glyph** writes all five anchors back to `data/<name>.json`.
 
 ## How the interpolation works
 
@@ -89,29 +81,29 @@ reproduce a `regular` shape that was hand-corrected to be anything else.
 
 So each point's interpolated position is corner-bilinear *plus a
 displacement term*: the difference between the drawn `regular` anchor and
-what bilinear alone would have predicted at the center, scaled by a bump
-function that equals 1 exactly at the center and fades to 0 along all four
-edges and corners. The result reproduces all five hand-drawn anchors
-exactly and blends smoothly everywhere between them, without needing the
-four additional edge-midpoint masters a true biquadratic patch would
-require.
+what bilinear alone would have predicted at the center, scaled by
+`bump(t) = 4*t*(1-t)`.
+
+That specific parabola isn't a style choice -- it's forced. A real
+quadratic Bezier does not pass through its own control point (a common
+misconception); to make one pass exactly through a chosen midpoint `M`
+with fixed endpoints `A` and `B`, the actual control point has to be
+`C = 2M - (A+B)/2`. Substituting that into the standard quadratic Bezier
+formula and simplifying leaves exactly `linear(t) + bump(t)*(M -
+linear(0.5))` with `bump(t) = 4*t*(1-t)` -- see `bezierControlFor()` and
+the comment above `interpolateGlyph()` in `index.html` for the derivation.
+`bump` is 1 exactly at the center and 0 along all four edges/corners for
+every glyph, with no free parameter: dragging Regular's point is the only
+control a designer needs, since the curve in between is a forced
+consequence of that drag, not a second, independent decision. This
+reproduces all five hand-drawn anchors exactly and blends smoothly
+everywhere between them, without needing the four additional
+edge-midpoint masters a true biquadratic patch would require, and without
+needing any adjustable easing curve either.
 
 This needs exactly five drawings and no more, which is why the tool
 enforces point-for-point compatibility across all five rather than trying
 to guess correspondences.
-
-By default the bump is the product of two triangular "tent" curves, one
-per axis -- a linear approach to Regular's shape from every direction.
-The **Weight easing** / **Width easing** sliders replace each tent with a
-power curve (`easeTent(t, k)` in `index.html`: exponent `2^(2k)` on the
-normalized distance from the nearer corner) that still hits exactly 0 at
-both corners and exactly 1 at the center for every `k` -- so this can only
-ever change how fast a node approaches Regular's shape, never where any
-anchor sits. This is deliberately not a general animation-easing curve
-editable at arbitrary points (no free control handle, no per-node
-easing): it's a single scalar per axis, because the only place a
-"control" is allowed to live is the one point already guaranteed to be
-the dead center of the interpolation -- Regular.
 
 ## Data format
 
@@ -125,8 +117,7 @@ the dead center of the interpolation -- Regular.
     "condensed":  { "width": 420, "contours": [...] },
     "wide":       { "width": 600, "contours": [...] },
     "regular":    { "width": 500, "contours": [...] }
-  },
-  "easing": { "weight": 0, "width": 0 }
+  }
 }
 ```
 
