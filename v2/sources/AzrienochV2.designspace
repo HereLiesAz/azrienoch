@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<designspace format="5.0">
+  <axes>
+    <axis tag="wght" name="wght" minimum="100" maximum="900" default="400">
+      <labelname xml:lang="en">Weight</labelname>
+    </axis>
+    <axis tag="wdth" name="wdth" minimum="75" maximum="100" default="100">
+      <labelname xml:lang="en">Width</labelname>
+    </axis>
+  </axes>
+  <sources>
+    <source filename="AzrienochV2-Wght100_Wdth75.ufo" name="Wght100_Wdth75" familyname="Azrienoch V2" stylename="Wght100_Wdth75">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght100_Wdth100.ufo" name="Wght100_Wdth100" familyname="Azrienoch V2" stylename="Wght100_Wdth100">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght400_Wdth75.ufo" name="Wght400_Wdth75" familyname="Azrienoch V2" stylename="Wght400_Wdth75">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght400_Wdth100.ufo" name="Wght400_Wdth100" familyname="Azrienoch V2" stylename="Wght400_Wdth100">
+      <lib copy="1"/>
+      <groups copy="1"/>
+      <features copy="1"/>
+      <info copy="1"/>
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght900_Wdth75.ufo" name="Wght900_Wdth75" familyname="Azrienoch V2" stylename="Wght900_Wdth75">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght900_Wdth100.ufo" name="Wght900_Wdth100" familyname="Azrienoch V2" stylename="Wght900_Wdth100">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+      </location>
+    </source>
+  </sources>
+</designspace>
