@@ -1,17 +1,17 @@
 <?xml version='1.0' encoding='UTF-8'?>
 <glyph name="n" format="2">
-  <advance width="620"/>
+  <advance width="580"/>
   <unicode hex="006E"/>
   <outline>
     <contour>
       <point x="0" y="0" type="line"/>
       <point x="0" y="500" type="line"/>
-      <point x="620" y="500" type="line"/>
-      <point x="620" y="0" type="line"/>
-      <point x="500.0" y="0" type="line"/>
-      <point x="500.0" y="210.0" type="line" smooth="yes"/>
-      <point x="500.0" y="398.0"/>
-      <point x="310.0" y="398.0" type="qcurve" smooth="yes"/>
+      <point x="580" y="500" type="line"/>
+      <point x="580" y="0" type="line"/>
+      <point x="460.0" y="0" type="line"/>
+      <point x="460.0" y="210.0" type="line" smooth="yes"/>
+      <point x="460.0" y="398.0"/>
+      <point x="290.0" y="398.0" type="qcurve" smooth="yes"/>
       <point x="120.0" y="398.0"/>
       <point x="120.0" y="210.0" type="qcurve" smooth="yes"/>
       <point x="120.0" y="0" type="line"/>

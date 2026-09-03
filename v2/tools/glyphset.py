@@ -83,20 +83,26 @@ def draw_v(pen, m: Metrics) -> float:
 
 
 def draw_O(pen, m: Metrics) -> float:
-    width = round(700 * m.wf)
+    """A true circle at wdth=100 (width == cap-height), same reasoning as
+    draw_o below."""
+    width = round(m.cap * m.wf)
     rx, ry = width / 2, m.cap / 2
     cx, cy = width / 2, m.cap / 2
-    hole = m.stem * 0.85
+    hole = m.stem * 0.78
     draw_oval(pen, cx, cy, rx, ry, clockwise=True)
     draw_oval(pen, cx, cy, max(rx - hole, rx * 0.1), max(ry - hole, ry * 0.1), clockwise=False)
     return width
 
 
 def draw_o(pen, m: Metrics) -> float:
-    width = round(560 * m.wf)
+    """A true circle at wdth=100 (Jost draws its round letters as near-
+    perfect circles, not rounded rectangles) with a tighter counter than
+    a fully geometric face would use (Helvetica's apertures are closed
+    down from the geometric ideal, not left wide open)."""
+    width = round(m.xh * m.wf)
     rx, ry = width / 2, m.xh / 2
     cx, cy = width / 2, m.xh / 2
-    hole = m.stem * 0.85
+    hole = m.stem * 0.78
     draw_oval(pen, cx, cy, rx, ry, clockwise=True)
     draw_oval(pen, cx, cy, max(rx - hole, rx * 0.1), max(ry - hole, ry * 0.1), clockwise=False)
     return width
@@ -116,7 +122,7 @@ def draw_n(pen, m: Metrics) -> float:
     into this rising-dome one.
     """
     stem = m.stem
-    width = max(round(620 * m.wf), 2 * stem + 60)
+    width = max(round(580 * m.wf), 2 * stem + 60)
     spring = m.xh * 0.42
     bridge = stem * 0.85
     peak = m.xh - bridge
