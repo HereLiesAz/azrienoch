@@ -61,6 +61,19 @@ all and are simply left alone -- confirmed by inspection, not assumed:
 `detect_feet` finds nothing there because there's nothing matching its
 own definition of a stem terminal, not because they're special-cased
 out.
+
+The same is true of every fully round letter in `SINGLE_STORY` --
+`o`/`c`/`e`/`s` -- even though the class as a whole is documented above
+as "gets exactly TWO feet": a round bowl has no flat run anywhere on it
+either, at any weight, so `detect_feet` finds nothing to grow a foot
+from for these four specifically, the same structural limitation as
+g's hook, not a bug (confirmed directly: `o`'s own point count doesn't
+change one bit between SERF=0 and SERF=100). A Glee design-coherence
+audit flagged `c`/`e`/`s` getting no feet as suspicious since they're
+declared SINGLE_STORY; `o` -- never flagged, and never expected to grow
+feet either -- has always behaved identically, which is what confirms
+this is round letters' own consistent limitation rather than something
+introduced by `c`/`e`/`s` being Arimo-sourced.
 """
 
 from __future__ import annotations

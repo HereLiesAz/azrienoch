@@ -62,11 +62,12 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
     the vendored Arimo instead (see `arimo_source.py`: an open, metric-
     compatible Helvetica/Arial workalike, used because these three
     letters are meant to read as Helvetica-derived, and actual
-    Helvetica outline data is proprietary) -- and applies the round-
-    counter modification to everyone else -- everything except serif
-    feet. Arimo's own 'c'/'e'/'s' already have Helvetica's flat/square
-    terminals, so they skip `apply_terminal_cuts` (which exists only to
-    reorient Jost's own, different terminals) entirely.
+    Helvetica outline data is proprietary) -- and applies the terminal-
+    cut and round-counter modifications -- everything except serif feet.
+    Arimo's own 'c'/'e'/'s' terminals are close to horizontal but
+    genuinely diagonal by design, so they go through
+    `apply_terminal_cuts` too, just with Arimo's own point indices
+    rather than Jost's.
     """
     font = ufoLib2.Font()
     jost_names = jost_source.glyph_names_for_chars(CHARS)
@@ -80,9 +81,12 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
+    quirks.fix_y_crotch(font["y"])
+    quirks.fix_six_nine_notch(font["six"])
+    quirks.fix_six_nine_notch(font["nine"])
+
     for ch in CHARS:
-        if ch not in _ARIMO_CHARS:
-            quirks.apply_terminal_cuts(font[_glyph_name(ch)])
+        quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
     o_inner_points = _o_inner_contour(font["o"]).points
     for name in quirks.ROUND_COUNTER_GLYPHS:

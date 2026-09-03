@@ -31,11 +31,24 @@ professionally drawn outlines and modifying them from there -- per the
 project owner's direction -- is the current approach.
 
 Jost only exposes a `wght` axis (100-900); it has no `wdth` axis to draw
-from. `wdth` here is currently a uniform horizontal scale of the
-extracted outline and advance width (see `jost_source.py`) -- a
-placeholder, not a true optically condensed redraw (a real condensed
-cut needs redrawn counters and adjusted spacing, not squashed stems).
-Worth revisiting once the modification pass below is underway.
+from. `wdth` here goes through `condense.py`'s per-x, ink-density
+weighted compression (see that module's docstring) rather than a flat
+`x *= wf` scale -- the flat scale used to thin a stem by the same
+factor it narrowed a counter, which read as an obvious squish rather
+than a condensed cut at heavy weight (a stem's X-extent shrinks with
+the scale, a horizontal stroke's Y-extent doesn't, so the two drift out
+of proportion the heavier and more condensed a master gets -- caught by
+rendering the full alphabet at `wght`=900/`wdth`=75 and comparing stroke
+weights directly). The new version still isn't a true optically
+condensed redraw (no counter is actually reshaped, and it's a single
+global compression curve applied the same at every height, so a
+diagonal stroke's x position only gets partial credit for the ink it
+carries) -- worth revisiting once the modification pass below is
+underway -- but stems now measure close to their `wdth`=100 width
+instead of uniformly thinned by the same 25% as every counter (`n`'s
+stem: 0.98x instead of 0.75x; `H`'s: 0.90x instead of 0.75x, both at
+`wght`=900 -- `o`'s ring, which has no distinct stem/counter columns to
+tell apart, still compresses close to uniformly, which is expected).
 
 `c`/`e`/`s` are the one exception: they're pulled from
 [Arimo](https://github.com/googlefonts/arimo) instead (vendored at
@@ -103,21 +116,87 @@ see below), with a first pass of Azrienoch-specific modifications on top
 
 - **`c`/`e`/`s` are sourced from Arimo, not Jost** (`tools/arimo_source.py`
   -- see "Where the letterforms come from" and "Design references"
-  above): these three are meant to read as Helvetica-derived, and
-  Arimo's own flat/square Helvetica-style terminals need no reorientation
-  at all -- a real fix, not a workaround, for a problem this project hit
-  twice trying to reorient Jost's own terminals on `c`/`s` into that
-  shape (see the similarity-transform note below): the reoriented cut
-  kept producing a self-intersection at heavy weight that traced back to
-  the curve geometry right at that terminal, not just the reorientation
+  above): these three are meant to read as Helvetica-derived. Arimo's own
+  terminals there are close to horizontal but genuinely diagonal by
+  design (a rise of 12-31 units across the cut, confirmed by dumping
+  Arimo's own raw points directly, not assumed from how they looked at a
+  glance), so they still go through `quirks.py::apply_terminal_cuts`,
+  just with Arimo's own point indices instead of Jost's -- this is a
+  real fix, not a workaround, for a problem this project hit twice
+  trying to reorient Jost's own terminals on `c`/`s` into that shape
+  (see the similarity-transform note below): the reoriented cut kept
+  producing a self-intersection at heavy weight that traced back to the
+  curve geometry right at that terminal, not just the reorientation
   math. Arimo ships only as static instances (Regular/Bold, not a
-  variable font); `arimo_source.py` linearly interpolates (or, past
-  Bold's own 700, extrapolates) between their point coordinates directly
-  for this project's own `wght` samples, confirmed safe to do
-  point-for-point since `c`/`e`/`s` have identical point-command
-  signatures between the two vendored weights.
-- **Every other terminal reorientation** (`quirks.py::_reorient_cut`,
-  still used for `r`/`f`'s vertical cut) transforms not just the two
+  variable font); `arimo_source.py` interpolates/extrapolates between
+  their point coordinates directly for this project's own `wght`
+  samples, confirmed safe to do point-for-point since `c`/`e`/`s` have
+  identical point-command signatures between the two vendored weights.
+- **`c`/`e`/`s`'s WEIGHT is calibrated against Jost's own original `c`,
+  not Arimo's own Regular/Bold labels.** A first version mapped this
+  project's `wght` value straight onto an interpolation fraction between
+  Arimo Regular (treated as 400) and Bold (700) -- but Arimo's own
+  weight range is far narrower than Jost's (`c`'s ring-wall thickness,
+  measured by a horizontal scanline through the bowl, spans 10 to 201
+  units across Jost's own 100-900, a ~20x range, versus only 188 to 295
+  -- ~1.6x -- between Arimo Regular and Bold), so that naive mapping
+  rendered `c`/`e`/`s` 3-4x heavier than the surrounding Jost letters at
+  `wght`=100 -- caught by a Glee design-coherence audit rendering
+  "acorns"/"assess" at Thin, confirmed with a direct stroke-width
+  measurement rather than left as a visual impression. `arimo_source.py`
+  now measures Jost's own ORIGINAL letter's stroke-width ratio at the
+  target `wght` (via a real instancer sample, not extrapolated) and
+  solves for the Arimo interpolation parameter that scales that same
+  Arimo letter's own stroke width by that same ratio -- correct WEIGHT
+  from the letter this project used before switching to Arimo, correct
+  SHAPE from Arimo, per the project owner's own framing of the fix.
+  Calibrated per letter (`c`, `e`, `s` each get their own ratio and their
+  own scanline height), not shared: a shared, `c`-only calibration left
+  `e`/`s` visibly heavier than `c` at `wght`=100, since each has its own
+  Regular-to-Bold stroke-width delta in Arimo. `e` additionally needed
+  its scanline moved out of its upper lobe (which measures aperture
+  pinch at heavy weight, not stroke width -- Jost's own `e` aperture
+  there goes from wide open to nearly shut across its `wght` range, a
+  4.3x ratio that broke `e`'s counter into two slivers at `wght`=900
+  when fed into Arimo's much gentler range) and into its lower bowl,
+  clear of both the aperture and the crossbar, which brought it back in
+  line with `c`/`s`. This pushes the extrapolation well past Arimo's own
+  [0, 1] Regular-Bold range in both directions, which surfaced (and this
+  same audit round fixed) a genuine near-duplicate-point defect in
+  Arimo's own raw `e` that only became a visible spike once stretched
+  that far -- see the `y`/`six`/`nine` fixes below for the same class of
+  bug inherited from Jost. `e` still reads very slightly heavier than
+  `c`/`o` at `wght`=100 (its crossbar has its own, smaller Regular-Bold
+  delta than its bowl, which the single per-letter alpha doesn't chase
+  separately -- a targeted second alpha for just the crossbar's points
+  was tried and reverted: it thinned the crossbar out of step with its
+  neighboring points and folded a bowtie at the junction, a worse defect
+  than the mild heaviness it was meant to fix). Known, minor, not the
+  counter-breaking regression this calibration was rewritten to fix.
+- **A Glee stability audit's self-intersection sweep across the full
+  `wght`x`wdth`x`SERF` grid** caught three genuine defects inherited
+  byte-for-byte from the vendored Jost outlines (none introduced by this
+  project's own extraction or modification code, which itself checked
+  out clean everywhere the audit tested it): `y` had a visible hole at
+  its crotch (its two diagonal strokes' inner edges terminated a few
+  units past their actual crossing point instead of meeting it exactly);
+  `six`/`nine` each had a small notch where the bowl meets the
+  ascender/descender stroke (two on-curve points a few units apart where
+  the drawing intends one). Both fixed in `quirks.py`
+  (`fix_y_crotch`/`fix_six_nine_notch`) by moving the offending points to
+  where the geometry actually intends them to meet, not by adding or
+  removing a point. A fourth finding, digit `4`'s technically
+  self-intersecting crossbar/stem junction, was confirmed by the same
+  audit to render with no visible artifact (a harmless T-junction under
+  nonzero-winding fill) and needed no fix. A fifth, capital `B`'s
+  self-intersecting waist (two overlapping spine segments in its
+  single-contour "keyhole" construction), is real but not yet fixed --
+  safely untangling it needs tracing the letter's full counter-bridge
+  topology rather than a quick point nudge, deferred rather than risked
+  under time pressure.
+- **Every terminal reorientation** (`quirks.py::_reorient_cut`, used for
+  `c`/`e`/`s`'s horizontal cut and `r`/`f`'s vertical one) transforms
+  not just the two
   terminal points but the whole run of off-curve control points leading
   into each one, via a similarity transform (rotate + scale, pivoting on
   that curve's own anchor point) rather than a plain translation: a
@@ -204,6 +283,12 @@ notching straight into their own counters):
   strictly between two others doesn't flare at all. This is what fixes
   `H`/`R`: both used to flare both ways whenever geometrically safe,
   which included flaring each stem toward the other, into the counter.
+- `o`/`c`/`e`/`s` -- fully round letters, all four declared
+  `SINGLE_STORY` -- get NO foot at any `SERF` value, on every one of
+  them alike: a round bowl has no flat stem run anywhere on it, the same
+  structural limitation already documented above for `g`'s curved
+  descender hook, not something specific to `c`/`e`/`s` being
+  Arimo-sourced (`o`, purely Jost-derived, behaves identically).
 
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
@@ -219,6 +304,8 @@ Not yet done, in order:
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
   tune real pairs against.
 - **The `wdth` axis's uniform-scale placeholder** (see above).
+- **Capital `B`'s self-intersecting waist**, inherited from Jost --
+  flagged by a Glee stability audit, not yet fixed (see "Status" above).
 
 ## Building
 
@@ -247,6 +334,7 @@ v2/tools/ufo_build.py          builds one UFO per master from jost_source.py + q
 v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
 v2/tools/arimo_source.py       extracts c/e/s from vendored Arimo (Helvetica-derived)
+v2/tools/condense.py           the wdth axis: ink-density weighted horizontal compression
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
 v2/third_party/arimo/          vendored Arimo Regular/Bold + its own OFL.txt
 v2/sources/                    build output (UFOs + designspace)
