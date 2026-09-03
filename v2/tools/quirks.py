@@ -341,3 +341,68 @@ def reshape_counter_to_o(glyph, o_inner_points) -> bool:
 ROUND_COUNTER_GLYPHS = {"o", "b", "d", "p", "q", "g"}
 
 
+# ---------------------------------------------------------------------------
+# Micro-notch fixes: a handful of Jost's own glyphs place two on-curve
+# points a few units apart where the drawing clearly intends a single
+# point (two strokes meeting, or a curve terminating flush against a
+# straight run) -- a genuine defect in the vendored source, not
+# something Azrienoch's own extraction or terminal-cut logic introduced
+# (confirmed directly: these exact coordinates appear byte-for-byte in
+# Jost[wght].ttf's own raw outlines, caught by a Glee stability audit's
+# self-intersection sweep across the full wght x wdth x SERF grid).
+# Left uncorrected, the tiny stray segment between the two near-
+# duplicate points folds the fill, showing as a visible hole ('y'), or
+# a thin notch carved into the stroke ('six'/'nine').
+# ---------------------------------------------------------------------------
+
+def _line_intersect(a, b, c, d):
+    """The intersection of infinite lines through (a, b) and (c, d)."""
+    x1, y1 = a.x, a.y
+    x2, y2 = b.x, b.y
+    x3, y3 = c.x, c.y
+    x4, y4 = d.x, d.y
+    denom = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+    t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / denom
+    return x1 + t * (x2 - x1), y1 + t * (y2 - y1)
+
+
+def fix_y_crotch(glyph) -> None:
+    """'y's two diagonal strokes' inner edges are meant to meet at a
+    single crotch point where they cross, but Jost's own points 2 and 3
+    (contour 0) sit a few units apart on either side of the true
+    crossing -- confirmed by computing where the lines through their own
+    neighbors (1->2 and 3->4) actually intersect: at wght=400 that point
+    is (223.6, 143.0), well clear of both original points (208, 104) and
+    (241, 100), meaning the drawn edges already cross before reaching
+    them and fold back, leaving a visible triangular hole at the join.
+    Moves both points to the real intersection -- unlike the six/nine
+    notches below, a plain midpoint merge would leave the fold in place
+    here, since the true crossing is genuinely elsewhere.
+    """
+    pts = glyph.contours[0].points
+    x, y = _line_intersect(pts[1], pts[2], pts[3], pts[4])
+    pts[2].x, pts[2].y = x, y
+    pts[3].x, pts[3].y = x, y
+
+
+def _merge_near_duplicate(points, i1: int, i2: int) -> None:
+    """Collapses points[i1]/points[i2] -- a few units apart where the
+    drawing intends one point -- to their shared midpoint, eliminating
+    the stray micro-segment between them without changing point count."""
+    mx = (points[i1].x + points[i2].x) / 2.0
+    my = (points[i1].y + points[i2].y) / 2.0
+    points[i1].x, points[i1].y = mx, my
+    points[i2].x, points[i2].y = mx, my
+
+
+def fix_six_nine_notch(glyph) -> None:
+    """'six'/'nine' each place two on-curve points ~8 units apart right
+    where the bowl's curve meets the ascender/descender's straight edge
+    (contour 1, indices 20/21 in both) -- confirmed present in Jost's
+    own raw outline at every sampled weight from 150 to 900 (a Glee
+    stability audit's finding). Close enough together, unlike 'y's
+    crotch, that a plain midpoint merge (not a full line intersection)
+    cleanly removes the notch."""
+    _merge_near_duplicate(glyph.contours[1].points, 20, 21)
+
+

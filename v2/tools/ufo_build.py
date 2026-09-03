@@ -81,6 +81,10 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
+    quirks.fix_y_crotch(font["y"])
+    quirks.fix_six_nine_notch(font["six"])
+    quirks.fix_six_nine_notch(font["nine"])
+
     for ch in CHARS:
         quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
