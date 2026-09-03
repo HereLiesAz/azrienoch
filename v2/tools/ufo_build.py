@@ -114,7 +114,7 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
         glyph = reference_font[_glyph_name(ch)]
         min_y = min(p.y for c in glyph.contours for p in c.points)
         guides = serifs.guides_for(ch, min_y)
-        specs = serifs.detect_feet(glyph, guides)
+        specs = serifs.detect_feet(glyph, guides, ch)
         cache[ch] = (specs, guides)
     _serif_reference_cache = cache
     return cache

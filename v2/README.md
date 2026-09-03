@@ -178,20 +178,32 @@ a hairline at `SERF`=0, a full slab at `SERF`=100), rather than
 relocating the stem's own points -- appending same-wound ink can only
 ever add, never accidentally flip a fill relationship the way an
 earlier, since-discarded point-insertion version of this did on `n`.
-Which terminal(s) get a foot follows the project owner's own rule:
+Which terminal(s) get a foot, and which direction each one flares,
+follows the project owner's own handwriting-inspired rule -- rewritten
+once already after the first pass got it wrong in two ways (every
+single-story letter got a foot per stem instead of exactly two, and
+multi-stem letters like `H`/`R` flared symmetrically outward AND inward,
+notching straight into their own counters):
 
-- A letter confined to the x-height box (no ascender/descender) gets a
-  foot at both the baseline and the x-height top, wherever a flat run
-  genuinely exists there -- `n`'s stems, for instance, only have one at
-  the baseline, since their tops curve straight into the arch with no
-  flat run to grow a foot from at all.
-- A letter with an ascender/descender gets a foot only at the end that
-  terminates at a baseline or a descender depth (`b`/`d`/`h`/`k`/`l`/
-  `f`/`t`'s baseline; `q`'s own descender), never at an ascender/cap
-  top -- `g`'s own descender is a curved hook rather than a straight
-  stem in this construction, so it gets no foot at all, a real
-  limitation of "slab feet on flat stems only," not a bug.
-- Uppercase and digits get a foot only at the baseline.
+- A single-story letter (`SINGLE_STORY`) gets exactly TWO feet total:
+  the x-height top of its leftmost stem, flaring only left, and the
+  baseline of its rightmost stem, flaring only right -- not a foot on
+  every flat terminal.
+- An ascender letter (`b`/`d`/`f`/`h`/`k`/`l`/`t`) gets a foot only at
+  the baseline, never the ascender top.
+- `g`/`p`/`q` get a foot only at the x-height top instead -- the
+  opposite end from the rest of `DESCENDER_TOP`'s siblings -- `g`'s own
+  descender is a curved hook rather than a straight stem in this
+  construction anyway, so it never had a foot there to move.
+- `y` gets a foot at both the x-height top and its own descender depth.
+- Uppercase and digits get a foot only at the baseline, never the top.
+- Every letter EXCEPT single-story ones keeps a foot per qualifying
+  stem, but each one flares only away from the letter's OTHER stems: the
+  leftmost stem at a guide flares left only, the rightmost flares right
+  only, a lone stem at that guide flares both ways, and anything
+  strictly between two others doesn't flare at all. This is what fixes
+  `H`/`R`: both used to flare both ways whenever geometrically safe,
+  which included flaring each stem toward the other, into the counter.
 
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
@@ -207,15 +219,6 @@ Not yet done, in order:
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
   tune real pairs against.
 - **The `wdth` axis's uniform-scale placeholder** (see above).
-- **The SERF axis's classification/geometry rules**, per the project
-  owner's more detailed direction than the first pass implemented:
-  single-story lowercase letters should get exactly two diagonal feet
-  (top-left of the first stem flaring only left/backward, bottom-right
-  of the last stem flaring only right/forward -- not a foot on every
-  flat terminal), two-story ascenders one symmetric-outward foot at the
-  bottom only, `g`/`p`/`q` one at the top instead, `y` both, and
-  uppercase never a top foot with bottom feet flaring strictly outward
-  (the current `H`/`R` feet flare inward, which needs fixing).
 
 ## Building
 
