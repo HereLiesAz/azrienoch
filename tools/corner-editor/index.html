@@ -1,0 +1,626 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Corner Editor</title>
+<style>
+  body { font: 13px -apple-system, sans-serif; margin: 0; background: #1e1e1e; color: #ddd; }
+  #toolbar { display: flex; gap: 12px; align-items: center; padding: 8px 12px; background: #262626; border-bottom: 1px solid #3a3a3a; flex-wrap: wrap; }
+  #toolbar label { display: flex; gap: 4px; align-items: center; }
+  select, button, input[type=text] { background: #333; color: #ddd; border: 1px solid #555; border-radius: 4px; padding: 4px 8px; font: inherit; }
+  button:hover { background: #444; cursor: pointer; }
+  button.primary { background: #2d6cdf; border-color: #2d6cdf; }
+  button.primary:hover { background: #3a7bf0; }
+  button.active { background: #b3562d; border-color: #b3562d; }
+  #status { padding: 4px 12px; color: #9a9; font-size: 12px; min-height: 1.2em; }
+  #status.err { color: #e77; }
+  #grid { display: grid; grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 8px; padding: 8px; height: calc(100vh - 90px); box-sizing: border-box; }
+  .panel { display: flex; flex-direction: column; background: #262626; border-radius: 6px; overflow: hidden; }
+  .panel-header { display: flex; gap: 8px; align-items: center; padding: 6px 10px; background: #2d2d2d; border-bottom: 1px solid #3a3a3a; }
+  .panel-header .title { font-weight: 600; flex: 1; }
+  .panel.active-panel .panel-header { background: #2d6cdf; }
+  .panel svg { flex: 1; width: 100%; background: #111; display: block; cursor: crosshair; min-height: 0; }
+  .panel-footer { padding: 6px 10px; display: flex; gap: 6px; flex-wrap: wrap; background: #2d2d2d; border-top: 1px solid #3a3a3a; }
+  #panel-extraThin { grid-column: 1; grid-row: 1; }
+  #panel-extraBlack { grid-column: 1; grid-row: 2; }
+  #panel-condensed { grid-column: 2; grid-row: 1; }
+  #panel-wide { grid-column: 2; grid-row: 2; }
+  #panel-preview { grid-column: 3; grid-row: 1 / 3; }
+  #panel-preview .panel-header { background: #2d4a2d; }
+  .pt-on { fill: #4ea1ff; stroke: #fff; stroke-width: 0.5; cursor: grab; }
+  .pt-off { fill: none; stroke: #ff9d4e; stroke-width: 1.5; cursor: grab; }
+  .pt-selected { fill: #ffe14e !important; stroke: #fff; }
+  .ctrl-line { stroke: #555; stroke-width: 1; stroke-dasharray: 2,2; }
+  .outline { fill: #ddd; fill-opacity: 0.55; stroke: #888; stroke-width: 1; }
+  .baseline { stroke: #2a4; stroke-width: 1; }
+  .rubberband { fill: rgba(78,161,255,0.15); stroke: #4ea1ff; stroke-width: 1; }
+  .sliders { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
+  .sliders label { display: flex; flex-direction: column; align-items: stretch; gap: 2px; font-size: 12px; }
+  .sliders input[type=range] { width: 100%; }
+  .mismatch { color: #e77; padding: 8px 10px; font-size: 12px; white-space: pre-line; }
+</style>
+</head>
+<body>
+<div id="toolbar">
+  <label>Glyph <select id="glyphSelect"></select></label>
+  <input id="newGlyphName" type="text" placeholder="new glyph name" style="width:110px">
+  <button id="newGlyphBtn">New</button>
+  <span style="flex:1"></span>
+  <button id="copyToOthersBtn">Copy active corner's outline to other 3 (seed topology)</button>
+  <button id="undoBtn">Undo (active)</button>
+  <button id="saveBtn" class="primary">Save glyph</button>
+</div>
+<div id="status"></div>
+<div id="grid">
+  <div class="panel" id="panel-extraThin" data-corner="extraThin">
+    <div class="panel-header"><span class="title">Extra Thin</span></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="new-contour">New contour</button>
+      <button class="toggle-type">Toggle on/off-curve</button>
+      <button class="delete-selected">Delete selected</button>
+      <span class="hint" style="color:#888">draw=click empty area · click=select · shift-click=multi · drag=move</span>
+    </div>
+  </div>
+  <div class="panel" id="panel-extraBlack" data-corner="extraBlack">
+    <div class="panel-header"><span class="title">Extra Black</span></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="new-contour">New contour</button>
+      <button class="toggle-type">Toggle on/off-curve</button>
+      <button class="delete-selected">Delete selected</button>
+      <span class="hint" style="color:#888">draw=click empty area · click=select · shift-click=multi · drag=move</span>
+    </div>
+  </div>
+  <div class="panel" id="panel-condensed" data-corner="condensed">
+    <div class="panel-header"><span class="title">Condensed</span></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="new-contour">New contour</button>
+      <button class="toggle-type">Toggle on/off-curve</button>
+      <button class="delete-selected">Delete selected</button>
+      <span class="hint" style="color:#888">draw=click empty area · click=select · shift-click=multi · drag=move</span>
+    </div>
+  </div>
+  <div class="panel" id="panel-wide" data-corner="wide">
+    <div class="panel-header"><span class="title">Wide</span></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="new-contour">New contour</button>
+      <button class="toggle-type">Toggle on/off-curve</button>
+      <button class="delete-selected">Delete selected</button>
+      <span class="hint" style="color:#888">draw=click empty area · click=select · shift-click=multi · drag=move</span>
+    </div>
+  </div>
+  <div class="panel" id="panel-preview">
+    <div class="panel-header"><span class="title">Preview (bilinear interpolation)</span></div>
+    <div class="sliders">
+      <label>Weight: extra thin <span id="wghtVal">0.50</span> extra black
+        <input id="wghtSlider" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <label>Width: condensed <span id="wdthVal">0.50</span> wide
+        <input id="wdthSlider" type="range" min="0" max="1" step="0.01" value="0.5">
+      </label>
+      <button id="jumpRegularBtn">Jump to regular (0.5 / 0.5)</button>
+    </div>
+    <div id="mismatch" class="mismatch"></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+  </div>
+</div>
+
+<script>
+const API = "";
+const CORNERS = ["extraThin", "extraBlack", "condensed", "wide"];
+const state = {
+  corners: {}, // corner -> {glyph, sel, history, viewBox, drawing:{contourIndex}}
+  activeCorner: "extraThin",
+  glyphName: null,
+};
+for (const c of CORNERS) state.corners[c] = { glyph: null, sel: new Set(), history: [], viewBox: null, drawing: null };
+
+function setStatus(msg, isErr) {
+  const el = document.getElementById("status");
+  el.textContent = msg || "";
+  el.className = isErr ? "err" : "";
+}
+
+async function api(path, opts) {
+  const res = await fetch(API + path, opts);
+  const data = await res.json();
+  if (!res.ok || data.error) throw new Error(data.error || ("HTTP " + res.status));
+  return data;
+}
+
+function panelEl(corner) { return document.getElementById("panel-" + corner); }
+function svgEl(corner) { return panelEl(corner).querySelector("svg"); }
+
+// --- shared geometry helpers ---
+function computeViewBox(glyph) {
+  let xs = [], ys = [0, 0];
+  for (const c of glyph.contours) for (const p of c.points) { xs.push(p.x); ys.push(p.y); }
+  if (xs.length === 0) { xs = [0, glyph.width || 1000]; }
+  const minX = Math.min(0, ...xs) - 100, maxX = Math.max(glyph.width || 0, ...xs) + 100;
+  const minY = Math.min(...ys) - 100, maxY = Math.max(...ys) + 200;
+  return { minX, minY, w: maxX - minX, h: maxY - minY };
+}
+
+function toSvg(vb, x, y) { return [x - vb.minX, vb.h - (y - vb.minY)]; }
+function fromSvg(vb, sx, sy) { return [sx + vb.minX, vb.h - sy + vb.minY]; }
+
+function pathForContour(vb, points) {
+  if (points.length === 0) return "";
+  let onPts = points.filter(p => p.type);
+  if (onPts.length === 0) return "";
+  let startIdx = points.findIndex(p => p.type);
+  const n = points.length;
+  const idx = i => (i + n) % n;
+  const [sx, sy] = toSvg(vb, points[startIdx].x, points[startIdx].y);
+  let d = `M ${sx} ${sy} `;
+  let offRun = [];
+  for (let step = 1; step <= n; step++) {
+    const p = points[idx(startIdx + step)];
+    if (!p.type) { offRun.push(p); continue; }
+    const [ex, ey] = toSvg(vb, p.x, p.y);
+    if (offRun.length === 0) {
+      d += `L ${ex} ${ey} `;
+    } else if (offRun.length === 1) {
+      const [cx, cy] = toSvg(vb, offRun[0].x, offRun[0].y);
+      d += `Q ${cx} ${cy} ${ex} ${ey} `;
+    } else {
+      for (let k = 0; k < offRun.length; k++) {
+        const [cx, cy] = toSvg(vb, offRun[k].x, offRun[k].y);
+        if (k < offRun.length - 1) {
+          const nxt = offRun[k + 1];
+          const [mx, my] = toSvg(vb, (offRun[k].x + nxt.x) / 2, (offRun[k].y + nxt.y) / 2);
+          d += `Q ${cx} ${cy} ${mx} ${my} `;
+        } else {
+          d += `Q ${cx} ${cy} ${ex} ${ey} `;
+        }
+      }
+    }
+    offRun = [];
+  }
+  d += "Z";
+  return d;
+}
+
+function drawGlyphInto(svg, glyph, vb, opts) {
+  svg.innerHTML = "";
+  const ns = "http://www.w3.org/2000/svg";
+  svg.setAttribute("viewBox", `0 0 ${vb.w} ${vb.h}`);
+  const [bx0, by0] = toSvg(vb, -10000, 0);
+  const [bx1, by1] = toSvg(vb, 10000, 0);
+  const base = document.createElementNS(ns, "line");
+  base.setAttribute("x1", bx0); base.setAttribute("y1", by0);
+  base.setAttribute("x2", bx1); base.setAttribute("y2", by1);
+  base.setAttribute("class", "baseline");
+  svg.appendChild(base);
+
+  const path = document.createElementNS(ns, "path");
+  let dAll = "";
+  for (const c of glyph.contours) dAll += pathForContour(vb, c.points) + " ";
+  path.setAttribute("d", dAll);
+  path.setAttribute("class", "outline");
+  path.setAttribute("fill-rule", "evenodd");
+  svg.appendChild(path);
+
+  if (opts && opts.points) {
+    glyph.contours.forEach((c, ci) => {
+      const n = c.points.length;
+      c.points.forEach((p, pi) => {
+        const [x, y] = toSvg(vb, p.x, p.y);
+        const next = c.points[(pi + 1) % n];
+        if (!p.type || !next.type) {
+          const [nx, ny] = toSvg(vb, next.x, next.y);
+          const line = document.createElementNS(ns, "line");
+          line.setAttribute("x1", x); line.setAttribute("y1", y);
+          line.setAttribute("x2", nx); line.setAttribute("y2", ny);
+          line.setAttribute("class", "ctrl-line");
+          svg.appendChild(line);
+        }
+      });
+      c.points.forEach((p, pi) => {
+        const [x, y] = toSvg(vb, p.x, p.y);
+        const key = ci + "," + pi;
+        const circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", x); circle.setAttribute("cy", y);
+        circle.setAttribute("r", p.type ? 5 : 3.5);
+        circle.setAttribute("class", (p.type ? "pt-on" : "pt-off") + (opts.sel && opts.sel.has(key) ? " pt-selected" : ""));
+        circle.dataset.ci = ci; circle.dataset.pi = pi;
+        if (opts.onPointDown) circle.addEventListener("mousedown", (ev) => opts.onPointDown(ev, ci, pi));
+        svg.appendChild(circle);
+      });
+    });
+  }
+}
+
+function render(corner) {
+  const st = state.corners[corner];
+  if (!st.glyph) { svgEl(corner).innerHTML = ""; return; }
+  const vb = computeViewBox(st.glyph);
+  st.viewBox = vb;
+  drawGlyphInto(svgEl(corner), st.glyph, vb, {
+    points: true,
+    sel: st.sel,
+    onPointDown: (ev, ci, pi) => onPointMouseDown(ev, corner, ci, pi),
+  });
+  panelEl(corner).classList.toggle("active-panel", corner === state.activeCorner);
+}
+
+function pushHistory(corner) {
+  const st = state.corners[corner];
+  st.history.push(JSON.parse(JSON.stringify(st.glyph)));
+  if (st.history.length > 80) st.history.shift();
+}
+
+function undo(corner) {
+  const st = state.corners[corner];
+  if (st.history.length <= 1) return;
+  st.history.pop();
+  st.glyph = JSON.parse(JSON.stringify(st.history[st.history.length - 1]));
+  st.sel = new Set();
+  render(corner);
+  renderPreview();
+}
+
+// --- selection / drag / rubber-band / draw ---
+let drag = null;
+let rubber = null;
+
+function svgPoint(corner, evt) {
+  const svg = svgEl(corner);
+  const rect = svg.getBoundingClientRect();
+  const vb = state.corners[corner].viewBox;
+  const sx = (evt.clientX - rect.left) / rect.width * vb.w;
+  const sy = (evt.clientY - rect.top) / rect.height * vb.h;
+  return [sx, sy];
+}
+
+function onPointMouseDown(ev, corner, ci, pi) {
+  ev.stopPropagation();
+  state.activeCorner = corner;
+  const st = state.corners[corner];
+  const key = ci + "," + pi;
+  if (!ev.shiftKey && !st.sel.has(key)) {
+    st.sel = new Set([key]);
+  } else if (ev.shiftKey) {
+    if (st.sel.has(key)) st.sel.delete(key); else st.sel.add(key);
+  }
+  renderAllPanels();
+  const [sx, sy] = svgPoint(corner, ev);
+  drag = { corner, keys: Array.from(st.sel), startSvg: [sx, sy], moved: false, orig: {} };
+  for (const k of drag.keys) {
+    const [dci, dpi] = k.split(",").map(Number);
+    drag.orig[k] = { x: st.glyph.contours[dci].points[dpi].x, y: st.glyph.contours[dci].points[dpi].y };
+  }
+}
+
+document.addEventListener("mousemove", (ev) => {
+  if (drag) {
+    const st = state.corners[drag.corner];
+    const [sx, sy] = svgPoint(drag.corner, ev);
+    const dxSvg = sx - drag.startSvg[0], dySvg = sy - drag.startSvg[1];
+    const dxFont = dxSvg, dyFont = -dySvg;
+    if (Math.abs(dxSvg) > 0.5 || Math.abs(dySvg) > 0.5) drag.moved = true;
+    for (const k of drag.keys) {
+      const [ci, pi] = k.split(",").map(Number);
+      const o = drag.orig[k];
+      st.glyph.contours[ci].points[pi].x = o.x + dxFont;
+      st.glyph.contours[ci].points[pi].y = o.y + dyFont;
+    }
+    render(drag.corner);
+    renderPreview();
+    return;
+  }
+  if (rubber) {
+    const [sx, sy] = svgPoint(rubber.corner, ev);
+    rubber.x1 = sx; rubber.y1 = sy;
+    drawRubber();
+  }
+});
+
+document.addEventListener("mouseup", () => {
+  if (drag) {
+    if (drag.moved) pushHistory(drag.corner);
+    drag = null;
+  }
+  if (rubber) { finishRubber(); rubber = null; }
+});
+
+function drawRubber() {
+  const svg = svgEl(rubber.corner);
+  let rect = svg.querySelector(".rubberband");
+  if (!rect) {
+    rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    rect.setAttribute("class", "rubberband");
+    svg.appendChild(rect);
+  }
+  const x = Math.min(rubber.x0, rubber.x1), y = Math.min(rubber.y0, rubber.y1);
+  const w = Math.abs(rubber.x1 - rubber.x0), h = Math.abs(rubber.y1 - rubber.y0);
+  rect.setAttribute("x", x); rect.setAttribute("y", y);
+  rect.setAttribute("width", w); rect.setAttribute("height", h);
+}
+
+function finishRubber() {
+  const corner = rubber.corner;
+  const st = state.corners[corner];
+  const vb = st.viewBox;
+  const x0 = Math.min(rubber.x0, rubber.x1), x1 = Math.max(rubber.x0, rubber.x1);
+  const y0 = Math.min(rubber.y0, rubber.y1), y1 = Math.max(rubber.y0, rubber.y1);
+  if (x1 - x0 < 2 && y1 - y0 < 2) { render(corner); return; }
+  const newSel = new Set();
+  st.glyph.contours.forEach((c, ci) => {
+    c.points.forEach((p, pi) => {
+      const [sx, sy] = toSvg(vb, p.x, p.y);
+      if (sx >= x0 && sx <= x1 && sy >= y0 && sy <= y1) newSel.add(ci + "," + pi);
+    });
+  });
+  st.sel = newSel;
+  render(corner);
+}
+
+for (const corner of CORNERS) {
+  svgEl(corner).addEventListener("mousedown", (ev) => {
+    state.activeCorner = corner;
+    const st = state.corners[corner];
+    if (ev.target.tagName === "circle") { renderAllPanels(); return; }
+    // draw mode: append an on-curve point to the contour being drawn
+    if (st.drawing !== null && st.glyph) {
+      const [sx, sy] = svgPoint(corner, ev);
+      const [fx, fy] = fromSvg(st.viewBox, sx, sy);
+      pushHistory(corner);
+      st.glyph.contours[st.drawing].points.push({ x: Math.round(fx), y: Math.round(fy), type: true, smooth: false });
+      render(corner);
+      renderPreview();
+      return;
+    }
+    const [sx, sy] = svgPoint(corner, ev);
+    rubber = { corner, x0: sx, y0: sy, x1: sx, y1: sy };
+    if (!ev.shiftKey) { st.sel = new Set(); render(corner); }
+  });
+}
+
+function renderAllPanels() {
+  for (const c of CORNERS) render(c);
+}
+
+// --- per-panel tool buttons ---
+for (const corner of CORNERS) {
+  const p = panelEl(corner);
+  p.querySelector(".new-contour").addEventListener("click", () => {
+    state.activeCorner = corner;
+    const st = state.corners[corner];
+    if (!st.glyph) { setStatus("Load or create a glyph first.", true); return; }
+    pushHistory(corner);
+    st.glyph.contours.push({ points: [] });
+    st.drawing = st.glyph.contours.length - 1;
+    st.sel = new Set();
+    render(corner);
+    setStatus(`Drawing a new contour in ${corner} -- click the canvas to place on-curve points. Click "New contour" again (or switch tools) to finish.`);
+  });
+  p.querySelector(".toggle-type").addEventListener("click", () => {
+    const st = state.corners[corner];
+    if (st.sel.size === 0) { setStatus("Select a point to toggle first.", true); return; }
+    pushHistory(corner);
+    for (const key of st.sel) {
+      const [ci, pi] = key.split(",").map(Number);
+      const pt = st.glyph.contours[ci].points[pi];
+      pt.type = pt.type ? false : true;
+    }
+    render(corner);
+    renderPreview();
+  });
+  p.querySelector(".delete-selected").addEventListener("click", () => {
+    const st = state.corners[corner];
+    if (st.sel.size === 0) return;
+    pushHistory(corner);
+    st.glyph.contours.forEach((c, ci) => {
+      c.points = c.points.filter((pp, pi) => !st.sel.has(ci + "," + pi));
+    });
+    st.glyph.contours = st.glyph.contours.filter(c => c.points.length > 0);
+    st.sel = new Set();
+    st.drawing = null;
+    render(corner);
+    renderPreview();
+  });
+}
+
+document.getElementById("undoBtn").addEventListener("click", () => undo(state.activeCorner));
+
+document.getElementById("copyToOthersBtn").addEventListener("click", () => {
+  const src = state.activeCorner;
+  const srcSt = state.corners[src];
+  if (!srcSt.glyph) { setStatus("Nothing to copy.", true); return; }
+  for (const c of CORNERS) {
+    if (c === src) continue;
+    pushHistory(c);
+    state.corners[c].glyph = JSON.parse(JSON.stringify(srcSt.glyph));
+    state.corners[c].sel = new Set();
+    state.corners[c].drawing = null;
+    render(c);
+  }
+  renderPreview();
+  setStatus(`Copied ${src}'s outline to the other three corners -- reshape each toward its extreme without adding or removing points.`);
+});
+
+// --- compatibility check + bilinear interpolation ---
+function compatibilityIssue(glyphs) {
+  // glyphs: {extraThin, extraBlack, condensed, wide}
+  const names = CORNERS;
+  const counts = names.map(n => glyphs[n] ? glyphs[n].contours.length : -1);
+  if (counts.some(c => c < 0)) return "Not every corner has a glyph loaded yet.";
+  if (new Set(counts).size > 1) {
+    return "Contour count differs across corners: " + names.map((n, i) => `${n}=${counts[i]}`).join(", ");
+  }
+  const nContours = counts[0];
+  for (let ci = 0; ci < nContours; ci++) {
+    const ptCounts = names.map(n => glyphs[n].contours[ci].points.length);
+    if (new Set(ptCounts).size > 1) {
+      return `Contour ${ci}: point count differs: ` + names.map((n, i) => `${n}=${ptCounts[i]}`).join(", ");
+    }
+    const n = ptCounts[0];
+    for (let pi = 0; pi < n; pi++) {
+      const types = names.map(n2 => !!glyphs[n2].contours[ci].points[pi].type);
+      if (new Set(types).size > 1) {
+        return `Contour ${ci}, point ${pi}: on/off-curve type differs across corners.`;
+      }
+    }
+  }
+  return null;
+}
+
+function bilerp(vTC, vTW, vBC, vBW, wght, wdth) {
+  // T=thin/B=black, C=condensed/W=wide
+  const top = vTC + (vTW - vTC) * wdth;
+  const bot = vBC + (vBW - vBC) * wdth;
+  return top + (bot - top) * wght;
+}
+
+// The four drawn shapes are corners of a weight x width grid:
+//   (thin, condensed)      (thin, wide)
+//   (black, condensed)     (black, wide)
+// But only 4 shapes are drawn total, one per *axis extreme*, not one per
+// grid corner -- extraThin/extraBlack fix weight, condensed/wide fix width,
+// and neither says which width extraThin was drawn at or which weight
+// condensed was drawn at. To get a true bilinear grid from exactly four
+// drawings, this tool treats them as the four grid corners directly, in
+// this fixed assignment:
+//   extraThin  == (wght=0, wdth=0)  "thin & condensed"
+//   extraBlack == (wght=1, wdth=0)  "black & condensed"
+//   condensed  == (wght=0, wdth=1)  "thin & wide"   -- drawn shape reused as the wght=0,wdth=1 corner
+//   wide       == (wght=1, wdth=1)  "black & wide"
+// i.e. name the four drawings by their dominant extreme, but interpolate
+// them as the corners of one square: extraThin=(0,0), extraBlack=(1,0),
+// condensed=(0,1), wide=(1,1).
+function interpolateGlyph(glyphs, wght, wdth) {
+  const g00 = glyphs.extraThin, g10 = glyphs.extraBlack, g01 = glyphs.condensed, g11 = glyphs.wide;
+  const out = { width: bilerp(g00.width, g01.width, g10.width, g11.width, wght, wdth), contours: [] };
+  g00.contours.forEach((c, ci) => {
+    const pts = c.points.map((p, pi) => {
+      const p10 = g10.contours[ci].points[pi];
+      const p01 = g01.contours[ci].points[pi];
+      const p11 = g11.contours[ci].points[pi];
+      return {
+        x: bilerp(p.x, p01.x, p10.x, p11.x, wght, wdth),
+        y: bilerp(p.y, p01.y, p10.y, p11.y, wght, wdth),
+        type: p.type,
+        smooth: p.smooth,
+      };
+    });
+    out.contours.push({ points: pts });
+  });
+  return out;
+}
+
+function renderPreview() {
+  const glyphs = {};
+  for (const c of CORNERS) glyphs[c] = state.corners[c].glyph;
+  const mismatchEl = document.getElementById("mismatch");
+  const svg = svgEl("preview");
+  if (Object.values(glyphs).some(g => !g)) {
+    mismatchEl.textContent = "Load or create a glyph in all four corners to preview.";
+    svg.innerHTML = "";
+    return;
+  }
+  const issue = compatibilityIssue(glyphs);
+  if (issue) {
+    mismatchEl.textContent = "Corners aren't interpolation-compatible yet:\n" + issue +
+      '\n\nUse "Copy active corner\'s outline to other 3" to seed matching topology, then reshape each without adding/removing points.';
+    svg.innerHTML = "";
+    return;
+  }
+  mismatchEl.textContent = "";
+  const wght = parseFloat(document.getElementById("wghtSlider").value);
+  const wdth = parseFloat(document.getElementById("wdthSlider").value);
+  document.getElementById("wghtVal").textContent = wght.toFixed(2);
+  document.getElementById("wdthVal").textContent = wdth.toFixed(2);
+  const inst = interpolateGlyph(glyphs, wght, wdth);
+  const vb = computeViewBox(inst);
+  drawGlyphInto(svg, inst, vb, { points: false });
+}
+
+document.getElementById("wghtSlider").addEventListener("input", renderPreview);
+document.getElementById("wdthSlider").addEventListener("input", renderPreview);
+document.getElementById("jumpRegularBtn").addEventListener("click", () => {
+  document.getElementById("wghtSlider").value = 0.5;
+  document.getElementById("wdthSlider").value = 0.5;
+  renderPreview();
+});
+
+// --- glyph load / new / save ---
+async function loadGlyphList() {
+  const data = await api("/api/glyphs");
+  const sel = document.getElementById("glyphSelect");
+  sel.innerHTML = "";
+  for (const g of data.glyphs) {
+    const opt = document.createElement("option");
+    opt.value = g; opt.textContent = g;
+    sel.appendChild(opt);
+  }
+}
+
+async function loadGlyph(name) {
+  const data = await api("/api/glyph?name=" + encodeURIComponent(name));
+  state.glyphName = name;
+  for (const c of CORNERS) {
+    const st = state.corners[c];
+    st.glyph = data.corners[c];
+    st.sel = new Set();
+    st.drawing = null;
+    st.history = [JSON.parse(JSON.stringify(st.glyph))];
+    render(c);
+  }
+  renderPreview();
+  setStatus(`Loaded "${name}".`);
+}
+
+document.getElementById("glyphSelect").addEventListener("change", (ev) => loadGlyph(ev.target.value));
+
+document.getElementById("newGlyphBtn").addEventListener("click", async () => {
+  const name = document.getElementById("newGlyphName").value.trim();
+  if (!name) { setStatus("Type a name for the new glyph first.", true); return; }
+  try {
+    await api("/api/glyph/new?name=" + encodeURIComponent(name), { method: "POST" });
+    await loadGlyphList();
+    document.getElementById("glyphSelect").value = name;
+    await loadGlyph(name);
+    document.getElementById("newGlyphName").value = "";
+    setStatus(`Created "${name}" -- click "New contour" in a panel to start drawing.`);
+  } catch (e) {
+    setStatus("Create failed: " + e.message, true);
+  }
+});
+
+document.getElementById("saveBtn").addEventListener("click", async () => {
+  if (!state.glyphName) { setStatus("No glyph loaded.", true); return; }
+  const corners = {};
+  for (const c of CORNERS) corners[c] = state.corners[c].glyph;
+  try {
+    await api("/api/glyph?name=" + encodeURIComponent(state.glyphName), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ corners }),
+    });
+    setStatus(`Saved "${state.glyphName}".`);
+  } catch (e) {
+    setStatus("Save failed: " + e.message, true);
+  }
+});
+
+async function init() {
+  try {
+    await loadGlyphList();
+    const sel = document.getElementById("glyphSelect");
+    if (sel.options.length > 0) {
+      await loadGlyph(sel.options[0].value);
+    } else {
+      setStatus('No glyphs yet -- type a name and click "New" to start one.');
+    }
+  } catch (e) {
+    setStatus("Init failed: " + e.message, true);
+  }
+}
+init();
+</script>
+</body>
+</html>
