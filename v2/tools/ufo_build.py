@@ -24,7 +24,9 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import jost_source, params, quirks, roboto_s_source, serifs, single_story_a
+from . import arimo_source, jost_source, params, quirks, serifs, single_story_a
+
+_ARIMO_CHARS = {"c", "e", "s"}
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -55,34 +57,31 @@ def _o_inner_contour(o_glyph):
     return min(o_glyph.contours, key=_contour_area)
 
 
-def _o_outer_contour(o_glyph):
-    return max(o_glyph.contours, key=_contour_area)
-
-
 def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
-    """Extracts every glyph from Jost -- except 's', pulled from the
-    repository root's own Roboto-Flex-based pipeline instead (see
-    `roboto_s_source.py`) -- and applies the terminal-cut, round-counter
-    and o-derived-circle modifications -- everything except serif feet.
+    """Extracts every glyph from Jost -- except 'c'/'e'/'s', pulled from
+    the vendored Arimo instead (see `arimo_source.py`: an open, metric-
+    compatible Helvetica/Arial workalike, used because these three
+    letters are meant to read as Helvetica-derived, and actual
+    Helvetica outline data is proprietary) -- and applies the round-
+    counter modification to everyone else -- everything except serif
+    feet. Arimo's own 'c'/'e'/'s' already have Helvetica's flat/square
+    terminals, so they skip `apply_terminal_cuts` (which exists only to
+    reorient Jost's own, different terminals) entirely.
     """
     font = ufoLib2.Font()
     jost_names = jost_source.glyph_names_for_chars(CHARS)
     for ch in CHARS:
         glyph = font.newGlyph(_glyph_name(ch))
         glyph.unicodes = [ord(ch)]
-        if ch == "s":
-            pen_value, width = roboto_s_source.extract(wght, wdth)
+        if ch in _ARIMO_CHARS:
+            pen_value, width = arimo_source.extract(ch, wght, wdth)
         else:
             pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
-    o_outer_points = _o_outer_contour(font["o"]).points
-    for name in quirks.O_DERIVED_GLYPHS:
-        quirks.snap_round_points_to_o(font[name], o_outer_points, _o_inner_contour(font["o"]).points)
-
     for ch in CHARS:
-        if ch != "s":
+        if ch not in _ARIMO_CHARS:
             quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
     o_inner_points = _o_inner_contour(font["o"]).points
