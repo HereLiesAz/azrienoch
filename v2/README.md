@@ -234,6 +234,37 @@ see below), with a first pass of Azrienoch-specific modifications on top
   did -- an approximation once the true polar curve is nonlinear in
   between, but checked directly to land within a few percent of the
   target at both letters' real `wght`=100/900 alphas.
+- **`c`/`e`/`s`'s advance width still doesn't track `o`'s own width
+  ratio, and NOT for lack of trying.** Arimo's own width has nothing to
+  do with how wide `o` (Jost-sourced, a completely independent width
+  curve) happens to be at the same master -- confirmed directly: `e`'s
+  raw Arimo Regular and Bold widths are IDENTICAL (1139 both), so its
+  interpolated width never moves across the whole `wght` range while
+  `o` grows normally, and the visible result is `c` reading condensed
+  relative to `o`/`e` at Thin, `e` reading condensed relative to `o`/`c`
+  at Black, the three agreeing only by coincidence at Regular. Jost's
+  own `c`/`e`/`s`-to-`o` ratio is stable across its whole `wght` range
+  (`c`/`o` 0.88->0.82, `e`/`o` 0.90->0.99, `s`/`o` 0.73->0.79, Thin to
+  Black), which looked like a sane rescale target.
+
+  Two rescale methods were tried and both reverted, for different
+  failures at different masters. A flat `x *= hscale` fattened `c`/`e`'s
+  already-flattened terminal cut (a purely horizontal-direction
+  structure once `quirks.apply_terminal_cuts` runs) by the full ratio,
+  visibly thick at Thin next to the ring's own top/bottom wall
+  thickness (a Y-extent, untouched by an X-only scale). A centroid-
+  radial push weighted by cos^2(angle) -- full push at due left/right,
+  tapering to zero at top/bottom, meant to concentrate the change where
+  advance width actually comes from instead of fattening the terminal --
+  fixed Thin, but at Black the push needed to reach `o`'s own ratio is
+  large enough, concentrated toward the ring's own left/right extent, to
+  visibly pinch the counter into an hourglass waist instead of a round
+  hole -- confirmed directly, rendering `c` at `wght`=900 and seeing
+  exactly that shape, a worse defect than the inconsistency it was
+  meant to fix. Reverted rather than shipped; `c`/`e`/`s` are back to
+  Arimo's own natural (inconsistent-with-`o`) width curve. The round,
+  non-self-intersecting SHAPE fix above (polar interpolation) is
+  unaffected by this revert and stands on its own.
 - **A Glee stability audit's self-intersection sweep across the full
   `wght`x`wdth`x`SERF` grid** caught three genuine defects inherited
   byte-for-byte from the vendored Jost outlines (none introduced by this
@@ -370,6 +401,21 @@ Not yet done, in order:
   spacing by hand, which this project doesn't do.
 - **Capital `B`'s self-intersecting waist**, inherited from Jost --
   flagged by a Glee stability audit, not yet fixed (see "Status" above).
+- **`c`/`e`/`s`'s advance width doesn't track `o`'s own `wght`-relative
+  proportions** (see "Status" above for the two rescale attempts tried
+  and reverted, and why). Needs either a fundamentally different
+  rescale technique than a global geometric transform, or accepting a
+  real optically-redrawn condensed-style fix (see the `wdth` axis
+  bullet above) at the same time, rather than another generic warp.
+- **`s` at Thin (`wght`=100, any `wdth`) has its own near-zero ring-wall
+  pinch** (~0.002 units, pre-existing -- present on the plain Cartesian-
+  interpolated shape itself, confirmed directly, independent of anything
+  else in this section). `s` couldn't take the same polar fix `c`/`e`
+  got (see above: an S-curve has no single center a polar description
+  helps), so its own extreme `wght`=100 alpha still moves points along
+  each one's own Regular-to-Bold straight line, the same mechanism that
+  caused `c`/`e`'s reported self-crossing. Not reported by name and not
+  fixed this pass; a real, if narrow and currently invisible, residual.
 
 ## Kerning
 

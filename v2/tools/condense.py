@@ -27,6 +27,22 @@ stroke's x position (which moves with y) only gets partial credit
 proportional to how much of the glyph's height it occupies at each x.
 Still a meaningfully closer approximation to real condensed type than a
 flat scale, which is all the previous version did.
+
+The same profile generalizes to EXPANSION (`wf` > 1), used by
+`arimo_source.py` to rescale `c`/`e`/`s` to Jost's own `ch`-to-'o' width
+ratio (see that module's own docstring): stems stay close to unchanged
+while the extra width goes into counters/sidebearings, for the same
+reason compression concentrates its narrowing there. A plain uniform
+`x *= wf` expansion was tried there first and rejected the same way the
+flat `wdth` scale was: at Thin, `c`'s own target width needed a 33%
+horizontal stretch, and applying that uniformly fattened its already-
+flattened terminal cut -- purely a horizontal-direction structure, so a
+horizontal-only scale multiplies its thickness by `wf` directly -- into
+a visibly thick club relative to the rest of the ring, whose wall
+thickness at top/bottom is mostly a Y-extent and so barely responded to
+the same scale. Confirmed directly: rendering `o`/`c`/`e`/`s` together
+at Thin showed exactly that mismatch, gone once the width-matching
+scale went through this same ink-density profile instead of a flat one.
 """
 
 from __future__ import annotations
@@ -101,12 +117,16 @@ def _point_in_contours(contours, x: float, y: float) -> bool:
 
 
 def condense_x(pen_value, width: float, wf: float, x_buckets: int = 48, y_samples: int = 20):
-    """Returns (new_pen_value, new_width): `pen_value` compressed toward
-    `width * wf` on the X axis only, using more compression where the
-    glyph has less ink at that X and closer to none where it has the
-    most -- see module docstring. Falls back to a plain uniform scale
-    when there's no ink to sample (e.g. `space`) or nothing to compress."""
-    if wf >= 1.0 or width <= 0:
+    """Returns (new_pen_value, new_width): `pen_value` rescaled toward
+    `width * wf` on the X axis only, `wf` <1 (compress) or >1 (expand),
+    using more of the change where the glyph has less ink at that X and
+    closer to none where it has the most -- see module docstring. Falls
+    back to a plain uniform scale when there's no ink to sample (e.g.
+    `space`) or nothing to redistribute the change into."""
+    if wf == 1.0 or width <= 0:
+        return pen_value, width
+
+    def uniform():
         scaled = [
             (cmd, tuple(None if pt is None else (pt[0] * wf, pt[1]) for pt in args))
             for cmd, args in pen_value
@@ -116,20 +136,12 @@ def condense_x(pen_value, width: float, wf: float, x_buckets: int = 48, y_sample
     contours = _flatten(pen_value)
     all_points = [p for c in contours for p in c]
     if not all_points:
-        scaled = [
-            (cmd, tuple(None if pt is None else (pt[0] * wf, pt[1]) for pt in args))
-            for cmd, args in pen_value
-        ]
-        return scaled, width * wf
+        return uniform()
 
     ys = [p[1] for p in all_points]
     ymin, ymax = min(ys), max(ys)
     if ymax - ymin < 1e-6:
-        scaled = [
-            (cmd, tuple(None if pt is None else (pt[0] * wf, pt[1]) for pt in args))
-            for cmd, args in pen_value
-        ]
-        return scaled, width * wf
+        return uniform()
 
     bucket_w = width / x_buckets
     y_coords = [ymin + (j + 0.5) / y_samples * (ymax - ymin) for j in range(y_samples)]
@@ -144,10 +156,12 @@ def condense_x(pen_value, width: float, wf: float, x_buckets: int = 48, y_sample
     if counter_mass < width * 1e-3:
         k = 0.0
     else:
-        k = (1.0 - wf) * width / counter_mass
-        k = max(0.0, min(1.0, k))
+        k = abs(wf - 1.0) * width / counter_mass
+        if wf < 1.0:
+            k = max(0.0, min(1.0, k))
 
-    f = [max(0.0, 1.0 - k * (1.0 - d)) for d in density]
+    sign = 1.0 if wf > 1.0 else -1.0
+    f = [max(0.0, 1.0 + sign * k * (1.0 - d)) for d in density]
 
     cum = [0.0] * (x_buckets + 1)
     for i in range(x_buckets):
