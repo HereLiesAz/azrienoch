@@ -321,3 +321,26 @@ build on.
       this graft touched anything, unrelated to it. Tracked here since
       nothing else in this file mentions it yet; next step if picked
       back up.
+- [x] Applied the project owner's own direct hand edit of the grafted
+      terminal (made in the point editor, further cleaning up a
+      self-intersection in that region by removing 2 redundant points
+      rather than just repositioning them) -- `tools/quirks.py`'s
+      `apply_e_hand_edit`, at the 5 real wght masters (180/400/900 are
+      the owner's own edited coordinates; 250/700 are a linear blend
+      between the nearest edited masters, since they weren't hand-
+      edited and there's no lower master below 180 to extrapolate
+      from). `trim_e_terminal_eye` drops the same 2 points at all 60
+      (wght, wdth, serf, grad) masters unconditionally, since gvar
+      interpolates one glyph across the whole designspace at once --
+      confirmed directly: a first version that only trimmed the 5 real
+      wght masters left the other 55 at the old point count and
+      fontmake's own compatibility check rejected the build outright.
+
+      Confirmed via a self-intersection sweep (every 10 wght units,
+      180-900) that this is a DIFFERENT self-intersection than the
+      upper-left eye-opening one directly above -- it's still there,
+      unchanged, same crossbar-vs-left-bowl location, at every weight,
+      in both the pre- and post-this-edit build. This hand edit only
+      touched the terminal graft region on 'e's own right side; it was
+      never meant to and doesn't reach the eye-opening issue. Still
+      open, still next step if picked back up.

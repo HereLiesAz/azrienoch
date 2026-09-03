@@ -701,6 +701,9 @@ def build_master_ufo(wght, wdth, serf, grad, feet_by_glyph, dots_by_glyph, refer
     e_gname, c_gname = cmap.get(ord("e")), cmap.get(ord("c"))
     if e_gname in ufo and c_gname in ufo:
         Q.graft_e_terminal_from_c(ufo[e_gname], ufo[c_gname])
+        Q.trim_e_terminal_eye(ufo[e_gname])
+        if wdth == 100 and serf == 0 and grad == 0:
+            Q.apply_e_hand_edit(ufo[e_gname], wght)
 
     if prop_subs:
         # Roboto Flex's own `pnum` (proportional figures) GSUB feature:
