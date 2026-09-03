@@ -17,7 +17,9 @@ not the full character set. See v2/README.md.
 
 from __future__ import annotations
 
-from .geometry import arch_quadrant_pair, draw_oval, draw_polygon
+import math
+
+from .geometry import draw_oval, draw_polygon, flat_topped_notch
 from .params import Metrics
 
 
@@ -72,8 +74,18 @@ def draw_one(pen, m: Metrics) -> float:
 
 
 def draw_v(pen, m: Metrics) -> float:
-    width = round(560 * m.wf)
-    inner = min(m.stem * 1.4, width * 0.4)
+    """Two diagonal strokes of genuinely constant width (measured
+    perpendicular to the stroke, not as a horizontal offset -- a
+    horizontal offset reads as constant only when the diagonal happens
+    to sit near 45 degrees, and thins or fattens at any other angle).
+    For a stroke from (0, xh) to the apex (width/2, 0), the horizontal
+    offset that produces a perpendicular width of `stem` is
+    stem * (diagonal length / xh) -- similar triangles between the
+    stroke's own length/height/offset and its width/thickness/height.
+    """
+    width = round(520 * m.wf)
+    diagonal = math.hypot(width / 2, m.xh)
+    inner = min(m.stem * diagonal / m.xh, width * 0.42)
     apex = (width / 2, 0)
     draw_polygon(pen, [
         (0, m.xh), apex, (width, m.xh),
@@ -114,28 +126,32 @@ def draw_n(pen, m: Metrics) -> float:
     to subtract a hole from -- the arch is open at the bottom).
 
     The stem tops are flat at x-height (the outer silhouette is a plain
-    rectangle); all of the arch's roundness is in the counter's ceiling,
-    which rises to a thin bridge just under x-height across the middle
-    and drops to meet each stem's inner edge at its own spring point --
-    a dome, not a valley: `arch_quadrant_pair` is reused with a negative
-    `ry` to flip it from the sagging-valley curve it draws by default
-    into this rising-dome one.
+    rectangle); the counter's ceiling is a thin flat bridge just under
+    x-height, with a small fixed-radius round at each corner turning it
+    down into the stems (`flat_topped_notch`) -- not one smooth oval
+    spanning the whole gap, which makes the counter lens-shaped (short
+    at the stems, only opening up in the dead centre) instead of the
+    tall, roughly constant-width doorway an arch counter actually is.
     """
     stem = m.stem
     width = max(round(580 * m.wf), 2 * stem + 60)
-    spring = m.xh * 0.42
-    bridge = stem * 0.85
+    bridge = stem * 0.6
     peak = m.xh - bridge
-    cx = width / 2
-    rx = width / 2 - stem
+    # Full half-span radius: one continuous round arch, not a flat
+    # ceiling with corner fillets -- checked both side by side (a
+    # rendered comparison, not just reasoning about it) and the fully
+    # rounded arch is what actually reads as a letter's counter and
+    # matches the true-circle language O/o already use. A flat-topped
+    # doorway with a small corner radius reads as architecture, not type.
+    radius = (width - 2 * stem) / 2
 
     pen.moveTo((0, 0))
     pen.lineTo((0, m.xh))
     pen.lineTo((width, m.xh))
     pen.lineTo((width, 0))
     pen.lineTo((width - stem, 0))
-    pen.lineTo((width - stem, spring))
-    arch_quadrant_pair(pen, cx, peak, rx, spring - peak)
+    pen.lineTo((width - stem, peak - radius))
+    flat_topped_notch(pen, left_x=stem, right_x=width - stem, ceiling_y=peak, radius=radius)
     pen.lineTo((stem, 0))
     pen.closePath()
     return width

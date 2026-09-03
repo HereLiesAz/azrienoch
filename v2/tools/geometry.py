@@ -49,13 +49,20 @@ def draw_polygon(pen, points: list[tuple[float, float]]) -> None:
     pen.closePath()
 
 
-def arch_quadrant_pair(pen, cx: float, bottom_y: float, rx: float, ry: float) -> None:
-    """Two quadratic arcs forming the bottom half of an oval, right-to-left.
+def flat_topped_notch(pen, left_x: float, right_x: float, ceiling_y: float, radius: float) -> None:
+    """A flat ceiling with a small fixed-radius rounded corner at each
+    end -- an arch letter's counter (n/m/h/u/r), not a smooth oval
+    spanning the whole gap: the ceiling stays flat and close to the
+    letter's own top for nearly the entire span, only turning down right
+    at each stem. A gradual oval across the full width (the previous
+    approach here) makes the counter lens-shaped -- short at the stems,
+    only opening up in the dead centre -- instead of the tall, roughly
+    constant-width doorway a real arch counter is.
 
-    Draws from (cx+rx, bottom_y+ry) down to (cx, bottom_y) and back up to
-    (cx-rx, bottom_y+ry) -- the underside of an arch letter's counter
-    (see glyphset.draw_n). Assumes the pen is already positioned at
-    (cx+rx, bottom_y+ry); does not move or close.
+    Assumes the pen is already positioned at (right_x, ceiling_y -
+    radius); ends at (left_x, ceiling_y - radius). Does not move or
+    close.
     """
-    pen.qCurveTo((cx + rx, bottom_y), (cx, bottom_y))
-    pen.qCurveTo((cx - rx, bottom_y), (cx - rx, bottom_y + ry))
+    pen.qCurveTo((right_x, ceiling_y), (right_x - radius, ceiling_y))
+    pen.lineTo((left_x + radius, ceiling_y))
+    pen.qCurveTo((left_x, ceiling_y), (left_x, ceiling_y - radius))
