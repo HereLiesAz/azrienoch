@@ -1,0 +1,6 @@
+fontTools>=4.63.0
+ufoLib2>=0.18.1
+fontmake>=3.12.1
+
+# tools/preview.py only (visual QA during development, not needed to build)
+matplotlib>=3.0
