@@ -1,192 +1,204 @@
-"""A variable SERF axis (0-100, sans by default): grows a slab foot at a
-stem's flat terminal, the same way `wght` grows stroke thickness --
-collapsed to nothing at SERF=0, a full slab at SERF=100, same technique
-the repository root's own `tools/serifs.py` uses on Roboto Flex (detect
-a flat run bordering a real stem, add the *same* foot topology to every
-master, sized by that master's own SERF value).
+"""The SERF axis: adding slab feet to Jost's sans letterforms.
 
-Per the project owner's direction, which terminal(s) get a foot depends
-on the letter's own shape, not a single fixed rule:
+Ported from the repository root's own `tools/serifs.py` (which does this
+for Roboto Flex) rather than the point-insertion approach this module
+tried first: instead of relocating a stem's own corner points, this
+detects a flat terminal run once on a reference instance and, at every
+master, APPENDS a separate rectangle contour there -- collapsed to a
+hairline at SERF=0, a full slab at SERF=100 -- wound the same direction
+as the stem's own contour so it merges as more solid ink rather than
+needing any hole/winding logic. This sidesteps the whole class of bug
+the point-insertion version had (see git history): appending a same-
+wound rectangle can only ever add ink, never accidentally flip a
+contour's fill relationship with something else.
 
-- A letter confined entirely to the x-height box (no ascender or
-  descender -- `SINGLE_STORY` below) gets a foot at BOTH ends: the
-  baseline and the x-height top are both "free" terminals with nothing
-  extending further.
-- A letter with an ascender or descender (`TWO_STORY` below) gets a
-  foot only at the end that terminates at a baseline or a descender
-  depth -- never at an ascender/cap top, which stays a plain cut.
-- Every uppercase letter gets a foot only at the baseline, same
-  reasoning as the two-story lowercase group.
+Root's own key insight, reused directly: a flat run's SIDE only gets
+widened when the *adjacent* segment is a long, straight, genuine stem
+side -- not a short connector leading into a curve (an arch letter's
+spring, or a stem transitioning into a bowl). That length threshold is
+exactly what a first, more complicated version of this file was missing
+when it grew a spurious extra foot on 'n' where its left stem's short
+run-up to the arch (~70 units) happens to end flat and close enough to
+the x-height ballpark to look like a genuine terminal -- root's
+MIN_STEM_LEN cleanly rejects anything that short as "not a real stem",
+no per-contour-extreme special-casing needed.
 
-Only straight, vertical-sided stems are handled -- a flat run is grown
-into a foot only when it borders a real stem (a long straight run
-perpendicular to it), the same guard the root project's own
-`detect_feet` uses to keep a foot from notching into an arch letter's
-counter. Diagonal-only strokes (the legs of A/V/W/X/Y/K's diagonals,
-v/w/x/y's own diagonals) have no flat stem terminal to grow a foot from
-and are left alone -- a cupped serif on a diagonal is a different
-construction, not attempted here.
+Per the project owner's direction, WHICH guide line(s) a given letter's
+feet grow from depends on its own shape:
+
+- A letter confined to the x-height box (`SINGLE_STORY`) gets a foot at
+  both the baseline and the x-height top.
+- A letter with an ascender (`ASCENDER`) gets a foot only at the
+  baseline -- never at the ascender/cap top.
+- A letter with a descender (`DESCENDER`) gets a foot only at its own
+  descender depth (read per glyph, not a shared constant -- Jost's own
+  g/q don't reach exactly the same depth).
+- Uppercase and digits get a foot only at the baseline.
+
+Diagonal-only strokes (v/w/x/y, A/V/W/X/Y/K's legs) and curved
+terminals (g's own descender hook) have no flat stem run to grow a foot
+from at all and are simply left alone -- confirmed by inspection, not
+assumed: `detect_feet` finds nothing there because there's nothing
+matching its own definition of a stem terminal, not because they're
+special-cased out.
 """
 
 from __future__ import annotations
 
+import math
+
+import ufoLib2
+
 from . import params
 
-TOLERANCE = 1.0  # units: how close to target_y counts as "at" it, at the baseline/a descender (both exact per-glyph)
-TOP_TOLERANCE = 15.0  # x-height varies letter to letter in Jost's own design (o/r/m hit 470, u only 460)
-MAX_STEM_RUN = 180.0  # units: how long a flat run can be and still be "a stem edge", not a crossbar
+TOLERANCE = 6.0  # units: how close a flat run's y must be to a guide line
+MIN_RUN = 10.0  # units: ignore tiny flat runs (noise, not a real stem)
+MAX_RUN = 200.0  # units: ignore wide runs (crossbars/bowls, not a stem) -- Jost's own stems run roughly 75-165 units wide
+MIN_FOOT_H = 1.0  # units: SERF=0 foot height -- a hairline, not literally 0
+MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to count as a real stem side
 
-# Letters confined to the x-height box: a foot at both baseline and x-height.
 SINGLE_STORY = set("acemnorsuvwxz")
-# Letters with an ascender: a foot only at the baseline.
-ASCENDER = set("bdfhiklt")
-# Letters with a descender: a foot only at the descender depth (the
-# glyph's own lowest point, not a fixed constant -- read per glyph).
+ASCENDER = set("bdfhikl") | {"t"}
 DESCENDER = set("gjpqy")
 
 
-def _on_curve_indices(points):
-    return [i for i, p in enumerate(points) if p.type is not None]
+def _seg_len(p, q) -> float:
+    return math.hypot(p.x - q.x, p.y - q.y)
 
 
-def find_flat_stem_runs(points, target_y: float, tolerance: float = TOLERANCE, stem_above: bool = True):
-    """Finds every straight run of points[i] -> points[i+1] that sits at
-    `target_y` (both endpoints, within `tolerance`), short enough to be
-    a stem's own edge rather than a crossbar, confirms each endpoint
-    continues into a genuine vertical stem (not a curve) on its far
-    side -- the guard that keeps this from growing a foot into an arch
-    letter's own curved counter -- AND that the run sits at this
-    contour's own actual extreme (its true lowest point for a bottom
-    foot, highest for a top foot), not just within `tolerance` of the
-    target in absolute terms.
-
-    That last check matters on letters like 'n': its left stem's own
-    top happens to go flat for one short run at y=460 before curving
-    into the arch -- within TOP_TOLERANCE of the x-height ballpark, and
-    genuinely bordered by a real vertical stem on one side, so it passes
-    every other check here -- but the arch itself reaches 10 units
-    higher (470) just a few points later. That flat run is a local
-    straightening inside an otherwise curving boundary, not the actual
-    top of anything: growing a foot there produced a single lopsided
-    spike on one side of 'n' and nothing on the other, caught by
-    rendering it and comparing against what a real terminal should look
-    like. Requiring the run to match this SAME CONTOUR's own true
-    extreme (not the whole glyph's -- 'r's stem is its own separate
-    contour from its arm, and the stem's own top is genuinely its
-    contour's max even though the arm reaches higher in a different
-    contour) rules out exactly this case without needing a much smaller,
-    more fragile absolute tolerance.
-
-    Returns a list of (i_left, i_right) on-curve point index pairs,
-    i_left always the smaller x. Indices are into the ORIGINAL point
-    list, before any insertion.
-    """
+def _signed_area(points) -> float:
     n = len(points)
-    contour_extreme = max(p.y for p in points) if not stem_above else min(p.y for p in points)
-    runs = []
+    total = 0.0
     for i in range(n):
-        p, q = points[i], points[(i + 1) % n]
-        if p.type is None or q.type is None:
+        x1, y1 = points[i].x, points[i].y
+        x2, y2 = points[(i + 1) % n].x, points[(i + 1) % n].y
+        total += x1 * y2 - x2 * y1
+    return total / 2.0
+
+
+def _flat_runs(glyph):
+    """Yields (contour, x0, x1, y, is_top_guide, left_ext, right_ext) for
+    every flat stem-terminal candidate. left_ext/right_ext say whether
+    that end connects to a long straight stem (safe to widen a foot
+    into) versus a short run into a curve (must not widen -- would
+    notch a counter)."""
+    for contour in glyph.contours:
+        pts = list(contour.points)
+        n = len(pts)
+        for i in range(n):
+            a, b = pts[i], pts[(i + 1) % n]
+            if a.type is None or b.type is None:
+                continue
+            if b.type != "line":
+                continue
+            if abs(a.y - b.y) > 1.0:
+                continue
+            run = abs(a.x - b.x)
+            if run < MIN_RUN or run > MAX_RUN:
+                continue
+            y = (a.y + b.y) / 2
+            prev_pt = pts[(i - 1) % n]
+            next_pt = pts[(i + 2) % n]
+            a_ext = a.type == "line" and _seg_len(prev_pt, a) >= MIN_STEM_LEN
+            b_ext = _seg_len(b, next_pt) >= MIN_STEM_LEN
+            if a.x <= b.x:
+                left_ext, right_ext = a_ext, b_ext
+            else:
+                left_ext, right_ext = b_ext, a_ext
+            x0, x1 = sorted((a.x, b.x))
+            is_top_guide = not (a.x < b.x)
+            yield contour, x0, x1, y, is_top_guide, left_ext, right_ext
+
+
+def detect_feet(reference_glyph, guides: dict[str, float]) -> list[dict]:
+    """Foot specs (fractional x/width, guide name, direction, extendable
+    sides, and the stem contour's own winding sign) from one reference
+    instance -- reused as-is (only re-scaled) at every master, so every
+    master's glyph gets identical topology."""
+    width = reference_glyph.width or 1
+    specs = []
+    seen = set()
+    for contour, x0, x1, y, is_top, left_ext, right_ext in _flat_runs(reference_glyph):
+        if not guides:
             continue
-        if q.type != "line":
+        guide_name = min(guides, key=lambda k: abs(guides[k] - y))
+        if abs(guides[guide_name] - y) > TOLERANCE:
             continue
-        if abs(p.y - target_y) > tolerance or abs(q.y - target_y) > tolerance:
+        if not (left_ext or right_ext):
             continue
-        if abs(p.y - contour_extreme) > 3.0:
+        key = (round(x0), round(x1), guide_name)
+        if key in seen:
             continue
-        if abs(p.x - q.x) > MAX_STEM_RUN:
+        seen.add(key)
+        specs.append(dict(
+            x_frac=((x0 + x1) / 2) / width,
+            run_frac=(x1 - x0) / width,
+            guide=guide_name,
+            direction=-1 if is_top else 1,
+            left_ext=left_ext,
+            right_ext=right_ext,
+            positive_winding=_signed_area(contour.points) >= 0,
+        ))
+    return specs
+
+
+def _rect_points(x0, y0, x1, y1, positive_winding: bool):
+    pts = [(x0, y0), (x1, y0), (x1, y1), (x0, y1)]  # counter-clockwise (positive signed area)
+    if not positive_winding:
+        pts.reverse()
+    return pts
+
+
+def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_amount: float) -> None:
+    """Appends one rectangle contour per foot spec, always (even at
+    serif_amount=0 -- a collapsed hairline, not a skipped contour, so
+    every master keeps identical topology)."""
+    width = glyph.width or 1
+    for spec in foot_specs:
+        if spec["guide"] not in guides:
             continue
-        # Confirm each endpoint's OTHER neighbor is a genuine vertical
-        # stem side: a straight line, nearly vertical, of real length.
-        prev_p = points[(i - 1) % n]
-        next_q = points[(i + 2) % n]
-        if not _is_vertical_stem_side(prev_p, p) or not _is_vertical_stem_side(q, next_q):
-            continue
-        i_left, i_right = (i, (i + 1) % n) if p.x <= q.x else ((i + 1) % n, i)
-        runs.append((i_left, i_right))
-    return runs
+        cx = spec["x_frac"] * width
+        run_w = max(spec["run_frac"] * width, 4.0)
+        y = guides[spec["guide"]]
+        extra = serif_amount * (run_w * 0.9) / 100.0
+        x0, x1 = cx - run_w / 2, cx + run_w / 2
+        left_ext, right_ext = spec["left_ext"], spec["right_ext"]
+        if left_ext and right_ext:
+            x0, x1 = x0 - extra / 2, x1 + extra / 2
+        elif left_ext:
+            x0 -= extra
+        elif right_ext:
+            x1 += extra
+        foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.42) / 100.0
+        y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
+
+        pen = glyph.getPointPen()
+        pen.beginPath()
+        for x, y_ in _rect_points(x0, y0, x1, y1, spec["positive_winding"]):
+            pen.addPoint((round(x, 2), round(y_, 2)), segmentType="line")
+        pen.endPath()
 
 
-def _is_vertical_stem_side(a, b) -> bool:
-    if a.type is None or b.type is None:
-        return False
-    dx, dy = abs(a.x - b.x), abs(a.y - b.y)
-    return dy > 30 and dx < dy * 0.35
-
-
-def insert_foot(contour, i_left: int, i_right: int, target_y: float, stem_above: bool, flare: float, height: float) -> int:
-    """Grows one foot at the flat run points[i_left]-points[i_right]
-    (both at `target_y`), by relocating those two points outward and
-    inserting one new point on each side at the kink height -- a
-    trapezoid flare, not a bracketed/curved traditional serif. At
-    flare=height=0 every new/moved point lands exactly on the original
-    corner, so SERF=0 reproduces the unmodified terminal exactly.
-
-    `stem_above` is True for a bottom foot (the stem rises up from this
-    flat run, so the flare's kink sits ABOVE target_y) and False for a
-    top foot (the stem descends to this run from above, kink BELOW).
-
-    Mutates `contour` in place (relocates 2 points, inserts 2 new
-    ones). Returns how many points were inserted (2), so callers
-    processing multiple runs in the same contour can keep later
-    indices valid by processing runs in descending index order.
-    """
-    points = contour.points
-    left, right = points[i_left], points[i_right]
-    sign = 1.0 if stem_above else -1.0
-    kink_y = target_y + sign * height
-
-    # New outer corners (the flared foot's own bottom-most/top-most
-    # extent), replacing the original flat-run endpoints.
-    left.x -= flare
-    right.x += flare
-
-    # New kink points, one per side, at the original (pre-flare) x and
-    # the kink height -- inserted so the contour now reads corner ->
-    # kink -> (unchanged stem side continues from there).
-    PointClass = type(left)
-    kink_left = PointClass(left.x + flare, kink_y, type="line")
-    kink_right = PointClass(right.x - flare, kink_y, type="line")
-
-    # Insert after i_right (kink_right, between right and its outward
-    # stem neighbor) and after i_left (kink_left) -- highest index first
-    # so the lower insertion doesn't shift it.
-    if i_right > i_left:
-        points.insert(i_right + 1, kink_right)
-        points.insert(i_left, kink_left)
-    else:
-        points.insert(i_left + 1, kink_left)
-        points.insert(i_right, kink_right)
-    return 2
-
-
-def classify_positions(ch: str, glyph_min_y: float) -> list[tuple[float, bool, float]]:
-    """Returns [(target_y, stem_above, tolerance), ...] -- the
-    terminal(s) that should get a foot for character `ch`, given this
-    glyph's own lowest point (needed for descender letters, whose foot
-    sits at their own descender depth, not a shared constant). x-height
-    uses TOP_TOLERANCE, not the strict default, since Jost's own letters
-    don't all reach the exact same x-height (see params.X_HEIGHT)."""
+def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
+    """The full set of guide lines to search for flat runs against
+    (detect_feet picks the closest one per run), and separately, which
+    of those guide NAMES this letter is actually allowed to grow a foot
+    at -- see module docstring for the per-letter-class rule. Returns
+    only the allowed subset, already filtered, since detect_feet and
+    apply_feet both just take "the guides that apply here"."""
+    all_guides = {
+        "baseline": 0.0,
+        "xheight": params.X_HEIGHT,
+        "ascender": params.ASCENDER,
+        "cap": params.CAP_HEIGHT,
+        "descender": glyph_min_y,
+    }
     if ch in SINGLE_STORY:
-        return [(0.0, True, TOLERANCE), (params.X_HEIGHT, False, TOP_TOLERANCE)]
-    if ch in ASCENDER:
-        return [(0.0, True, TOLERANCE)]
-    if ch in DESCENDER:
-        return [(glyph_min_y, True, TOLERANCE)]
-    return [(0.0, True, TOLERANCE)]  # uppercase and digits: baseline only
-
-
-def apply_serif(glyph, ch: str, serf: float) -> None:
-    """Grows every applicable foot on `glyph` for character `ch`, sized
-    by `serf` (0-100). Safe to call at serf=0 -- every insertion
-    collapses to the original corner, a no-op shape (still inserts the
-    same extra points, though, which is required: every master needs
-    identical topology for this glyph, including the SERF=0 ones)."""
-    flare = serf / 100.0 * 26.0
-    height = serf / 100.0 * 70.0
-    min_y = min(p.y for c in glyph.contours for p in c.points)
-    for target_y, stem_above, tolerance in classify_positions(ch, min_y):
-        for contour in glyph.contours:
-            runs = find_flat_stem_runs(contour.points, target_y, tolerance)
-            for i_left, i_right in sorted(runs, key=lambda pair: -max(pair)):
-                insert_foot(contour, i_left, i_right, target_y, stem_above, flare, height)
+        allowed = {"baseline", "xheight"}
+    elif ch in ASCENDER:
+        allowed = {"baseline"}
+    elif ch in DESCENDER:
+        allowed = {"descender"}
+    else:
+        allowed = {"baseline"}  # uppercase and digits
+    return {name: y for name, y in all_guides.items() if name in allowed}

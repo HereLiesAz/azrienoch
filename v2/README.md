@@ -73,17 +73,20 @@ that fact for the build; they don't override anything.
 |---|---|---|---|
 | Weight | `wght` | 100-900 | 400 |
 | Width | `wdth` | 75-100 | 100 |
+| Serif | `SERF` | 0-100 | 0 (sans) |
 
-Masters: the full `wght` x `wdth` grid (`tools/params.py::MASTER_GRID`),
-3 weight samples (100/400/900, so `wght` gets a bend rather than one
-straight interpolation) x 2 width samples = 6 masters. The default
-location (400, 100) is itself one of the six, as a designspace requires.
+Masters: the full `wght` x `wdth` x `SERF` grid
+(`tools/params.py::MASTER_GRID`), 3 weight samples (100/400/900, so
+`wght` gets a bend rather than one straight interpolation) x 2 width
+samples x 2 serif samples = 12 masters. The default
+location (400, 100, 0) is itself one of the twelve, as a designspace
+requires.
 
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied from Jost across all 6 masters, with a first pass of
-Azrienoch-specific modifications on top (`tools/quirks.py`):
+(`0`-`9`) -- copied from Jost across all 12 masters, with a first pass
+of Azrienoch-specific modifications on top (`tools/quirks.py`):
 
 - **Horizontal terminal cuts** on `c`/`e`/`s` (Helvetica-style -- Jost's
   own cut is vertical on `c`, diagonal on `e`/`s`). `g`'s own descender-
@@ -115,19 +118,47 @@ matching topology across masters to compile at all, and Jost's own
 `gvar` already interpolates across its native `wght` range, so a given
 glyph's point count/order doesn't change with weight).
 
-Compiles to a variable TTF with both axes interpolating cleanly, and
-`tools/preview.py`'s rendered sample confirms the modifications hold up
-at Thin/Regular/Black and Condensed alike, not just at the reference
-weight the point indices were found at.
+Compiles to a variable TTF with all three axes interpolating cleanly,
+and `tools/preview.py`'s rendered sample confirms the modifications
+hold up at Thin/Regular/Black and Condensed alike, not just at the
+reference weight the point indices were found at.
+
+**A variable `SERF` axis** (0-100, sans by default, `tools/serifs.py`)
+grows a slab foot the same way `wght` grows stroke thickness -- ported
+from the repository root's own `tools/serifs.py` (which does this for
+Roboto Flex) rather than redesigned from scratch: detect a flat stem
+terminal once on a reference instance (`wght`=400, `wdth`=100), and at
+every master append a same-wound rectangle contour there (collapsed to
+a hairline at `SERF`=0, a full slab at `SERF`=100), rather than
+relocating the stem's own points -- appending same-wound ink can only
+ever add, never accidentally flip a fill relationship the way an
+earlier, since-discarded point-insertion version of this did on `n`.
+Which terminal(s) get a foot follows the project owner's own rule:
+
+- A letter confined to the x-height box (no ascender/descender) gets a
+  foot at both the baseline and the x-height top, wherever a flat run
+  genuinely exists there -- `n`'s stems, for instance, only have one at
+  the baseline, since their tops curve straight into the arch with no
+  flat run to grow a foot from at all.
+- A letter with an ascender/descender gets a foot only at the end that
+  terminates at a baseline or a descender depth (`b`/`d`/`h`/`k`/`l`/
+  `f`/`t`'s baseline; `q`'s own descender), never at an ascender/cap
+  top -- `g`'s own descender is a curved hook rather than a straight
+  stem in this construction, so it gets no foot at all, a real
+  limitation of "slab feet on flat stems only," not a bug.
+- Uppercase and digits get a foot only at the baseline.
+
+One real bug caught by rendering before this landed: a first version
+grew a spurious extra foot on `n` where its left stem's short (~70-unit)
+run-up into the arch happens to end flat and close enough to the
+x-height ballpark to look like a genuine terminal. The root project's
+own length threshold on the adjacent stem segment (must run at least
+~150 units to count as a real stem side) rejects that short run
+cleanly, the same guard that already keeps a foot from notching into an
+arch letter's own counter.
 
 Not yet done, in order:
 
-- **Serifs.** A variable `SERF` axis (0-100, sans by default) that grows
-  a slab foot the same way weight grows stroke thickness -- planned:
-  single-story lowercase letters get a foot top and bottom; two-story
-  lowercase (ascenders/descenders) and all uppercase get a foot only on
-  the end that terminates at a baseline or a descender depth, not at an
-  ascender/cap top.
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
   tune real pairs against.
 - **The round-counter treatment extended to `a`.**
@@ -153,8 +184,10 @@ out.png` (needs `matplotlib`, dev-only, not part of the build).
 
 ```
 v2/tools/jost_source.py        extracts glyph outlines from vendored Jost
+v2/tools/quirks.py             terminal-cut reorientation, canonical round counters
+v2/tools/serifs.py             the SERF axis: detects stem terminals, grows slab feet
 v2/tools/params.py             axis model, master grid, vertical metrics
-v2/tools/ufo_build.py          builds one UFO per master from jost_source.py
+v2/tools/ufo_build.py          builds one UFO per master from jost_source.py + quirks.py + serifs.py
 v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
@@ -171,15 +204,14 @@ root repository's `OFL.txt` covers the project as a whole.
 
 ## Next steps
 
-1. The Helvetica-inspired modification pass: tighter apertures, flatter
-   terminals, proportion adjustments -- applied on top of Jost's real
-   outlines the way the repository root's `tools/quirks.py` and
-   friends modify Roboto Flex's, not as a from-scratch redraw.
-2. Kerning: derive pair classes from the full glyph set and tune by eye
+1. Kerning: derive pair classes from the full glyph set and tune by eye
    against rendered specimens.
+2. The round-counter treatment extended to `a`, and further Helvetica-
+   inspired proportion adjustments beyond terminals/counters/serifs.
 3. A real condensed cut for `wdth`, replacing the uniform-scale
-   placeholder, once the modification pass has settled the letterforms
-   it would otherwise have to redo.
-4. Revisit whether a third axis belongs here for the Heliuum-style
+   placeholder, now that the letterform modification passes it would
+   otherwise have to redo (terminals, counters, serifs) are in place.
+4. Revisit whether a fourth axis belongs here for the Heliuum-style
    "mix and match" goal specifically, once the modified letterforms are
-   settled enough to know if `wght`/`wdth` alone already deliver on it.
+   settled enough to know if `wght`/`wdth`/`SERF` alone already deliver
+   on it.

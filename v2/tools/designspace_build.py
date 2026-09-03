@@ -32,14 +32,14 @@ def write_designspace(ufo_paths: list[Path]) -> Path:
         a.maximum = axis["maximum"]
         doc.addAxis(a)
 
-    for path, (wght, wdth) in zip(ufo_paths, params.MASTER_GRID):
+    for path, (wght, wdth, serf) in zip(ufo_paths, params.MASTER_GRID):
         s = SourceDescriptor()
         s.path = str(path)
-        s.name = params.style_name(wght, wdth)
-        s.styleName = params.style_name(wght, wdth)
+        s.name = params.style_name(wght, wdth, serf)
+        s.styleName = params.style_name(wght, wdth, serf)
         s.familyName = "Azrienoch V2"
-        s.location = {"wght": wght, "wdth": wdth}
-        if (wght, wdth) == params.DEFAULT_LOCATION:
+        s.location = {"wght": wght, "wdth": wdth, "SERF": serf}
+        if (wght, wdth, serf) == params.DEFAULT_LOCATION:
             s.copyLib = True
             s.copyInfo = True
             s.copyGroups = True
