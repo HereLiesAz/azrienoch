@@ -148,6 +148,16 @@ def _base_pairs() -> dict[tuple[str, str], int]:
     if ("d", "d") in pairs:
         pairs[("a", "a")] = pairs[("d", "d")]
 
+    # Manual correction: Jost's own donor values leave "TOY" reading
+    # unevenly kerned -- T-O (-50) closes its ink gap to 0 units, but
+    # O-Y (-30) still leaves 15 units of daylight (measured on the
+    # compiled font: right-ink-x of the left glyph to left-ink-x of the
+    # right, at wght=400/wdth=100). Tightened by that same 15 units so
+    # O-Y reads exactly as close as T-O does, rather than hand-waving a
+    # "looks about right" value.
+    if ("O", "Y") in pairs:
+        pairs[("O", "Y")] -= 15
+
     _base_pairs_cache = pairs
     return pairs
 
