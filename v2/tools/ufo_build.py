@@ -24,7 +24,7 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import jost_source, params, quirks, roboto_s_source, serifs
+from . import jost_source, params, quirks, roboto_s_source, serifs, single_story_a
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -88,6 +88,13 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
     o_inner_points = _o_inner_contour(font["o"]).points
     for name in quirks.ROUND_COUNTER_GLYPHS:
         quirks.reshape_counter_to_o(font[name], o_inner_points)
+
+    # 'a' is single-story, built directly from 'd's own (by now fully
+    # finalized -- counter already reshaped to 'o's own) outline, per the
+    # project owner's direction, rather than kept as Jost's own separately
+    # drawn 'a' (which happens to already be single-story too, but isn't
+    # literally 'd' with a shortened stem the way this project wants it).
+    font["a"] = single_story_a.build_from_d(font["d"], params.X_HEIGHT)
 
     return font
 

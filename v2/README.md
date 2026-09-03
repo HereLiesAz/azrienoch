@@ -141,9 +141,19 @@ below), with a first pass of Azrienoch-specific modifications on top
   letterforms with no separate counter contour to replace) -- both are
   the same class of gap the root project's own `canonical_counter.py`
   documents as unfinished for its analogous cases.
-- **`a` is single-story** -- confirmed to already be true of Jost's own
-  `a` (its bbox top matches `o`'s exactly, `(_, _, _, 470)` at every
-  weight tested) rather than something this pass needed to build.
+- **`a` is single-story, built directly from `d`** (`tools/single_story_a.py`,
+  ported from the repository root's own module of the same name): a
+  fresh copy of `d`'s own three contours (Jost draws `d` as an
+  independent stem rectangle, bowl outer, and inner counter, rather than
+  Roboto Flex's fused stem+bowl outer, which made this simpler than
+  root's own version -- the stem is just contour 0 outright) with the
+  stem's top edge moved down from ascender height to x-height (or just
+  clear of the counter's own top, if that's taller at extreme weights,
+  same `COUNTER_CLEARANCE` guard root's version uses). Not "confirmed
+  Jost's own `a` happens to already be single-story" any more, as this
+  project's first pass here found -- replaced with an `a` that's
+  literally `d` with a shortened stem, matching root's own convention,
+  per the project owner's direction.
 
 The reorientation itself is a rigid transform (preserves the cut's
 length/stroke-thickness and its midpoint, only changes which axis it
@@ -196,8 +206,16 @@ Not yet done, in order:
 
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
   tune real pairs against.
-- **The round-counter treatment extended to `a`.**
 - **The `wdth` axis's uniform-scale placeholder** (see above).
+- **The SERF axis's classification/geometry rules**, per the project
+  owner's more detailed direction than the first pass implemented:
+  single-story lowercase letters should get exactly two diagonal feet
+  (top-left of the first stem flaring only left/backward, bottom-right
+  of the last stem flaring only right/forward -- not a foot on every
+  flat terminal), two-story ascenders one symmetric-outward foot at the
+  bottom only, `g`/`p`/`q` one at the top instead, `y` both, and
+  uppercase never a top foot with bottom feet flaring strictly outward
+  (the current `H`/`R` feet flare inward, which needs fixing).
 
 ## Building
 
