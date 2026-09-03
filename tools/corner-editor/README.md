@@ -45,11 +45,20 @@ Then open `http://localhost:8766/`.
    at once so counts and on/off-curve types stay identical everywhere --
    the preview panel tells you exactly which contour/point index
    disagrees if they don't.
-5. The **Preview** panel interpolates live as you edit, read-only. Its two
+5. The **Regular** panel's *Travel path* controls pick two corners (default
+   Extra Thin -> Extra Black); for each node it overlays a dashed curve
+   from that node's position at the first corner, through Regular's own
+   position for that node, to its position at the second corner. Regular's
+   point is literally the control point of that quadratic Bezier -- so
+   dragging it (the same drag already used to edit Regular's outline)
+   visibly bends the node's travel between the two corners, instead of
+   moving it blind. Switch the pair to Condensed -> Wide to check the
+   width axis's travel the same way.
+6. The **Preview** panel interpolates live as you edit, read-only. Its two
    sliders are the weight axis (0 = extra thin, 1 = extra black) and the
    width axis (0 = condensed, 1 = wide); **Jump to regular** sets both to
    0.5, which is exactly where the hand-drawn Regular anchor sits.
-6. **Save glyph** writes all five anchors back to `data/<name>.json`.
+7. **Save glyph** writes all five anchors back to `data/<name>.json`.
 
 ## How the interpolation works
 

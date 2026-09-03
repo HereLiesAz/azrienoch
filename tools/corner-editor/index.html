@@ -36,6 +36,9 @@
   .outline { fill: #ddd; fill-opacity: 0.55; stroke: #888; stroke-width: 1; }
   .baseline { stroke: #2a4; stroke-width: 1; }
   .rubberband { fill: rgba(78,161,255,0.15); stroke: #4ea1ff; stroke-width: 1; }
+  .path-curve { fill: none; stroke: #4ec9ff; stroke-width: 1; stroke-dasharray: 4,2; opacity: 0.65; pointer-events: none; }
+  .path-endpoint { fill: none; stroke: #4ec9ff; stroke-width: 1; opacity: 0.55; pointer-events: none; }
+  .path-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
   .sliders { display: flex; flex-direction: column; gap: 8px; padding: 10px; }
   .sliders label { display: flex; flex-direction: column; align-items: stretch; gap: 2px; font-size: 12px; }
   .sliders input[type=range] { width: 100%; }
@@ -96,6 +99,23 @@
   </div>
   <div class="panel" id="panel-regular" data-corner="regular">
     <div class="panel-header"><span class="title">Regular (center anchor)</span></div>
+    <div class="path-controls panel-footer" style="border-top:none; border-bottom:1px solid #3a3a3a;">
+      <span>Travel path</span>
+      <select id="pathCornerA">
+        <option value="extraThin">Extra Thin</option>
+        <option value="extraBlack">Extra Black</option>
+        <option value="condensed">Condensed</option>
+        <option value="wide">Wide</option>
+      </select>
+      <span>&#8594;</span>
+      <select id="pathCornerB">
+        <option value="extraThin">Extra Thin</option>
+        <option value="extraBlack" selected>Extra Black</option>
+        <option value="condensed">Condensed</option>
+        <option value="wide">Wide</option>
+      </select>
+      <span class="hint" style="color:#888">dashed curve = each node's travel between the two picked corners; drag a node here to bend its curve</span>
+    </div>
     <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
     <div class="panel-footer">
       <button class="new-contour">New contour</button>
@@ -248,7 +268,11 @@ function drawGlyphInto(svg, glyph, vb, opts) {
 
 function render(corner) {
   const st = state.corners[corner];
-  if (!st.glyph) { svgEl(corner).innerHTML = ""; return; }
+  if (!st.glyph) {
+    svgEl(corner).innerHTML = "";
+    renderRegularPaths();
+    return;
+  }
   const vb = computeViewBox(st.glyph);
   st.viewBox = vb;
   drawGlyphInto(svgEl(corner), st.glyph, vb, {
@@ -257,6 +281,7 @@ function render(corner) {
     onPointDown: (ev, ci, pi) => onPointMouseDown(ev, corner, ci, pi),
   });
   panelEl(corner).classList.toggle("active-panel", corner === state.activeCorner);
+  renderRegularPaths();
 }
 
 function pushHistory(corner) {
@@ -456,13 +481,14 @@ document.getElementById("copyToOthersBtn").addEventListener("click", () => {
 });
 
 // --- compatibility check + bilinear interpolation ---
-function compatibilityIssue(glyphs) {
-  // glyphs: {extraThin, extraBlack, condensed, wide, regular}
-  const names = CORNERS;
+function compatibilityIssue(glyphs, names) {
+  // glyphs: a map of corner name -> glyph, covering at least `names`
+  // (default: all five anchors).
+  names = names || CORNERS;
   const counts = names.map(n => glyphs[n] ? glyphs[n].contours.length : -1);
-  if (counts.some(c => c < 0)) return "Not every corner has a glyph loaded yet.";
+  if (counts.some(c => c < 0)) return "Not every anchor has a glyph loaded yet.";
   if (new Set(counts).size > 1) {
-    return "Contour count differs across corners: " + names.map((n, i) => `${n}=${counts[i]}`).join(", ");
+    return "Contour count differs: " + names.map((n, i) => `${n}=${counts[i]}`).join(", ");
   }
   const nContours = counts[0];
   for (let ci = 0; ci < nContours; ci++) {
@@ -474,12 +500,63 @@ function compatibilityIssue(glyphs) {
     for (let pi = 0; pi < n; pi++) {
       const types = names.map(n2 => !!glyphs[n2].contours[ci].points[pi].type);
       if (new Set(types).size > 1) {
-        return `Contour ${ci}, point ${pi}: on/off-curve type differs across corners.`;
+        return `Contour ${ci}, point ${pi}: on/off-curve type differs.`;
       }
     }
   }
   return null;
 }
+
+// Draws, inside the Regular panel's own SVG, each node's "travel path"
+// between the two corners picked in the Path controls: a quadratic Bezier
+// from that node's position at Corner A, through Regular's current
+// position for that node (as the curve's control point), to its position
+// at Corner B. Dragging a point in the Regular panel -- already supported
+// by the normal point-editing code -- bends this curve live, since it's
+// the same point. Purely a read-only overlay: it adds no new hit targets.
+function renderRegularPaths() {
+  const svg = svgEl("regular");
+  const old = svg.querySelector("g.path-overlay");
+  if (old) old.remove();
+
+  const st = state.corners.regular;
+  if (!st.glyph || !st.viewBox) return;
+  const aName = document.getElementById("pathCornerA").value;
+  const bName = document.getElementById("pathCornerB").value;
+  if (aName === bName) return;
+  const A = state.corners[aName].glyph, B = state.corners[bName].glyph;
+  if (!A || !B) return;
+  const issue = compatibilityIssue({ [aName]: A, [bName]: B, regular: st.glyph }, [aName, bName, "regular"]);
+  if (issue) return; // the main mismatch panel already reports this
+
+  const vb = st.viewBox;
+  const ns = "http://www.w3.org/2000/svg";
+  const g = document.createElementNS(ns, "g");
+  g.setAttribute("class", "path-overlay");
+  st.glyph.contours.forEach((c, ci) => {
+    c.points.forEach((p, pi) => {
+      const pa = A.contours[ci].points[pi];
+      const pb = B.contours[ci].points[pi];
+      const [ax, ay] = toSvg(vb, pa.x, pa.y);
+      const [bx, by] = toSvg(vb, pb.x, pb.y);
+      const [rx, ry] = toSvg(vb, p.x, p.y);
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("d", `M ${ax} ${ay} Q ${rx} ${ry} ${bx} ${by}`);
+      path.setAttribute("class", "path-curve");
+      g.appendChild(path);
+      for (const [ex, ey] of [[ax, ay], [bx, by]]) {
+        const dot = document.createElementNS(ns, "circle");
+        dot.setAttribute("cx", ex); dot.setAttribute("cy", ey); dot.setAttribute("r", 3);
+        dot.setAttribute("class", "path-endpoint");
+        g.appendChild(dot);
+      }
+    });
+  });
+  svg.appendChild(g);
+}
+
+document.getElementById("pathCornerA").addEventListener("change", renderRegularPaths);
+document.getElementById("pathCornerB").addEventListener("change", renderRegularPaths);
 
 function bilerp(vTC, vTW, vBC, vBW, wght, wdth) {
   // T=thin/B=black, C=condensed/W=wide
