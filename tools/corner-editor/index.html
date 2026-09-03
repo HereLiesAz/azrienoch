@@ -25,7 +25,9 @@
   #panel-extraBlack { grid-column: 1; grid-row: 2; }
   #panel-condensed { grid-column: 2; grid-row: 1; }
   #panel-wide { grid-column: 2; grid-row: 2; }
-  #panel-preview { grid-column: 3; grid-row: 1 / 3; }
+  #panel-regular { grid-column: 3; grid-row: 1; }
+  #panel-regular .panel-header { background: #4a3d2d; }
+  #panel-preview { grid-column: 3; grid-row: 2; }
   #panel-preview .panel-header { background: #2d4a2d; }
   .pt-on { fill: #4ea1ff; stroke: #fff; stroke-width: 0.5; cursor: grab; }
   .pt-off { fill: none; stroke: #ff9d4e; stroke-width: 1.5; cursor: grab; }
@@ -46,7 +48,7 @@
   <input id="newGlyphName" type="text" placeholder="new glyph name" style="width:110px">
   <button id="newGlyphBtn">New</button>
   <span style="flex:1"></span>
-  <button id="copyToOthersBtn">Copy active corner's outline to other 3 (seed topology)</button>
+  <button id="copyToOthersBtn">Copy active anchor's outline to other 4 (seed topology)</button>
   <button id="undoBtn">Undo (active)</button>
   <button id="saveBtn" class="primary">Save glyph</button>
 </div>
@@ -92,8 +94,18 @@
       <span class="hint" style="color:#888">draw=click empty area · click=select · shift-click=multi · drag=move</span>
     </div>
   </div>
+  <div class="panel" id="panel-regular" data-corner="regular">
+    <div class="panel-header"><span class="title">Regular (center anchor)</span></div>
+    <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="panel-footer">
+      <button class="new-contour">New contour</button>
+      <button class="toggle-type">Toggle on/off-curve</button>
+      <button class="delete-selected">Delete selected</button>
+      <span class="hint" style="color:#888">the fixed anchor at wght=0.5, wdth=0.5 -- fix extrapolation issues here, not by editing the preview</span>
+    </div>
+  </div>
   <div class="panel" id="panel-preview">
-    <div class="panel-header"><span class="title">Preview (bilinear interpolation)</span></div>
+    <div class="panel-header"><span class="title">Preview (read-only, interpolated)</span></div>
     <div class="sliders">
       <label>Weight: extra thin <span id="wghtVal">0.50</span> extra black
         <input id="wghtSlider" type="range" min="0" max="1" step="0.01" value="0.5">
@@ -110,7 +122,7 @@
 
 <script>
 const API = "";
-const CORNERS = ["extraThin", "extraBlack", "condensed", "wide"];
+const CORNERS = ["extraThin", "extraBlack", "condensed", "wide", "regular"];
 const state = {
   corners: {}, // corner -> {glyph, sel, history, viewBox, drawing:{contourIndex}}
   activeCorner: "extraThin",
@@ -440,12 +452,12 @@ document.getElementById("copyToOthersBtn").addEventListener("click", () => {
     render(c);
   }
   renderPreview();
-  setStatus(`Copied ${src}'s outline to the other three corners -- reshape each toward its extreme without adding or removing points.`);
+  setStatus(`Copied ${src}'s outline to the other four anchors -- reshape each toward its extreme without adding or removing points.`);
 });
 
 // --- compatibility check + bilinear interpolation ---
 function compatibilityIssue(glyphs) {
-  // glyphs: {extraThin, extraBlack, condensed, wide}
+  // glyphs: {extraThin, extraBlack, condensed, wide, regular}
   const names = CORNERS;
   const counts = names.map(n => glyphs[n] ? glyphs[n].contours.length : -1);
   if (counts.some(c => c < 0)) return "Not every corner has a glyph loaded yet.";
@@ -476,33 +488,45 @@ function bilerp(vTC, vTW, vBC, vBW, wght, wdth) {
   return top + (bot - top) * wght;
 }
 
-// The four drawn shapes are corners of a weight x width grid:
-//   (thin, condensed)      (thin, wide)
-//   (black, condensed)     (black, wide)
-// But only 4 shapes are drawn total, one per *axis extreme*, not one per
-// grid corner -- extraThin/extraBlack fix weight, condensed/wide fix width,
-// and neither says which width extraThin was drawn at or which weight
-// condensed was drawn at. To get a true bilinear grid from exactly four
-// drawings, this tool treats them as the four grid corners directly, in
-// this fixed assignment:
-//   extraThin  == (wght=0, wdth=0)  "thin & condensed"
-//   extraBlack == (wght=1, wdth=0)  "black & condensed"
-//   condensed  == (wght=0, wdth=1)  "thin & wide"   -- drawn shape reused as the wght=0,wdth=1 corner
-//   wide       == (wght=1, wdth=1)  "black & wide"
-// i.e. name the four drawings by their dominant extreme, but interpolate
-// them as the corners of one square: extraThin=(0,0), extraBlack=(1,0),
-// condensed=(0,1), wide=(1,1).
+// tent(t): 0 at t=0 and t=1, 1 at t=0.5 -- a triangular bump used to blend
+// the regular anchor's correction in at the center and fade it out to
+// nothing at the four corners.
+function tent(t) { return 1 - Math.abs(2 * t - 1); }
+
+// Five shapes are drawn total: four grid corners plus a regular anchor at
+// the dead center. The corners are treated directly as the corners of one
+// square in (weight, width) space:
+//   extraThin=(0,0)  extraBlack=(1,0)  condensed=(0,1)  wide=(1,1)
+// Plain bilinear interpolation of just those four corners already passes
+// through all four exactly, but at the center (0.5, 0.5) it can only ever
+// land on their average -- it has no way to reproduce a `regular` shape
+// that was hand-corrected to be anything else. So the interpolated value
+// at (wght, wdth) is corner-bilinear plus a displacement term: the
+// difference between the drawn `regular` anchor and what bilinear alone
+// would have predicted there, scaled by a bump function that is 1 at the
+// center and 0 along all four edges/corners. This reproduces all five
+// anchors exactly and blends smoothly between them, without requiring the
+// four additional edge-midpoint masters a true biquadratic patch would
+// need.
 function interpolateGlyph(glyphs, wght, wdth) {
-  const g00 = glyphs.extraThin, g10 = glyphs.extraBlack, g01 = glyphs.condensed, g11 = glyphs.wide;
-  const out = { width: bilerp(g00.width, g01.width, g10.width, g11.width, wght, wdth), contours: [] };
+  const g00 = glyphs.extraThin, g10 = glyphs.extraBlack, g01 = glyphs.condensed, g11 = glyphs.wide, gR = glyphs.regular;
+  const bump = tent(wght) * tent(wdth);
+  const bilerpWidth = bilerp(g00.width, g01.width, g10.width, g11.width, wght, wdth);
+  const widthDisplacement = gR.width - (g00.width + g01.width + g10.width + g11.width) / 4;
+  const out = { width: bilerpWidth + widthDisplacement * bump, contours: [] };
   g00.contours.forEach((c, ci) => {
     const pts = c.points.map((p, pi) => {
       const p10 = g10.contours[ci].points[pi];
       const p01 = g01.contours[ci].points[pi];
       const p11 = g11.contours[ci].points[pi];
+      const pR = gR.contours[ci].points[pi];
+      const bx = bilerp(p.x, p01.x, p10.x, p11.x, wght, wdth);
+      const by = bilerp(p.y, p01.y, p10.y, p11.y, wght, wdth);
+      const dx = pR.x - (p.x + p01.x + p10.x + p11.x) / 4;
+      const dy = pR.y - (p.y + p01.y + p10.y + p11.y) / 4;
       return {
-        x: bilerp(p.x, p01.x, p10.x, p11.x, wght, wdth),
-        y: bilerp(p.y, p01.y, p10.y, p11.y, wght, wdth),
+        x: bx + dx * bump,
+        y: by + dy * bump,
         type: p.type,
         smooth: p.smooth,
       };
@@ -518,14 +542,14 @@ function renderPreview() {
   const mismatchEl = document.getElementById("mismatch");
   const svg = svgEl("preview");
   if (Object.values(glyphs).some(g => !g)) {
-    mismatchEl.textContent = "Load or create a glyph in all four corners to preview.";
+    mismatchEl.textContent = "Load or create a glyph in all five anchors to preview.";
     svg.innerHTML = "";
     return;
   }
   const issue = compatibilityIssue(glyphs);
   if (issue) {
-    mismatchEl.textContent = "Corners aren't interpolation-compatible yet:\n" + issue +
-      '\n\nUse "Copy active corner\'s outline to other 3" to seed matching topology, then reshape each without adding/removing points.';
+    mismatchEl.textContent = "Anchors aren't interpolation-compatible yet:\n" + issue +
+      '\n\nUse "Copy active anchor\'s outline to other 4" to seed matching topology, then reshape each without adding/removing points.';
     svg.innerHTML = "";
     return;
   }

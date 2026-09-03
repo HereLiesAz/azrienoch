@@ -1,16 +1,21 @@
-"""Local HTTP server backing `tools/corner-editor/index.html` -- a four-corner
-glyph shaping tool.
+"""Local HTTP server backing `tools/corner-editor/index.html` -- a glyph
+shaping tool built around five hand-drawn anchors.
 
 Standalone by design: no dependency on ufoLib2, fontTools, or this repo's
 UFO sources. Glyphs are plain JSON files under a data directory (default
 `tools/corner-editor/data/`), each holding the same glyph drawn at four
-variable-font extremes -- extraThin, extraBlack, condensed, wide -- as
-point-compatible outlines (same contour count, same point count and order
-per contour, across all four). A "regular" instance, or any point between
-the extremes, is produced by bilinear interpolation of corresponding
-points; see index.html for that math. This tool doesn't know anything
-about Azrienoch's own axes, masters, or build pipeline -- it's meant to be
-lifted into its own repo unchanged.
+variable-font extremes -- extraThin, extraBlack, condensed, wide -- plus a
+fifth "regular" anchor at the dead center of that weight x width space, all
+as point-compatible outlines (same contour count, same point count and
+order per contour, across all five). Any other instance is produced by
+interpolation that passes exactly through all five anchors; see index.html
+for that math. Rather than supporting free editing at arbitrary
+interpolated weights the way most variable-font editors do, this tool
+deliberately narrows editing to those five fixed points -- if the
+automatic interpolation looks wrong somewhere, the fix is to adjust
+`regular`, not to add another editable anchor. This tool doesn't know
+anything about Azrienoch's own axes, masters, or build pipeline -- it's
+meant to be lifted into its own repo unchanged.
 
 Run with: python3 -m tools.corner-editor.server [--port 8766]
 (or, from inside tools/corner-editor/: python3 server.py [--port 8766])
@@ -20,10 +25,10 @@ Endpoints:
   GET  /                       -> the editor page
   GET  /api/glyphs             -> JSON list of glyph names (data/*.json)
   GET  /api/glyph?name=<n>     -> JSON glyph {corners: {extraThin, extraBlack,
-                                   condensed, wide}}, each corner
+                                   condensed, wide, regular}}, each corner
                                    {width, contours: [{points: [...]}]}
   POST /api/glyph?name=<n>     -> body = same shape -> overwrites glyph JSON
-  POST /api/glyph/new?name=<n> -> creates an empty glyph (all four corners
+  POST /api/glyph/new?name=<n> -> creates an empty glyph (all five anchors
                                    start with zero contours, width 500)
 """
 
@@ -39,7 +44,7 @@ HERE = pathlib.Path(__file__).resolve().parent
 DATA = HERE / "data"
 INDEX_HTML = HERE / "index.html"
 
-CORNERS = ("extraThin", "extraBlack", "condensed", "wide")
+CORNERS = ("extraThin", "extraBlack", "condensed", "wide", "regular")
 
 
 def _empty_glyph() -> dict:
@@ -116,7 +121,7 @@ class Handler(BaseHTTPRequestHandler):
                 length = int(self.headers.get("Content-Length", "0"))
                 payload = json.loads(self.rfile.read(length))
                 if set(payload.get("corners", {})) != set(CORNERS):
-                    self._send_json({"error": "payload must have all four corners"}, status=400)
+                    self._send_json({"error": "payload must have all five anchors"}, status=400)
                     return
                 DATA.mkdir(exist_ok=True)
                 path.write_text(json.dumps(payload, indent=2))
