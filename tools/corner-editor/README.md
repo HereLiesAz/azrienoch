@@ -54,11 +54,20 @@ Then open `http://localhost:8766/`.
    visibly bends the node's travel between the two corners, instead of
    moving it blind. Switch the pair to Condensed -> Wide to check the
    width axis's travel the same way.
-6. The **Preview** panel interpolates live as you edit, read-only. Its two
+6. The Regular panel's **Weight easing** / **Width easing** sliders (-1 to
+   1, 0 = linear) control the *rate* a node approaches Regular's shape as
+   its slider nears 0.5 -- not where it ends up. Every anchor still sits
+   exactly where it was drawn at every easing setting; only how quickly
+   the shape rushes toward (or lingers away from) Regular changes. This is
+   deliberately not a freely-draggable control: it's a single bounded
+   scalar per axis, anchored at the center, because letting it move
+   anywhere would mean it's no longer *only* about the dead center.
+7. The **Preview** panel interpolates live as you edit, read-only. Its two
    sliders are the weight axis (0 = extra thin, 1 = extra black) and the
    width axis (0 = condensed, 1 = wide); **Jump to regular** sets both to
    0.5, which is exactly where the hand-drawn Regular anchor sits.
-7. **Save glyph** writes all five anchors back to `data/<name>.json`.
+8. **Save glyph** writes all five anchors, plus the two easing values,
+   back to `data/<name>.json`.
 
 ## How the interpolation works
 
@@ -81,15 +90,28 @@ reproduce a `regular` shape that was hand-corrected to be anything else.
 So each point's interpolated position is corner-bilinear *plus a
 displacement term*: the difference between the drawn `regular` anchor and
 what bilinear alone would have predicted at the center, scaled by a bump
-function (the product of two triangular "tent" curves, one per axis) that
-equals 1 exactly at the center and fades to 0 along all four edges and
-corners. The result reproduces all five hand-drawn anchors exactly and
-blends smoothly everywhere between them, without needing the four
-additional edge-midpoint masters a true biquadratic patch would require.
+function that equals 1 exactly at the center and fades to 0 along all four
+edges and corners. The result reproduces all five hand-drawn anchors
+exactly and blends smoothly everywhere between them, without needing the
+four additional edge-midpoint masters a true biquadratic patch would
+require.
 
 This needs exactly five drawings and no more, which is why the tool
 enforces point-for-point compatibility across all five rather than trying
 to guess correspondences.
+
+By default the bump is the product of two triangular "tent" curves, one
+per axis -- a linear approach to Regular's shape from every direction.
+The **Weight easing** / **Width easing** sliders replace each tent with a
+power curve (`easeTent(t, k)` in `index.html`: exponent `2^(2k)` on the
+normalized distance from the nearer corner) that still hits exactly 0 at
+both corners and exactly 1 at the center for every `k` -- so this can only
+ever change how fast a node approaches Regular's shape, never where any
+anchor sits. This is deliberately not a general animation-easing curve
+editable at arbitrary points (no free control handle, no per-node
+easing): it's a single scalar per axis, because the only place a
+"control" is allowed to live is the one point already guaranteed to be
+the dead center of the interpolation -- Regular.
 
 ## Data format
 
@@ -103,7 +125,8 @@ to guess correspondences.
     "condensed":  { "width": 420, "contours": [...] },
     "wide":       { "width": 600, "contours": [...] },
     "regular":    { "width": 500, "contours": [...] }
-  }
+  },
+  "easing": { "weight": 0, "width": 0 }
 }
 ```
 

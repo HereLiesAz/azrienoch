@@ -116,6 +116,19 @@
       </select>
       <span class="hint" style="color:#888">dashed curve = each node's travel between the two picked corners; drag a node here to bend its curve</span>
     </div>
+    <div class="path-controls panel-footer" style="border-top:none; border-bottom:1px solid #3a3a3a;">
+      <label style="display:flex; flex-direction:column; gap:2px;">
+        <span>Weight easing <span id="wghtEaseVal">0.00</span></span>
+        <input id="wghtEaseSlider" type="range" min="-1" max="1" step="0.05" value="0" style="width:120px">
+      </label>
+      <svg id="wghtEaseCurve" viewBox="0 0 120 40" width="120" height="40" style="background:#111; border-radius:3px;"></svg>
+      <label style="display:flex; flex-direction:column; gap:2px;">
+        <span>Width easing <span id="wdthEaseVal">0.00</span></span>
+        <input id="wdthEaseSlider" type="range" min="-1" max="1" step="0.05" value="0" style="width:120px">
+      </label>
+      <svg id="wdthEaseCurve" viewBox="0 0 120 40" width="120" height="40" style="background:#111; border-radius:3px;"></svg>
+      <span class="hint" style="color:#888">how fast a node approaches Regular's exact shape as its slider nears 0.5 -- corners and Regular itself never move</span>
+    </div>
     <svg viewBox="0 0 1000 1000" preserveAspectRatio="xMidYMid meet"></svg>
     <div class="panel-footer">
       <button class="new-contour">New contour</button>
@@ -147,6 +160,10 @@ const state = {
   corners: {}, // corner -> {glyph, sel, history, viewBox, drawing:{contourIndex}}
   activeCorner: "extraThin",
   glyphName: null,
+  // Per-axis easing (-1..1, 0 = linear): how fast a node approaches
+  // Regular's exact shape as its slider nears 0.5. Doesn't move corners
+  // or Regular itself -- see easeTent().
+  easing: { weight: 0, width: 0 },
 };
 for (const c of CORNERS) state.corners[c] = { glyph: null, sel: new Set(), history: [], viewBox: null, drawing: null };
 
@@ -565,10 +582,19 @@ function bilerp(vTC, vTW, vBC, vBW, wght, wdth) {
   return top + (bot - top) * wght;
 }
 
-// tent(t): 0 at t=0 and t=1, 1 at t=0.5 -- a triangular bump used to blend
-// the regular anchor's correction in at the center and fade it out to
-// nothing at the four corners.
-function tent(t) { return 1 - Math.abs(2 * t - 1); }
+// easeTent(t, k): 0 at t=0 and t=1, exactly 1 at t=0.5 for every k -- a
+// bump used to blend the regular anchor's correction in at the center and
+// fade it out to nothing at the four corners. k=0 is the plain triangular
+// tent (linear approach); k>0 slows the approach near the corners and
+// rushes it near the center (ease-in); k<0 does the reverse (ease-out).
+// Endpoints and the center are fixed for every k, so this only ever
+// changes the *rate* a node approaches Regular's drawn shape -- never
+// where a corner or Regular itself actually sits.
+function easeTent(t, k) {
+  const p = Math.pow(2, 2 * k); // k=0 -> p=1 (linear); k=+-1 -> p=4 or 0.25
+  const u = t <= 0.5 ? t / 0.5 : (1 - t) / 0.5;
+  return Math.pow(u, p);
+}
 
 // Five shapes are drawn total: four grid corners plus a regular anchor at
 // the dead center. The corners are treated directly as the corners of one
@@ -584,10 +610,12 @@ function tent(t) { return 1 - Math.abs(2 * t - 1); }
 // center and 0 along all four edges/corners. This reproduces all five
 // anchors exactly and blends smoothly between them, without requiring the
 // four additional edge-midpoint masters a true biquadratic patch would
-// need.
+// need. The bump's shape along each axis is controlled by state.easing,
+// so the *rate* of that blend is adjustable independently of where any
+// of the five anchors sit.
 function interpolateGlyph(glyphs, wght, wdth) {
   const g00 = glyphs.extraThin, g10 = glyphs.extraBlack, g01 = glyphs.condensed, g11 = glyphs.wide, gR = glyphs.regular;
-  const bump = tent(wght) * tent(wdth);
+  const bump = easeTent(wght, state.easing.weight) * easeTent(wdth, state.easing.width);
   const bilerpWidth = bilerp(g00.width, g01.width, g10.width, g11.width, wght, wdth);
   const widthDisplacement = gR.width - (g00.width + g01.width + g10.width + g11.width) / 4;
   const out = { width: bilerpWidth + widthDisplacement * bump, contours: [] };
@@ -648,6 +676,53 @@ document.getElementById("jumpRegularBtn").addEventListener("click", () => {
   renderPreview();
 });
 
+// --- easing widgets: live preview of easeTent(t, k) for the current k ---
+function drawEaseCurve(axis) {
+  const svg = document.getElementById(axis === "weight" ? "wghtEaseCurve" : "wdthEaseCurve");
+  svg.innerHTML = "";
+  const ns = "http://www.w3.org/2000/svg";
+  const k = state.easing[axis];
+  const W = 120, H = 40, pad = 3;
+  const pts = [];
+  for (let i = 0; i <= 40; i++) {
+    const t = i / 40;
+    const e = easeTent(t, k);
+    const x = pad + t * (W - 2 * pad);
+    const y = (H - pad) - e * (H - 2 * pad);
+    pts.push(`${x},${y}`);
+  }
+  const poly = document.createElementNS(ns, "polyline");
+  poly.setAttribute("points", pts.join(" "));
+  poly.setAttribute("fill", "none");
+  poly.setAttribute("stroke", "#4ec9ff");
+  poly.setAttribute("stroke-width", "1.5");
+  svg.appendChild(poly);
+  // mark the fixed points: 0 at both edges, 1 (Regular) at center
+  for (const t of [0, 0.5, 1]) {
+    const x = pad + t * (W - 2 * pad);
+    const y = (H - pad) - easeTent(t, k) * (H - 2 * pad);
+    const dot = document.createElementNS(ns, "circle");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", y); dot.setAttribute("r", 2);
+    dot.setAttribute("fill", t === 0.5 ? "#ffe14e" : "#888");
+    svg.appendChild(dot);
+  }
+}
+
+function wireEaseSlider(axis, sliderId, valId) {
+  const slider = document.getElementById(sliderId);
+  const val = document.getElementById(valId);
+  slider.addEventListener("input", () => {
+    state.easing[axis] = parseFloat(slider.value);
+    val.textContent = state.easing[axis].toFixed(2);
+    drawEaseCurve(axis);
+    renderPreview();
+  });
+}
+wireEaseSlider("weight", "wghtEaseSlider", "wghtEaseVal");
+wireEaseSlider("width", "wdthEaseSlider", "wdthEaseVal");
+drawEaseCurve("weight");
+drawEaseCurve("width");
+
 // --- glyph load / new / save ---
 async function loadGlyphList() {
   const data = await api("/api/glyphs");
@@ -671,6 +746,13 @@ async function loadGlyph(name) {
     st.history = [JSON.parse(JSON.stringify(st.glyph))];
     render(c);
   }
+  state.easing = data.easing || { weight: 0, width: 0 };
+  document.getElementById("wghtEaseSlider").value = state.easing.weight;
+  document.getElementById("wdthEaseSlider").value = state.easing.width;
+  document.getElementById("wghtEaseVal").textContent = state.easing.weight.toFixed(2);
+  document.getElementById("wdthEaseVal").textContent = state.easing.width.toFixed(2);
+  drawEaseCurve("weight");
+  drawEaseCurve("width");
   renderPreview();
   setStatus(`Loaded "${name}".`);
 }
@@ -700,7 +782,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     await api("/api/glyph?name=" + encodeURIComponent(state.glyphName), {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ corners }),
+      body: JSON.stringify({ corners, easing: state.easing }),
     });
     setStatus(`Saved "${state.glyphName}".`);
   } catch (e) {

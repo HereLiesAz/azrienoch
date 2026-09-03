@@ -25,11 +25,13 @@ Endpoints:
   GET  /                       -> the editor page
   GET  /api/glyphs             -> JSON list of glyph names (data/*.json)
   GET  /api/glyph?name=<n>     -> JSON glyph {corners: {extraThin, extraBlack,
-                                   condensed, wide, regular}}, each corner
-                                   {width, contours: [{points: [...]}]}
+                                   condensed, wide, regular}, easing: {weight,
+                                   width}}, each corner {width, contours:
+                                   [{points: [...]}]}
   POST /api/glyph?name=<n>     -> body = same shape -> overwrites glyph JSON
   POST /api/glyph/new?name=<n> -> creates an empty glyph (all five anchors
-                                   start with zero contours, width 500)
+                                   start with zero contours, width 500,
+                                   easing 0/0)
 """
 
 from __future__ import annotations
@@ -51,7 +53,11 @@ def _empty_glyph() -> dict:
     return {
         "corners": {
             corner: {"width": 500, "contours": []} for corner in CORNERS
-        }
+        },
+        # Per-axis easing (-1..1, 0 = linear): see easeTent() in index.html.
+        # Controls how fast a node approaches the regular anchor's shape,
+        # never where any anchor itself sits.
+        "easing": {"weight": 0, "width": 0},
     }
 
 
