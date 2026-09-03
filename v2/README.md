@@ -37,6 +37,16 @@ placeholder, not a true optically condensed redraw (a real condensed
 cut needs redrawn counters and adjusted spacing, not squashed stems).
 Worth revisiting once the modification pass below is underway.
 
+`c`/`e`/`s` are the one exception: they're pulled from
+[Arimo](https://github.com/googlefonts/arimo) instead (vendored at
+`third_party/arimo/`, SIL OFL 1.1) -- an open, metric-compatible
+Helvetica/Arial workalike -- per the project owner's direction that
+these three specifically read as Helvetica-derived. Real Helvetica
+outline data is proprietary (Linotype/Monotype) and was never traced or
+extracted here; Arimo is a freely licensed font used and modified
+exactly as its license permits, the same legal basis this project uses
+Jost on. See `tools/arimo_source.py`.
+
 ## Design references
 
 - **Jost** (OFL) -- the actual source of every outline in this build
@@ -44,8 +54,10 @@ Worth revisiting once the modification pass below is underway.
 - **Helvetica** -- proprietary (Linotype/Monotype); its rational,
   flat/square-cut terminals and directness (no ball terminals, no
   bracketed serifs, tighter apertures than Jost's own) are the intended
-  target of the modification pass on top of Jost's outlines -- nothing
-  from Helvetica is traced or extracted, per its license.
+  target for `c`/`e`/`s` specifically -- nothing from Helvetica itself
+  is traced or extracted, per its license. Those three letters are
+  instead pulled from **Arimo** (OFL), an open, metric-compatible
+  Helvetica/Arial workalike -- see "Where the letterforms come from."
 - **Heliuum VAR** (205TF, Damien Gautier; commercial/trial license) --
   referenced for its underlying idea, not its shapes: a single font
   built as "a typographic system for mixing and matching," meant to
@@ -85,51 +97,39 @@ requires.
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied from Jost across all 12 masters (except `s`, see
-below), with a first pass of Azrienoch-specific modifications on top
+(`0`-`9`) -- copied from Jost across all 12 masters (except `c`/`e`/`s`,
+see below), with a first pass of Azrienoch-specific modifications on top
 (`tools/quirks.py`):
 
-- **`c`/`e` are cut directly from `o`, not from Jost's own (very
-  slightly different) circle for those two letters**: every on/off-curve
-  point on their round silhouette is projected onto `o`'s own exact
-  outer or inner circle at the same angle from center
-  (`quirks.py::snap_round_points_to_o`), before the terminal cut below
-  carves the opening. Only runs on points that aren't part of a straight
-  ('line'-type) segment -- `e`'s crossbar and both letters' flat cut
-  connectors were never on the circle to begin with, so they're left as
-  Jost drew them.
-- **Horizontal terminal cuts** on `c`/`e` (Helvetica-style -- Jost's own
-  cut is vertical on `c`, diagonal on `e`). `g`'s own descender-loop
-  terminal was already a horizontal cut in Jost and needed no change
-  (confirmed by inspection, not assumed).
-- **`s` is sourced from the repository root's own Azrienoch pipeline
-  (Roboto Flex) instead of Jost** (`tools/roboto_s_source.py`): Jost's
-  own `s`, once reoriented to a horizontal terminal, kept producing a
-  self-intersection at heavy weight that traced back to the curve
-  geometry right at that terminal, not just the reorientation math.
-  Root's own `s` has a real stepped ink-trap notch at heavy weight
-  instead (confirmed directly against Roboto Flex's own raw, untouched
-  points -- a deliberate optical correction, not a bug), extracted
-  before root's own serif feet are applied (v2 applies its own SERF axis
-  afterward) and rescaled from Roboto Flex's metrics to this project's
-  own via the x-height ratio (`s` sits entirely within the x-height box
-  in both). Root's `wght` axis floors at 180, not v2's 100 -- v2's
-  `wght`=100 sample clamps to root's 180, the closest real value rather
-  than an extrapolation.
+- **`c`/`e`/`s` are sourced from Arimo, not Jost** (`tools/arimo_source.py`
+  -- see "Where the letterforms come from" and "Design references"
+  above): these three are meant to read as Helvetica-derived, and
+  Arimo's own flat/square Helvetica-style terminals need no reorientation
+  at all -- a real fix, not a workaround, for a problem this project hit
+  twice trying to reorient Jost's own terminals on `c`/`s` into that
+  shape (see the similarity-transform note below): the reoriented cut
+  kept producing a self-intersection at heavy weight that traced back to
+  the curve geometry right at that terminal, not just the reorientation
+  math. Arimo ships only as static instances (Regular/Bold, not a
+  variable font); `arimo_source.py` linearly interpolates (or, past
+  Bold's own 700, extrapolates) between their point coordinates directly
+  for this project's own `wght` samples, confirmed safe to do
+  point-for-point since `c`/`e`/`s` have identical point-command
+  signatures between the two vendored weights.
+- **Every other terminal reorientation** (`quirks.py::_reorient_cut`,
+  still used for `r`/`f`'s vertical cut) transforms not just the two
+  terminal points but the whole run of off-curve control points leading
+  into each one, via a similarity transform (rotate + scale, pivoting on
+  that curve's own anchor point) rather than a plain translation: a
+  translation was tried first and left the control point the same
+  distance from its anchor regardless of how far the terminal itself had
+  to move, which overshot into a self-intersecting notch at heavy weight
+  (confirmed directly, rendering `c`/`s` at wght 900 before this fix,
+  back when they were still Jost-derived) even though it looked fine at
+  Thin.
 - **Vertical terminal cuts** on `r`/`f`, matching each other (Jost draws
   both with the same diagonal cut; both are now reoriented the same way
   instead of one differing from the other).
-- Each terminal reorientation (`quirks.py::_reorient_cut`) transforms not
-  just the two terminal points but the whole run of off-curve control
-  points leading into each one, via a similarity transform (rotate +
-  scale, pivoting on that curve's own anchor point) rather than a plain
-  translation: a translation was tried first and left the control point
-  the same distance from its anchor regardless of how far the terminal
-  itself had to move, which overshot into a self-intersecting notch at
-  heavy weight (confirmed directly, rendering `c`/`s` at wght 900 before
-  this fix) even though it looked fine at Thin. The similarity transform
-  scales the whole curve segment consistently with its own terminal's
-  actual displacement.
 - **Every round-bowled lowercase letter's inner counter is now a true
   affine-scaled copy of `o`'s own inner counter**: `b`, `d`, `p`, `q`,
   `g`. Confirmed structurally (Jost's own `o`/`b`/`d`/`p`/`q`/`g` all
@@ -137,10 +137,10 @@ below), with a first pass of Azrienoch-specific modifications on top
   ported from the repository root's own `tools/canonical_counter.py`
   technique. Not yet extended to `a` (its inner contour also carries the
   points where the counter joins the stem, so it doesn't structurally
-  match as a whole contour the way the others do) or `c`/`e` (open
-  letterforms with no separate counter contour to replace) -- both are
-  the same class of gap the root project's own `canonical_counter.py`
-  documents as unfinished for its analogous cases.
+  match as a whole contour the way the others do) -- the same class of
+  gap the root project's own `canonical_counter.py` documents as
+  unfinished for its analogous case. `c`/`e` are no longer Jost-derived
+  at all (see above) so this doesn't apply to them.
 - **`a` is single-story, built directly from `d`** (`tools/single_story_a.py`,
   ported from the repository root's own module of the same name): a
   fresh copy of `d`'s own three contours (Jost draws `d` as an
@@ -246,7 +246,9 @@ v2/tools/params.py             axis model, master grid, vertical metrics
 v2/tools/ufo_build.py          builds one UFO per master from jost_source.py + quirks.py + serifs.py
 v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
+v2/tools/arimo_source.py       extracts c/e/s from vendored Arimo (Helvetica-derived)
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
+v2/third_party/arimo/          vendored Arimo Regular/Bold + its own OFL.txt
 v2/sources/                    build output (UFOs + designspace)
 v2/fonts/variable/             build output (compiled variable TTF)
 ```
@@ -255,8 +257,10 @@ v2/fonts/variable/             build output (compiled variable TTF)
 
 Everything in this directory that touches Jost's outline data is a
 Modified Version of Jost under the SIL Open Font License, Version 1.1
-(`v2/third_party/jost/OFL.txt`; project authors credited there). The
-root repository's `OFL.txt` covers the project as a whole.
+(`v2/third_party/jost/OFL.txt`; project authors credited there).
+Likewise, `c`/`e`/`s` are a Modified Version of Arimo under the same
+license (`v2/third_party/arimo/OFL.txt`). The root repository's
+`OFL.txt` covers the project as a whole.
 
 ## Next steps
 
