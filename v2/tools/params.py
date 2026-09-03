@@ -1,15 +1,14 @@
 """Axis model for Azrienoch v2.
 
-Every glyph is drawn parametrically (see glyphset.py) as a function of
-weight and width -- there is no source font being extracted from. This
-module is the single place that maps an axis location to the numbers
-those drawing functions need (stem thickness, vertical metrics, width
-factor), and enumerates the master grid the build compiles from.
+Glyph outlines come from the vendored Jost variable font (see
+jost_source.py). This module is the single place that defines the axis
+grid Jost gets sampled at, and the vertical metrics the build asserts
+(Jost's own cap-height/x-height already happen to be fixed across its
+wght range, confirmed against the vendored font directly -- see
+README.md -- so no override is needed there).
 """
 
 from __future__ import annotations
-
-from dataclasses import dataclass
 
 UPM = 1000
 
@@ -39,28 +38,6 @@ WDTH_SAMPLES = (WDTH_MIN, WDTH_MAX)
 
 MASTER_GRID = [(wght, wdth) for wght in WGHT_SAMPLES for wdth in WDTH_SAMPLES]
 DEFAULT_LOCATION = (WGHT_DEFAULT, WDTH_DEFAULT)
-
-
-@dataclass(frozen=True)
-class Metrics:
-    wght: int
-    wdth: int
-    stem: float  # stroke thickness at this wght
-    wf: float  # horizontal scale factor from wdth
-    cap: float = CAP_HEIGHT
-    xh: float = X_HEIGHT
-    asc: float = ASCENDER
-    desc: float = DESCENDER
-
-
-def stem_for_wght(wght: float) -> float:
-    """Stroke thickness: 60 units at Thin (100) to 220 at Black (900)."""
-    t = (wght - WGHT_MIN) / (WGHT_MAX - WGHT_MIN)
-    return 60.0 + t * (220.0 - 60.0)
-
-
-def metrics_for(wght: int, wdth: int) -> Metrics:
-    return Metrics(wght=wght, wdth=wdth, stem=stem_for_wght(wght), wf=wdth / 100.0)
 
 
 def style_name(wght: int, wdth: int) -> str:

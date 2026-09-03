@@ -21,7 +21,7 @@ from matplotlib.patches import PathPatch
 ROOT = Path(__file__).resolve().parent.parent
 VF_PATH = ROOT / "fonts" / "variable" / "AzrienochV2-VF.ttf"
 
-GLYPHS = ["H", "O", "o", "n", "v", "T", "l", "one"]
+GLYPHS = ["H", "O", "o", "n", "v", "T", "l", "one", "a", "e", "g", "s", "R", "M"]
 LOCATIONS = [
     ("Thin Normal", {"wght": 100, "wdth": 100}),
     ("Regular Normal", {"wght": 400, "wdth": 100}),
