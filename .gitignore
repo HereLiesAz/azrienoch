@@ -1,5 +1,8 @@
 .sass-cache
 
+# Claude Code agent worktree scratch space (isolated checkouts for background subagents)
+.claude/worktrees/
+
 # https://github.com/github/gitignore/blob/master/Global/macOS.gitignore
 
 # General
