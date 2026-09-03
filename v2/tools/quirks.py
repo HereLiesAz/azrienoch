@@ -144,6 +144,20 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
             _rotate_scale_run(points, neighbor_i, step, (i1, i2), old, new)
 
 
+# glyph name -> (contour index, point index 1, point index 2), horizontal cut
+_HORIZONTAL_TERMINALS = {
+    # Arimo's own 'c'/'e' terminals are close to horizontal but genuinely
+    # diagonal by design (~12-14 units of rise across the cut, confirmed
+    # by dumping Arimo's own raw points directly, not assumed from how
+    # they looked) -- these indices are Arimo's point layout (via
+    # arimo_source.py), found once against its own topology, which
+    # `arimo_source.extract`'s point-for-point interpolation between
+    # Regular and Bold keeps identical at every wght sample.
+    "c": [(0, 9, 10), (0, 22, 23)],
+    "e": [(0, 6, 7)],
+    "s": [(0, 6, 7), (0, 29, 30)],
+}
+
 # glyph name -> (contour index, point index 1, point index 2), vertical cut
 _VERTICAL_TERMINALS = {
     "r": [(1, 0, 1)],
@@ -152,12 +166,17 @@ _VERTICAL_TERMINALS = {
 
 
 def apply_terminal_cuts(glyph) -> None:
-    """r/f get a vertical terminal cut, matching each other, instead of
-    Jost's own diagonal one. 'c'/'e'/'s' are no longer sourced from Jost
-    at all (see `arimo_source.py`) -- Arimo's own Helvetica-style flat
-    terminals need no reorientation. 'g' is left alone: Jost's own
-    descender-loop terminal is already a horizontal cut (both endpoints
-    already share a Y) -- confirmed by inspection, not assumed."""
+    """'c'/'e'/'s' (sourced from Arimo, see `arimo_source.py`) get a true
+    horizontal terminal cut -- Arimo's own terminals are close to
+    horizontal but genuinely diagonal by design (a rise of 12-31 units
+    across the cut, confirmed by dumping Arimo's own raw points
+    directly, not assumed from how they looked at a glance). r/f get a
+    vertical terminal cut, matching each other, instead of Jost's own
+    diagonal one. 'g' is left alone: Jost's own descender-loop terminal
+    is already a horizontal cut (both endpoints already share a Y) --
+    confirmed by inspection, not assumed."""
+    for contour_idx, i1, i2 in _HORIZONTAL_TERMINALS.get(glyph.name, []):
+        _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "horizontal")
     for contour_idx, i1, i2 in _VERTICAL_TERMINALS.get(glyph.name, []):
         _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "vertical")
 

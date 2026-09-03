@@ -103,21 +103,26 @@ see below), with a first pass of Azrienoch-specific modifications on top
 
 - **`c`/`e`/`s` are sourced from Arimo, not Jost** (`tools/arimo_source.py`
   -- see "Where the letterforms come from" and "Design references"
-  above): these three are meant to read as Helvetica-derived, and
-  Arimo's own flat/square Helvetica-style terminals need no reorientation
-  at all -- a real fix, not a workaround, for a problem this project hit
-  twice trying to reorient Jost's own terminals on `c`/`s` into that
-  shape (see the similarity-transform note below): the reoriented cut
-  kept producing a self-intersection at heavy weight that traced back to
-  the curve geometry right at that terminal, not just the reorientation
+  above): these three are meant to read as Helvetica-derived. Arimo's own
+  terminals there are close to horizontal but genuinely diagonal by
+  design (a rise of 12-31 units across the cut, confirmed by dumping
+  Arimo's own raw points directly, not assumed from how they looked at a
+  glance), so they still go through `quirks.py::apply_terminal_cuts`,
+  just with Arimo's own point indices instead of Jost's -- this is a
+  real fix, not a workaround, for a problem this project hit twice
+  trying to reorient Jost's own terminals on `c`/`s` into that shape
+  (see the similarity-transform note below): the reoriented cut kept
+  producing a self-intersection at heavy weight that traced back to the
+  curve geometry right at that terminal, not just the reorientation
   math. Arimo ships only as static instances (Regular/Bold, not a
   variable font); `arimo_source.py` linearly interpolates (or, past
   Bold's own 700, extrapolates) between their point coordinates directly
   for this project's own `wght` samples, confirmed safe to do
   point-for-point since `c`/`e`/`s` have identical point-command
   signatures between the two vendored weights.
-- **Every other terminal reorientation** (`quirks.py::_reorient_cut`,
-  still used for `r`/`f`'s vertical cut) transforms not just the two
+- **Every terminal reorientation** (`quirks.py::_reorient_cut`, used for
+  `c`/`e`/`s`'s horizontal cut and `r`/`f`'s vertical one) transforms
+  not just the two
   terminal points but the whole run of off-curve control points leading
   into each one, via a similarity transform (rotate + scale, pivoting on
   that curve's own anchor point) rather than a plain translation: a
