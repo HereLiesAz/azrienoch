@@ -202,6 +202,38 @@ see below), with a first pass of Azrienoch-specific modifications on top
   neighboring points and folded a bowtie at the junction, a worse defect
   than the mild heaviness it was meant to fix). Known, minor, not the
   counter-breaking regression this calibration was rewritten to fix.
+- **`c`/`e`'s weight interpolation is POLAR (radius+angle from a shared
+  centroid), not Cartesian per-point.** The Cartesian version above
+  reproduces Arimo's own Regular/Bold exactly (correct by construction
+  at `alpha`=0/1), but in between and especially beyond -- which this
+  module needs, chasing Jost's much wider weight range -- each point
+  travels its own straight line from its Regular position to its Bold
+  position, a direction unrelated to the bowl's actual local radial
+  direction there. At `wght`=900 that visibly warped `c`/`e` into an
+  asymmetric, "pear-shaped" outline instead of the round one Arimo's own
+  Regular AND Bold both actually are -- confirmed directly, rendering
+  Arimo's raw Bold next to this module's extrapolated `wght`=900 `c` at
+  the same visual scale: Bold symmetric and round, `wght`=900 lopsided,
+  from the exact same two masters. The same non-radial drift made
+  `wght`=100 (thinning past Regular) cross itself repeatedly: two
+  points whose Regular-Bold directions happen to converge can pass
+  through each other once stretched far enough backwards. Interpolating
+  (radius, angle) from a shared centroid instead keeps every point's
+  motion purely radial -- it can move toward or away from the letter's
+  own center, never sideways past a neighbor -- so the outline stays as
+  round as Regular/Bold already are at any extrapolation, confirmed by
+  rendering both cases clean afterward. `s` stays on the Cartesian path:
+  an S-curve has no single center "radius/angle from here" describes
+  usefully, and forcing one on caused a grossly swollen middle stroke at
+  the alpha its own calibration needs -- confirmed directly, and `s`
+  wasn't reported as having `c`/`e`'s own defect either. The weight
+  CALIBRATION itself (`_calibrated_alpha`) didn't need to change: it
+  only ever measures width at `alpha`=0/1, where polar and Cartesian
+  agree exactly (both are Regular/Bold themselves), and extrapolates a
+  straight line between those two measurements the same way it always
+  did -- an approximation once the true polar curve is nonlinear in
+  between, but checked directly to land within a few percent of the
+  target at both letters' real `wght`=100/900 alphas.
 - **A Glee stability audit's self-intersection sweep across the full
   `wght`x`wdth`x`SERF` grid** caught three genuine defects inherited
   byte-for-byte from the vendored Jost outlines (none introduced by this

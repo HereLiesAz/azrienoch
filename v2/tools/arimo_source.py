@@ -93,6 +93,7 @@ as `jost_source.py` does for every other letter.
 
 from __future__ import annotations
 
+import math
 from pathlib import Path
 
 from fontTools.pens.recordingPen import RecordingPen
@@ -236,6 +237,128 @@ def _ring_wall_width(pen_value, y: float) -> float:
     return crossings[1] - crossings[0]
 
 
+def _prepared_masters(ch: str):
+    """(reg_value, bold_value), near-duplicate-merged, cached per letter
+    (both masters are the same regardless of `wght`/`wdth`, so this
+    never needs to redo `_record`/`_merge_near_duplicate_points` per
+    call)."""
+    reg_value, reg_width = _record(ch, "regular")
+    bold_value, bold_width = _record(ch, "bold")
+    if ch in _NEAR_DUPLICATE_POINTS:
+        i1, i2 = _NEAR_DUPLICATE_POINTS[ch]
+        reg_value = _merge_near_duplicate_points(reg_value, i1, i2)
+        bold_value = _merge_near_duplicate_points(bold_value, i1, i2)
+    return reg_value, reg_width, bold_value, bold_width
+
+
+def _centroid(pen_value) -> tuple[float, float]:
+    xs = [pt[0] for cmd, args in pen_value for pt in args if pt is not None]
+    ys = [pt[1] for cmd, args in pen_value for pt in args if pt is not None]
+    return sum(xs) / len(xs), sum(ys) / len(ys)
+
+
+# 'c'/'e' interpolate in POLAR coordinates around a shared centroid (see
+# `_interpolate_at`'s own docstring) -- 's' stays on the plain Cartesian
+# per-point blend below it: an S-curve has no single center a "distance
+# from here, angle from here" description means anything for, and
+# forcing one onto it doesn't fix anything the way it does for a bowl
+# shape -- confirmed directly, rendering 's' through the polar version
+# at the same alpha its own calibration needs for `wght`=100 produced a
+# grossly swollen, worse-than-before middle stroke, not a cleaner one.
+# 's' wasn't reported as having 'c'/'e's own defect either.
+_POLAR_LETTERS = {"c", "e"}
+
+
+def _interpolate_at(ch: str, alpha: float):
+    """Returns (pen_value, width) in Arimo's own native coordinate space
+    (UPM 2048), blending/extrapolating Regular -> Bold by `alpha` (0 =
+    Regular, 1 = Bold).
+
+    'c'/'e' (`_POLAR_LETTERS`) interpolate each point's (radius, angle)
+    from a shared centroid rather than its raw (x, y). A first version
+    interpolated (x, y) directly for every letter -- correct at exactly
+    alpha=0/1 (it reproduces Regular/Bold exactly by construction) but
+    not in between or beyond: each point travels in its OWN straight
+    line from its Regular position to its Bold position, a direction
+    that has nothing to do with the bowl's actual local radial direction
+    at that point, so extrapolating past alpha=1 (needed here
+    specifically because Jost's own weight range is much wider than
+    Arimo's real Regular-Bold span -- see module docstring) visibly
+    warped 'c'/'e' into an asymmetric, "pear-shaped" outline at heavy
+    weight instead of the round one both Regular and Bold actually are
+    -- confirmed directly: rendering Arimo's own raw Bold next to this
+    module's extrapolated wght=900 'c' at the same visual scale showed
+    Bold symmetric and round, wght=900 lopsided, even though wght=900 is
+    a LARGER extrapolation of the exact same two masters, not a
+    different source. The same non-radial per-point drift also made
+    heavily-extrapolated NEGATIVE alpha (`wght`=100, thinning past
+    Regular) cross itself: two points whose Regular-Bold directions
+    happen to converge can pass through each other once stretched far
+    enough backwards, independent of anything the calibration's own
+    alpha magnitude does right or wrong.
+
+    Interpolating (radius, angle) instead keeps every point's motion
+    purely radial: a point can only move directly toward or away from
+    the letter's own center, never sideways past its neighbors, so the
+    outline stays as round as Regular/Bold already are at any alpha,
+    including a large extrapolation in either direction -- confirmed by
+    rendering the same wght=900/wght=100 cases through this version:
+    'c'/'e' both round and symmetric at 900, no self-crossing at 100.
+    The centroid is the average of Regular's and Bold's own on-curve+
+    off-curve point average (not recomputed per alpha), so it's a single
+    fixed pivot consistent across the whole extrapolation range. Radius
+    is interpolated linearly, not geometrically/log-scaled -- a
+    geometric blend keeps radius strictly positive at any alpha (no
+    wrap-through-center), which looks appealing, but it diverges to
+    infinity for any point whose radius SHRINKS from Regular to Bold
+    once extrapolated far enough the other way (exactly the inner
+    counter-wall points on a thinning letter), which is worse, not
+    better, than the plain linear blend's much milder failure mode --
+    confirmed directly by trying it. Linear radius still isn't perfectly
+    monotonic in stroke-width terms at extreme alpha (there's a real,
+    checked-for minimum a couple of units past what either letter's own
+    calibrated `wght`=100 alpha needs), but every alpha this module's
+    own calibration actually produces for 'c'/'e' lands well clear of
+    it, checked directly against the calibrated value, not assumed."""
+    reg_value, reg_width, bold_value, bold_width = _prepared_masters(ch)
+
+    if ch not in _POLAR_LETTERS:
+        out = [
+            (
+                cmd,
+                tuple(
+                    (rx + (bx - rx) * alpha, ry + (by - ry) * alpha)
+                    for (rx, ry), (bx, by) in zip(reg_args, bold_args)
+                ),
+            )
+            for (cmd, reg_args), (_, bold_args) in zip(reg_value, bold_value)
+        ]
+        return out, reg_width + (bold_width - reg_width) * alpha
+
+    cx = (_centroid(reg_value)[0] + _centroid(bold_value)[0]) / 2.0
+    cy = (_centroid(reg_value)[1] + _centroid(bold_value)[1]) / 2.0
+
+    out = []
+    for (cmd, reg_args), (_, bold_args) in zip(reg_value, bold_value):
+        new_args = []
+        for (rx, ry), (bx, by) in zip(reg_args, bold_args):
+            r_reg = math.hypot(rx - cx, ry - cy)
+            a_reg = math.atan2(ry - cy, rx - cx)
+            r_bold = math.hypot(bx - cx, by - cy)
+            a_bold = math.atan2(by - cy, bx - cx)
+            da = a_bold - a_reg
+            if da > math.pi:
+                da -= 2 * math.pi
+            elif da < -math.pi:
+                da += 2 * math.pi
+            r = r_reg + (r_bold - r_reg) * alpha
+            a = a_reg + da * alpha
+            new_args.append((cx + r * math.cos(a), cy + r * math.sin(a)))
+        out.append((cmd, tuple(new_args)))
+    width = reg_width + (bold_width - reg_width) * alpha
+    return out, width
+
+
 _jost_names: dict[str, str] = {}
 _alpha_cache: dict[tuple[str, int], float] = {}
 
@@ -250,7 +373,27 @@ def _calibrated_alpha(ch: str, wght: int) -> float:
     Arimo, so the same alpha doesn't thin/thicken them by the same
     visual ratio -- confirmed directly (a shared, 'c'-only calibration
     left 'e'/'s' visibly heavier than 'c'/'a'/'o'/'r'/'n' at wght=100 in
-    a rendered "acorns", even though 'c' alone matched perfectly)."""
+    a rendered "acorns", even though 'c' alone matched perfectly).
+
+    Solved with the same closed-form linear formula regardless of
+    whether `_interpolate_at` blends this letter in polar or Cartesian
+    terms: it only ever evaluates width at alpha=0 and alpha=1, where
+    every blend mode agrees exactly (Regular and Bold themselves), and
+    extrapolates a straight line between those two measurements to hit
+    `desired_width`. This is an approximation once `_interpolate_at`
+    stops being linear in `alpha` in between (true for the polar blend
+    -- see its own docstring) -- checked directly for both 'c' and 'e'
+    at the actual alpha this produces for `wght`=100/900: the resulting
+    width lands within a few percent of `desired_width` in each case,
+    comfortably close enough for a calibration that was already an
+    approximation (matching a single scanline's ratio, not the whole
+    letter) before polar interpolation entered the picture. A numeric
+    solve against the true (non-linear) width-vs-alpha curve was tried
+    instead and rejected: that curve has a real minimum a bit past
+    'c'/'e's own needed alpha in the thinning direction (checked
+    directly, plotting it), so a general-purpose root-finder can just as
+    easily converge on the WRONG side of that minimum -- a far worse
+    failure mode than this formula's mild approximation error."""
     key = (ch, wght)
     if key in _alpha_cache:
         return _alpha_cache[key]
@@ -267,10 +410,8 @@ def _calibrated_alpha(ch: str, wght: int) -> float:
     ratio = jost_target_width / jost_ref_width
 
     arimo_y = scan_y / JOST_X_HEIGHT * ARIMO_X_HEIGHT
-    reg_value, _ = _record(ch, "regular")
-    bold_value, _ = _record(ch, "bold")
-    regular_width = _ring_wall_width(reg_value, arimo_y)
-    bold_width = _ring_wall_width(bold_value, arimo_y)
+    regular_width = _ring_wall_width(_interpolate_at(ch, 0.0)[0], arimo_y)
+    bold_width = _ring_wall_width(_interpolate_at(ch, 1.0)[0], arimo_y)
 
     desired_width = regular_width * ratio
     alpha = (desired_width - regular_width) / (bold_width - regular_width)
@@ -284,27 +425,15 @@ def extract(ch: str, wght: int, wdth: int):
     using `_calibrated_alpha` (Jost's own weight curve, not Arimo's own
     labels -- see module docstring) and rescaled into Azrienoch v2's
     coordinate space -- same return shape as `jost_source.extract`."""
-    reg_value, reg_width = _record(ch, "regular")
-    bold_value, bold_width = _record(ch, "bold")
-    if ch in _NEAR_DUPLICATE_POINTS:
-        i1, i2 = _NEAR_DUPLICATE_POINTS[ch]
-        reg_value = _merge_near_duplicate_points(reg_value, i1, i2)
-        bold_value = _merge_near_duplicate_points(bold_value, i1, i2)
-
     alpha = _calibrated_alpha(ch, wght)
+    pen_value, width = _interpolate_at(ch, alpha)
     scale = params.X_HEIGHT / ARIMO_X_HEIGHT
 
-    out = []
-    for (cmd, reg_args), (_, bold_args) in zip(reg_value, bold_value):
-        new_args = tuple(
-            (
-                (rx + (bx - rx) * alpha) * scale,
-                (ry + (by - ry) * alpha) * scale,
-            )
-            for (rx, ry), (bx, by) in zip(reg_args, bold_args)
-        )
-        out.append((cmd, new_args))
-    width = (reg_width + (bold_width - reg_width) * alpha) * scale
+    out = [
+        (cmd, tuple((x * scale, y * scale) for x, y in args))
+        for cmd, args in pen_value
+    ]
+    width *= scale
 
     if wdth != 100:
         out, width = condense.condense_x(out, width, wdth / 100.0)
