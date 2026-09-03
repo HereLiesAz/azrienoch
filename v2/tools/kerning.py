@@ -149,23 +149,20 @@ def _base_pairs() -> dict[tuple[str, str], int]:
         pairs[("a", "a")] = pairs[("d", "d")]
 
     # Manual correction: Jost's own donor values leave "TOY" reading
-    # unevenly kerned. The real optical gap between two letters is the
-    # closest approach of their silhouettes at ANY shared height, not a
-    # single bbox-corner distance -- a first attempt that compared only
-    # each glyph's single closest extreme point measured T-O's own gap
-    # as 0 and picked a smaller correction than this pair actually
-    # needed, because that plain corner-to-corner distance isn't the
-    # true point of closest approach for either letter (T's crossbar tip
-    # and O's rounded shoulder meet at different heights than either
-    # glyph's own bbox extreme). Rescanning both pairs' full silhouette
-    # profiles (per-height leftmost/rightmost x, minimized over every
-    # height the two glyphs share) at wght=400/wdth=100 gives T-O's true
-    # closest approach as 115 units and O-Y's (at the previous, smaller
-    # correction) as 143 -- so O-Y needed another 28 units off, for 43
-    # off Jost's own -30 total, to close the same true 115-unit gap
-    # T-O does.
+    # unevenly kerned -- confirmed by the project owner directly against
+    # the rendered word, not by a geometric proxy: two rounds of
+    # measuring "closeness" as a silhouette-distance metric (first each
+    # glyph's single closest bbox corner, then the true minimum gap
+    # between both letters' full outlines at any shared height) each
+    # matched O-Y's number to T-O's, and the owner still called it too
+    # loose both times -- Y's open diagonal wedge under the touch point
+    # evidently reads as looser than T's overhanging crossbar even at an
+    # identical minimum gap, a perceptual effect no single-point distance
+    # captures. Pushed well past that geometric match instead of
+    # re-deriving a third proxy metric: -100 total (was -73, Jost's own
+    # donor value was -30), to be judged against the actual render again.
     if ("O", "Y") in pairs:
-        pairs[("O", "Y")] -= 43
+        pairs[("O", "Y")] -= 70
 
     _base_pairs_cache = pairs
     return pairs
