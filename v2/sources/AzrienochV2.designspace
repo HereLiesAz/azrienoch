@@ -7,27 +7,54 @@
     <axis tag="wdth" name="wdth" minimum="75" maximum="100" default="100">
       <labelname xml:lang="en">Width</labelname>
     </axis>
+    <axis tag="SERF" name="SERF" minimum="0" maximum="100" default="0">
+      <labelname xml:lang="en">Serif</labelname>
+    </axis>
   </axes>
   <sources>
-    <source filename="AzrienochV2-Wght100_Wdth75.ufo" name="Wght100_Wdth75" familyname="Azrienoch V2" stylename="Wght100_Wdth75">
+    <source filename="AzrienochV2-Wght100_Wdth75_Serf0.ufo" name="Wght100_Wdth75_Serf0" familyname="Azrienoch V2" stylename="Wght100_Wdth75_Serf0">
       <location>
         <dimension name="wght" xvalue="100"/>
         <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
       </location>
     </source>
-    <source filename="AzrienochV2-Wght100_Wdth100.ufo" name="Wght100_Wdth100" familyname="Azrienoch V2" stylename="Wght100_Wdth100">
+    <source filename="AzrienochV2-Wght100_Wdth75_Serf100.ufo" name="Wght100_Wdth75_Serf100" familyname="Azrienoch V2" stylename="Wght100_Wdth75_Serf100">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght100_Wdth100_Serf0.ufo" name="Wght100_Wdth100_Serf0" familyname="Azrienoch V2" stylename="Wght100_Wdth100_Serf0">
       <location>
         <dimension name="wght" xvalue="100"/>
         <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
       </location>
     </source>
-    <source filename="AzrienochV2-Wght400_Wdth75.ufo" name="Wght400_Wdth75" familyname="Azrienoch V2" stylename="Wght400_Wdth75">
+    <source filename="AzrienochV2-Wght100_Wdth100_Serf100.ufo" name="Wght100_Wdth100_Serf100" familyname="Azrienoch V2" stylename="Wght100_Wdth100_Serf100">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght400_Wdth75_Serf0.ufo" name="Wght400_Wdth75_Serf0" familyname="Azrienoch V2" stylename="Wght400_Wdth75_Serf0">
       <location>
         <dimension name="wght" xvalue="400"/>
         <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
       </location>
     </source>
-    <source filename="AzrienochV2-Wght400_Wdth100.ufo" name="Wght400_Wdth100" familyname="Azrienoch V2" stylename="Wght400_Wdth100">
+    <source filename="AzrienochV2-Wght400_Wdth75_Serf100.ufo" name="Wght400_Wdth75_Serf100" familyname="Azrienoch V2" stylename="Wght400_Wdth75_Serf100">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght400_Wdth100_Serf0.ufo" name="Wght400_Wdth100_Serf0" familyname="Azrienoch V2" stylename="Wght400_Wdth100_Serf0">
       <lib copy="1"/>
       <groups copy="1"/>
       <features copy="1"/>
@@ -35,18 +62,42 @@
       <location>
         <dimension name="wght" xvalue="400"/>
         <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
       </location>
     </source>
-    <source filename="AzrienochV2-Wght900_Wdth75.ufo" name="Wght900_Wdth75" familyname="Azrienoch V2" stylename="Wght900_Wdth75">
+    <source filename="AzrienochV2-Wght400_Wdth100_Serf100.ufo" name="Wght400_Wdth100_Serf100" familyname="Azrienoch V2" stylename="Wght400_Wdth100_Serf100">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght900_Wdth75_Serf0.ufo" name="Wght900_Wdth75_Serf0" familyname="Azrienoch V2" stylename="Wght900_Wdth75_Serf0">
       <location>
         <dimension name="wght" xvalue="900"/>
         <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="0"/>
       </location>
     </source>
-    <source filename="AzrienochV2-Wght900_Wdth100.ufo" name="Wght900_Wdth100" familyname="Azrienoch V2" stylename="Wght900_Wdth100">
+    <source filename="AzrienochV2-Wght900_Wdth75_Serf100.ufo" name="Wght900_Wdth75_Serf100" familyname="Azrienoch V2" stylename="Wght900_Wdth75_Serf100">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="75"/>
+        <dimension name="SERF" xvalue="100"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght900_Wdth100_Serf0.ufo" name="Wght900_Wdth100_Serf0" familyname="Azrienoch V2" stylename="Wght900_Wdth100_Serf0">
       <location>
         <dimension name="wght" xvalue="900"/>
         <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="AzrienochV2-Wght900_Wdth100_Serf100.ufo" name="Wght900_Wdth100_Serf100" familyname="Azrienoch V2" stylename="Wght900_Wdth100_Serf100">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
       </location>
     </source>
   </sources>
