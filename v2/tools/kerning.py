@@ -149,14 +149,23 @@ def _base_pairs() -> dict[tuple[str, str], int]:
         pairs[("a", "a")] = pairs[("d", "d")]
 
     # Manual correction: Jost's own donor values leave "TOY" reading
-    # unevenly kerned -- T-O (-50) closes its ink gap to 0 units, but
-    # O-Y (-30) still leaves 15 units of daylight (measured on the
-    # compiled font: right-ink-x of the left glyph to left-ink-x of the
-    # right, at wght=400/wdth=100). Tightened by that same 15 units so
-    # O-Y reads exactly as close as T-O does, rather than hand-waving a
-    # "looks about right" value.
+    # unevenly kerned. The real optical gap between two letters is the
+    # closest approach of their silhouettes at ANY shared height, not a
+    # single bbox-corner distance -- a first attempt that compared only
+    # each glyph's single closest extreme point measured T-O's own gap
+    # as 0 and picked a smaller correction than this pair actually
+    # needed, because that plain corner-to-corner distance isn't the
+    # true point of closest approach for either letter (T's crossbar tip
+    # and O's rounded shoulder meet at different heights than either
+    # glyph's own bbox extreme). Rescanning both pairs' full silhouette
+    # profiles (per-height leftmost/rightmost x, minimized over every
+    # height the two glyphs share) at wght=400/wdth=100 gives T-O's true
+    # closest approach as 115 units and O-Y's (at the previous, smaller
+    # correction) as 143 -- so O-Y needed another 28 units off, for 43
+    # off Jost's own -30 total, to close the same true 115-unit gap
+    # T-O does.
     if ("O", "Y") in pairs:
-        pairs[("O", "Y")] -= 15
+        pairs[("O", "Y")] -= 43
 
     _base_pairs_cache = pairs
     return pairs
