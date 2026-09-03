@@ -85,16 +85,51 @@ requires.
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied from Jost across all 12 masters, with a first pass
-of Azrienoch-specific modifications on top (`tools/quirks.py`):
+(`0`-`9`) -- copied from Jost across all 12 masters (except `s`, see
+below), with a first pass of Azrienoch-specific modifications on top
+(`tools/quirks.py`):
 
-- **Horizontal terminal cuts** on `c`/`e`/`s` (Helvetica-style -- Jost's
-  own cut is vertical on `c`, diagonal on `e`/`s`). `g`'s own descender-
-  loop terminal was already a horizontal cut in Jost and needed no
-  change (confirmed by inspection, not assumed).
+- **`c`/`e` are cut directly from `o`, not from Jost's own (very
+  slightly different) circle for those two letters**: every on/off-curve
+  point on their round silhouette is projected onto `o`'s own exact
+  outer or inner circle at the same angle from center
+  (`quirks.py::snap_round_points_to_o`), before the terminal cut below
+  carves the opening. Only runs on points that aren't part of a straight
+  ('line'-type) segment -- `e`'s crossbar and both letters' flat cut
+  connectors were never on the circle to begin with, so they're left as
+  Jost drew them.
+- **Horizontal terminal cuts** on `c`/`e` (Helvetica-style -- Jost's own
+  cut is vertical on `c`, diagonal on `e`). `g`'s own descender-loop
+  terminal was already a horizontal cut in Jost and needed no change
+  (confirmed by inspection, not assumed).
+- **`s` is sourced from the repository root's own Azrienoch pipeline
+  (Roboto Flex) instead of Jost** (`tools/roboto_s_source.py`): Jost's
+  own `s`, once reoriented to a horizontal terminal, kept producing a
+  self-intersection at heavy weight that traced back to the curve
+  geometry right at that terminal, not just the reorientation math.
+  Root's own `s` has a real stepped ink-trap notch at heavy weight
+  instead (confirmed directly against Roboto Flex's own raw, untouched
+  points -- a deliberate optical correction, not a bug), extracted
+  before root's own serif feet are applied (v2 applies its own SERF axis
+  afterward) and rescaled from Roboto Flex's metrics to this project's
+  own via the x-height ratio (`s` sits entirely within the x-height box
+  in both). Root's `wght` axis floors at 180, not v2's 100 -- v2's
+  `wght`=100 sample clamps to root's 180, the closest real value rather
+  than an extrapolation.
 - **Vertical terminal cuts** on `r`/`f`, matching each other (Jost draws
   both with the same diagonal cut; both are now reoriented the same way
   instead of one differing from the other).
+- Each terminal reorientation (`quirks.py::_reorient_cut`) transforms not
+  just the two terminal points but the whole run of off-curve control
+  points leading into each one, via a similarity transform (rotate +
+  scale, pivoting on that curve's own anchor point) rather than a plain
+  translation: a translation was tried first and left the control point
+  the same distance from its anchor regardless of how far the terminal
+  itself had to move, which overshot into a self-intersecting notch at
+  heavy weight (confirmed directly, rendering `c`/`s` at wght 900 before
+  this fix) even though it looked fine at Thin. The similarity transform
+  scales the whole curve segment consistently with its own terminal's
+  actual displacement.
 - **Every round-bowled lowercase letter's inner counter is now a true
   affine-scaled copy of `o`'s own inner counter**: `b`, `d`, `p`, `q`,
   `g`. Confirmed structurally (Jost's own `o`/`b`/`d`/`p`/`q`/`g` all

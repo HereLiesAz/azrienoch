@@ -24,7 +24,7 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import jost_source, params, quirks, serifs
+from . import jost_source, params, quirks, roboto_s_source, serifs
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -55,20 +55,35 @@ def _o_inner_contour(o_glyph):
     return min(o_glyph.contours, key=_contour_area)
 
 
+def _o_outer_contour(o_glyph):
+    return max(o_glyph.contours, key=_contour_area)
+
+
 def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
-    """Extracts every glyph from Jost and applies the terminal-cut and
-    round-counter modifications -- everything except serif feet."""
+    """Extracts every glyph from Jost -- except 's', pulled from the
+    repository root's own Roboto-Flex-based pipeline instead (see
+    `roboto_s_source.py`) -- and applies the terminal-cut, round-counter
+    and o-derived-circle modifications -- everything except serif feet.
+    """
     font = ufoLib2.Font()
     jost_names = jost_source.glyph_names_for_chars(CHARS)
     for ch in CHARS:
-        pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
         glyph = font.newGlyph(_glyph_name(ch))
         glyph.unicodes = [ord(ch)]
+        if ch == "s":
+            pen_value, width = roboto_s_source.extract(wght, wdth)
+        else:
+            pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
+    o_outer_points = _o_outer_contour(font["o"]).points
+    for name in quirks.O_DERIVED_GLYPHS:
+        quirks.snap_round_points_to_o(font[name], o_outer_points, _o_inner_contour(font["o"]).points)
+
     for ch in CHARS:
-        quirks.apply_terminal_cuts(font[_glyph_name(ch)])
+        if ch != "s":
+            quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
     o_inner_points = _o_inner_contour(font["o"]).points
     for name in quirks.ROUND_COUNTER_GLYPHS:
