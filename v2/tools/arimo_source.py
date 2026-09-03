@@ -360,6 +360,14 @@ def _interpolate_at(ch: str, alpha: float):
 
 
 _jost_names: dict[str, str] = {}
+
+
+def _jost_name(ch: str) -> str:
+    if ch not in _jost_names:
+        _jost_names[ch] = jost_source.glyph_names_for_chars(ch)[ch]
+    return _jost_names[ch]
+
+
 _alpha_cache: dict[tuple[str, int], float] = {}
 
 
@@ -398,9 +406,7 @@ def _calibrated_alpha(ch: str, wght: int) -> float:
     if key in _alpha_cache:
         return _alpha_cache[key]
 
-    if ch not in _jost_names:
-        _jost_names[ch] = jost_source.glyph_names_for_chars(ch)[ch]
-    jost_name = _jost_names[ch]
+    jost_name = _jost_name(ch)
     scan_y = _CALIBRATION_JOST_Y[ch]
 
     jost_ref_value, _ = jost_source.extract(jost_name, int(_REGULAR_WGHT), 100)
@@ -424,7 +430,24 @@ def extract(ch: str, wght: int, wdth: int):
     interpolated/extrapolated between Arimo Regular (400) and Bold (700)
     using `_calibrated_alpha` (Jost's own weight curve, not Arimo's own
     labels -- see module docstring) and rescaled into Azrienoch v2's
-    coordinate space -- same return shape as `jost_source.extract`."""
+    coordinate space -- same return shape as `jost_source.extract`.
+
+    Advance width is whatever Arimo's own Regular-Bold blend produces
+    at this `alpha` -- NOT rescaled to Jost's own `ch`-to-'o' width
+    ratio. That rescale was tried (a centroid-radial push, weighted by
+    cos^2(angle) so the change concentrates at the letter's own left/
+    right extent and tapers to zero at top/bottom, to avoid a flat
+    scale's own problem of fattening 'c'/'e's already-flattened
+    terminal cut by the same ratio) and reverted: at Black, the push
+    needed to reach `o`'s own ratio is large enough, concentrated
+    toward the ring's own left/right extent, to visibly pinch the
+    counter into an hourglass waist instead of the round hole it
+    should be -- confirmed directly, rendering 'c' at `wght`=900 and
+    seeing exactly that shape, worse than the width inconsistency it
+    was meant to fix. `c`/`e`/`s` reading inconsistently condensed
+    relative to `o` across the `wght` range (see README) is therefore
+    still open; the round, non-self-intersecting shape `_interpolate_at`
+    already fixes stands on its own, unaffected by this revert."""
     alpha = _calibrated_alpha(ch, wght)
     pen_value, width = _interpolate_at(ch, alpha)
     scale = params.X_HEIGHT / ARIMO_X_HEIGHT
