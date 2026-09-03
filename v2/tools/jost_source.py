@@ -13,10 +13,13 @@ axis behavior) are meant to be layered on top of this real data in
 later passes.
 
 Jost only exposes a `wght` axis (100-900) -- there is no `wdth` axis to
-draw from. This module's width handling is a uniform horizontal scale
-of the extracted outline and advance width, not a true optically
-condensed redraw (a real condensed cut needs redrawn counters, not
-squashed stems) -- a known simplification, see README.md.
+draw from. This module's width handling (`condense.condense_x`) is a
+per-x compression profile derived from the glyph's own ink density, not
+a true optically condensed redraw (no counter is actually reshaped) --
+still a known simplification, see README.md, but no longer a flat
+`x *= wf` scale: that thinned stems by the same factor it narrowed
+counters, visibly uneven against horizontal strokes (untouched by any
+X-axis scale) at heavy weight -- see `condense.py`'s own docstring.
 """
 
 from __future__ import annotations
@@ -26,6 +29,8 @@ from pathlib import Path
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
+
+from . import condense
 
 JOST_PATH = Path(__file__).resolve().parent.parent / "third_party" / "jost" / "Jost[wght].ttf"
 
@@ -60,9 +65,8 @@ def extract(glyph_name: str, wght: int, wdth: int) -> tuple[list, float]:
 
     `pen_value` is a fontTools RecordingPen's `.value` -- a list of
     (operator, args) tuples, replayable onto another pen via `replay`.
-    `wdth` scales x-coordinates and the advance width uniformly (see
-    module docstring); coordinates are rounded to integers same as any
-    font's units must be.
+    `wdth` != 100 runs `condense.condense_x` (see module docstring);
+    coordinates are rounded to integers same as any font's units must be.
     """
     font = _instance_at(wght)
     glyph_set = font.getGlyphSet()
@@ -73,9 +77,9 @@ def extract(glyph_name: str, wght: int, wdth: int) -> tuple[list, float]:
     glyph_set[glyph_name].draw(pen)
     width = glyph_set[glyph_name].width
 
-    wf = wdth / 100.0
-    scaled = [(op, tuple((round(x * wf), round(y)) for x, y in args)) for op, args in pen.value]
-    return scaled, width * wf
+    value, width = condense.condense_x(pen.value, width, wdth / 100.0)
+    rounded = [(op, tuple(None if pt is None else (round(pt[0]), round(pt[1])) for pt in args)) for op, args in value]
+    return rounded, width
 
 
 def replay(pen, pen_value: list) -> None:

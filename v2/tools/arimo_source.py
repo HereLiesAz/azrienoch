@@ -84,6 +84,11 @@ Rescaled from Arimo's own metrics (UPM 2048, x-height 1082) to Azrienoch
 v2's (UPM 1000, x-height 470) via the x-height ratio, the same shortcut
 `roboto_s_source.py` uses and for the same reason: all three of these
 letters sit entirely within the x-height box in both fonts.
+
+`wdth` != 100 goes through `condense.condense_x` (a per-x, ink-density
+weighted compression, not a flat scale -- see that module's docstring)
+applied AFTER the weight interpolation and x-height rescale above, same
+as `jost_source.py` does for every other letter.
 """
 
 from __future__ import annotations
@@ -93,7 +98,7 @@ from pathlib import Path
 from fontTools.pens.recordingPen import RecordingPen
 from fontTools.ttLib import TTFont
 
-from . import jost_source, params
+from . import condense, jost_source, params
 
 ARIMO_DIR = Path(__file__).resolve().parent.parent / "third_party" / "arimo"
 ARIMO_X_HEIGHT = 1082.0
@@ -288,17 +293,19 @@ def extract(ch: str, wght: int, wdth: int):
 
     alpha = _calibrated_alpha(ch, wght)
     scale = params.X_HEIGHT / ARIMO_X_HEIGHT
-    wdth_scale = wdth / 100.0
 
     out = []
     for (cmd, reg_args), (_, bold_args) in zip(reg_value, bold_value):
         new_args = tuple(
             (
-                (rx + (bx - rx) * alpha) * scale * wdth_scale,
+                (rx + (bx - rx) * alpha) * scale,
                 (ry + (by - ry) * alpha) * scale,
             )
             for (rx, ry), (bx, by) in zip(reg_args, bold_args)
         )
         out.append((cmd, new_args))
-    width = (reg_width + (bold_width - reg_width) * alpha) * scale * wdth_scale
+    width = (reg_width + (bold_width - reg_width) * alpha) * scale
+
+    if wdth != 100:
+        out, width = condense.condense_x(out, width, wdth / 100.0)
     return out, width

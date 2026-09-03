@@ -31,11 +31,24 @@ professionally drawn outlines and modifying them from there -- per the
 project owner's direction -- is the current approach.
 
 Jost only exposes a `wght` axis (100-900); it has no `wdth` axis to draw
-from. `wdth` here is currently a uniform horizontal scale of the
-extracted outline and advance width (see `jost_source.py`) -- a
-placeholder, not a true optically condensed redraw (a real condensed
-cut needs redrawn counters and adjusted spacing, not squashed stems).
-Worth revisiting once the modification pass below is underway.
+from. `wdth` here goes through `condense.py`'s per-x, ink-density
+weighted compression (see that module's docstring) rather than a flat
+`x *= wf` scale -- the flat scale used to thin a stem by the same
+factor it narrowed a counter, which read as an obvious squish rather
+than a condensed cut at heavy weight (a stem's X-extent shrinks with
+the scale, a horizontal stroke's Y-extent doesn't, so the two drift out
+of proportion the heavier and more condensed a master gets -- caught by
+rendering the full alphabet at `wght`=900/`wdth`=75 and comparing stroke
+weights directly). The new version still isn't a true optically
+condensed redraw (no counter is actually reshaped, and it's a single
+global compression curve applied the same at every height, so a
+diagonal stroke's x position only gets partial credit for the ink it
+carries) -- worth revisiting once the modification pass below is
+underway -- but stems now measure close to their `wdth`=100 width
+instead of uniformly thinned by the same 25% as every counter (`n`'s
+stem: 0.98x instead of 0.75x; `H`'s: 0.90x instead of 0.75x, both at
+`wght`=900 -- `o`'s ring, which has no distinct stem/counter columns to
+tell apart, still compresses close to uniformly, which is expected).
 
 `c`/`e`/`s` are the one exception: they're pulled from
 [Arimo](https://github.com/googlefonts/arimo) instead (vendored at
@@ -321,6 +334,7 @@ v2/tools/ufo_build.py          builds one UFO per master from jost_source.py + q
 v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
 v2/tools/arimo_source.py       extracts c/e/s from vendored Arimo (Helvetica-derived)
+v2/tools/condense.py           the wdth axis: ink-density weighted horizontal compression
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
 v2/third_party/arimo/          vendored Arimo Regular/Bold + its own OFL.txt
 v2/sources/                    build output (UFOs + designspace)
