@@ -85,16 +85,51 @@ requires.
 ## Status
 
 62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied from Jost across all 12 masters, with a first pass
-of Azrienoch-specific modifications on top (`tools/quirks.py`):
+(`0`-`9`) -- copied from Jost across all 12 masters (except `s`, see
+below), with a first pass of Azrienoch-specific modifications on top
+(`tools/quirks.py`):
 
-- **Horizontal terminal cuts** on `c`/`e`/`s` (Helvetica-style -- Jost's
-  own cut is vertical on `c`, diagonal on `e`/`s`). `g`'s own descender-
-  loop terminal was already a horizontal cut in Jost and needed no
-  change (confirmed by inspection, not assumed).
+- **`c`/`e` are cut directly from `o`, not from Jost's own (very
+  slightly different) circle for those two letters**: every on/off-curve
+  point on their round silhouette is projected onto `o`'s own exact
+  outer or inner circle at the same angle from center
+  (`quirks.py::snap_round_points_to_o`), before the terminal cut below
+  carves the opening. Only runs on points that aren't part of a straight
+  ('line'-type) segment -- `e`'s crossbar and both letters' flat cut
+  connectors were never on the circle to begin with, so they're left as
+  Jost drew them.
+- **Horizontal terminal cuts** on `c`/`e` (Helvetica-style -- Jost's own
+  cut is vertical on `c`, diagonal on `e`). `g`'s own descender-loop
+  terminal was already a horizontal cut in Jost and needed no change
+  (confirmed by inspection, not assumed).
+- **`s` is sourced from the repository root's own Azrienoch pipeline
+  (Roboto Flex) instead of Jost** (`tools/roboto_s_source.py`): Jost's
+  own `s`, once reoriented to a horizontal terminal, kept producing a
+  self-intersection at heavy weight that traced back to the curve
+  geometry right at that terminal, not just the reorientation math.
+  Root's own `s` has a real stepped ink-trap notch at heavy weight
+  instead (confirmed directly against Roboto Flex's own raw, untouched
+  points -- a deliberate optical correction, not a bug), extracted
+  before root's own serif feet are applied (v2 applies its own SERF axis
+  afterward) and rescaled from Roboto Flex's metrics to this project's
+  own via the x-height ratio (`s` sits entirely within the x-height box
+  in both). Root's `wght` axis floors at 180, not v2's 100 -- v2's
+  `wght`=100 sample clamps to root's 180, the closest real value rather
+  than an extrapolation.
 - **Vertical terminal cuts** on `r`/`f`, matching each other (Jost draws
   both with the same diagonal cut; both are now reoriented the same way
   instead of one differing from the other).
+- Each terminal reorientation (`quirks.py::_reorient_cut`) transforms not
+  just the two terminal points but the whole run of off-curve control
+  points leading into each one, via a similarity transform (rotate +
+  scale, pivoting on that curve's own anchor point) rather than a plain
+  translation: a translation was tried first and left the control point
+  the same distance from its anchor regardless of how far the terminal
+  itself had to move, which overshot into a self-intersecting notch at
+  heavy weight (confirmed directly, rendering `c`/`s` at wght 900 before
+  this fix) even though it looked fine at Thin. The similarity transform
+  scales the whole curve segment consistently with its own terminal's
+  actual displacement.
 - **Every round-bowled lowercase letter's inner counter is now a true
   affine-scaled copy of `o`'s own inner counter**: `b`, `d`, `p`, `q`,
   `g`. Confirmed structurally (Jost's own `o`/`b`/`d`/`p`/`q`/`g` all
@@ -106,9 +141,19 @@ of Azrienoch-specific modifications on top (`tools/quirks.py`):
   letterforms with no separate counter contour to replace) -- both are
   the same class of gap the root project's own `canonical_counter.py`
   documents as unfinished for its analogous cases.
-- **`a` is single-story** -- confirmed to already be true of Jost's own
-  `a` (its bbox top matches `o`'s exactly, `(_, _, _, 470)` at every
-  weight tested) rather than something this pass needed to build.
+- **`a` is single-story, built directly from `d`** (`tools/single_story_a.py`,
+  ported from the repository root's own module of the same name): a
+  fresh copy of `d`'s own three contours (Jost draws `d` as an
+  independent stem rectangle, bowl outer, and inner counter, rather than
+  Roboto Flex's fused stem+bowl outer, which made this simpler than
+  root's own version -- the stem is just contour 0 outright) with the
+  stem's top edge moved down from ascender height to x-height (or just
+  clear of the counter's own top, if that's taller at extreme weights,
+  same `COUNTER_CLEARANCE` guard root's version uses). Not "confirmed
+  Jost's own `a` happens to already be single-story" any more, as this
+  project's first pass here found -- replaced with an `a` that's
+  literally `d` with a shortened stem, matching root's own convention,
+  per the project owner's direction.
 
 The reorientation itself is a rigid transform (preserves the cut's
 length/stroke-thickness and its midpoint, only changes which axis it
@@ -133,20 +178,32 @@ a hairline at `SERF`=0, a full slab at `SERF`=100), rather than
 relocating the stem's own points -- appending same-wound ink can only
 ever add, never accidentally flip a fill relationship the way an
 earlier, since-discarded point-insertion version of this did on `n`.
-Which terminal(s) get a foot follows the project owner's own rule:
+Which terminal(s) get a foot, and which direction each one flares,
+follows the project owner's own handwriting-inspired rule -- rewritten
+once already after the first pass got it wrong in two ways (every
+single-story letter got a foot per stem instead of exactly two, and
+multi-stem letters like `H`/`R` flared symmetrically outward AND inward,
+notching straight into their own counters):
 
-- A letter confined to the x-height box (no ascender/descender) gets a
-  foot at both the baseline and the x-height top, wherever a flat run
-  genuinely exists there -- `n`'s stems, for instance, only have one at
-  the baseline, since their tops curve straight into the arch with no
-  flat run to grow a foot from at all.
-- A letter with an ascender/descender gets a foot only at the end that
-  terminates at a baseline or a descender depth (`b`/`d`/`h`/`k`/`l`/
-  `f`/`t`'s baseline; `q`'s own descender), never at an ascender/cap
-  top -- `g`'s own descender is a curved hook rather than a straight
-  stem in this construction, so it gets no foot at all, a real
-  limitation of "slab feet on flat stems only," not a bug.
-- Uppercase and digits get a foot only at the baseline.
+- A single-story letter (`SINGLE_STORY`) gets exactly TWO feet total:
+  the x-height top of its leftmost stem, flaring only left, and the
+  baseline of its rightmost stem, flaring only right -- not a foot on
+  every flat terminal.
+- An ascender letter (`b`/`d`/`f`/`h`/`k`/`l`/`t`) gets a foot only at
+  the baseline, never the ascender top.
+- `g`/`p`/`q` get a foot only at the x-height top instead -- the
+  opposite end from the rest of `DESCENDER_TOP`'s siblings -- `g`'s own
+  descender is a curved hook rather than a straight stem in this
+  construction anyway, so it never had a foot there to move.
+- `y` gets a foot at both the x-height top and its own descender depth.
+- Uppercase and digits get a foot only at the baseline, never the top.
+- Every letter EXCEPT single-story ones keeps a foot per qualifying
+  stem, but each one flares only away from the letter's OTHER stems: the
+  leftmost stem at a guide flares left only, the rightmost flares right
+  only, a lone stem at that guide flares both ways, and anything
+  strictly between two others doesn't flare at all. This is what fixes
+  `H`/`R`: both used to flare both ways whenever geometrically safe,
+  which included flaring each stem toward the other, into the counter.
 
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
@@ -161,7 +218,6 @@ Not yet done, in order:
 
 - **Kerning.** None yet -- needs the full glyph set (now in place) to
   tune real pairs against.
-- **The round-counter treatment extended to `a`.**
 - **The `wdth` axis's uniform-scale placeholder** (see above).
 
 ## Building

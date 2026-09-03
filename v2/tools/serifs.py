@@ -24,23 +24,43 @@ MIN_STEM_LEN cleanly rejects anything that short as "not a real stem",
 no per-contour-extreme special-casing needed.
 
 Per the project owner's direction, WHICH guide line(s) a given letter's
-feet grow from depends on its own shape:
+feet grow from, and which DIRECTION each foot is allowed to flare,
+follows the shape of handwriting rather than "widen wherever there's
+room":
 
-- A letter confined to the x-height box (`SINGLE_STORY`) gets a foot at
-  both the baseline and the x-height top.
+- A single-story letter (`SINGLE_STORY`) gets exactly TWO feet, never
+  one per stem: the x-height-top of its LEFTMOST stem, flaring only
+  left/backward, and the baseline of its RIGHTMOST stem, flaring only
+  right/forward -- not a foot on every flat terminal the letter happens
+  to have.
 - A letter with an ascender (`ASCENDER`) gets a foot only at the
   baseline -- never at the ascender/cap top.
-- A letter with a descender (`DESCENDER`) gets a foot only at its own
-  descender depth (read per glyph, not a shared constant -- Jost's own
-  g/q don't reach exactly the same depth).
-- Uppercase and digits get a foot only at the baseline.
+- `g`/`p`/`q` get a foot only at the x-height top instead of the
+  baseline/descender (`DESCENDER_TOP`) -- the opposite end from every
+  other descender-bearing letter, per the project owner's direction.
+- `j`'s own descender hook is curved, not a flat stem (like `g`'s own
+  hook -- see below), so it's grouped with `DESCENDER_BOTTOM` mostly for
+  documentation; `detect_feet` finds nothing there in practice.
+- `y` gets a foot at BOTH the x-height top and its own descender depth.
+- Uppercase and digits get a foot only at the baseline, never the top.
 
-Diagonal-only strokes (v/w/x/y, A/V/W/X/Y/K's legs) and curved
-terminals (g's own descender hook) have no flat stem run to grow a foot
-from at all and are simply left alone -- confirmed by inspection, not
-assumed: `detect_feet` finds nothing there because there's nothing
-matching its own definition of a stem terminal, not because they're
-special-cased out.
+For every letter EXCEPT single-story ones, every qualifying stem gets
+its own foot, but each one flares only AWAY from the letter's other
+stems, never toward them: the leftmost stem at a given guide flares only
+left, the rightmost only right, a stem that's the only one at that guide
+flares both ways (nothing to protect on either side), and any stem
+strictly between two others gets no flare at all. This is what fixes an
+early version of this file's own `H`/`R`: both of `H`'s stems used to
+flare both ways whenever both sides were geometrically safe to widen,
+which included flaring the LEFT stem rightward -- into its own counter,
+not away from it.
+
+Diagonal-only strokes (v/w/x, A/V/W/X/K's legs) and curved terminals
+(g's own descender hook) have no flat stem run to grow a foot from at
+all and are simply left alone -- confirmed by inspection, not assumed:
+`detect_feet` finds nothing there because there's nothing matching its
+own definition of a stem terminal, not because they're special-cased
+out.
 """
 
 from __future__ import annotations
@@ -59,7 +79,9 @@ MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to coun
 
 SINGLE_STORY = set("acemnorsuvwxz")
 ASCENDER = set("bdfhikl") | {"t"}
-DESCENDER = set("gjpqy")
+DESCENDER_TOP = set("gpq")  # foot at x-height, not the descender -- see module docstring
+DESCENDER_BOTTOM = {"j"}
+Y_BOTH = {"y"}
 
 
 def _seg_len(p, q) -> float:
@@ -110,7 +132,49 @@ def _flat_runs(glyph):
             yield contour, x0, x1, y, is_top_guide, left_ext, right_ext
 
 
-def detect_feet(reference_glyph, guides: dict[str, float]) -> list[dict]:
+def _apply_outward_flares(specs: list[dict], single_story: bool) -> list[dict]:
+    """Restricts each spec's flare direction to face away from this
+    glyph's OTHER stems at the same guide, per the module docstring:
+    the leftmost stem at a guide flares only left, the rightmost only
+    right, a lone stem at that guide flares both ways, and (for
+    non-single-story letters) anything strictly in between flares
+    neither. `left_ext`/`right_ext` already say whether a side is
+    geometrically SAFE to widen at all (a genuine long stem there, not a
+    short curve connector) -- this only ever narrows that, never
+    widens it back past what was already unsafe.
+
+    Single-story letters get a stricter version: only the very leftmost
+    x-height-guide stem and the very rightmost baseline-guide stem keep
+    a foot at all -- every other candidate is dropped outright, not just
+    unflared, since single-story letters get exactly two feet total.
+    """
+    by_guide: dict[str, list[int]] = {}
+    for i, spec in enumerate(specs):
+        by_guide.setdefault(spec["guide"], []).append(i)
+
+    keep: list[int] = []
+    for guide, idxs in by_guide.items():
+        idxs.sort(key=lambda i: specs[i]["x_frac"])
+        if single_story:
+            if guide == "xheight":
+                i = idxs[0]
+                specs[i]["right_ext"] = False
+                keep.append(i)
+            elif guide == "baseline":
+                i = idxs[-1]
+                specs[i]["left_ext"] = False
+                keep.append(i)
+            continue
+        for pos, i in enumerate(idxs):
+            want_left = pos == 0
+            want_right = pos == len(idxs) - 1
+            specs[i]["left_ext"] = specs[i]["left_ext"] and want_left
+            specs[i]["right_ext"] = specs[i]["right_ext"] and want_right
+            keep.append(i)
+    return [specs[i] for i in sorted(keep)]
+
+
+def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list[dict]:
     """Foot specs (fractional x/width, guide name, direction, extendable
     sides, and the stem contour's own winding sign) from one reference
     instance -- reused as-is (only re-scaled) at every master, so every
@@ -139,7 +203,7 @@ def detect_feet(reference_glyph, guides: dict[str, float]) -> list[dict]:
             right_ext=right_ext,
             positive_winding=_signed_area(contour.points) >= 0,
         ))
-    return specs
+    return _apply_outward_flares(specs, ch in SINGLE_STORY)
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):
@@ -197,7 +261,11 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
         allowed = {"baseline", "xheight"}
     elif ch in ASCENDER:
         allowed = {"baseline"}
-    elif ch in DESCENDER:
+    elif ch in DESCENDER_TOP:
+        allowed = {"xheight"}
+    elif ch in Y_BOTH:
+        allowed = {"xheight", "descender"}
+    elif ch in DESCENDER_BOTTOM:
         allowed = {"descender"}
     else:
         allowed = {"baseline"}  # uppercase and digits
