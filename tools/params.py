@@ -21,7 +21,7 @@ Four variable axes:
   alongside the -50/50 extremes, not just their interpolated midpoint.
 
 ``opsz`` (optical size) and ``slnt`` (slant) are deliberately not
-exposed -- see README.md's "Design" section and TODO.md for why.
+exposed -- see docs/axes.md for why.
 """
 
 from __future__ import annotations

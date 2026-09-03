@@ -2,8 +2,22 @@
 
 Tracked follow-up work for Azrienoch, beyond what's in this repository.
 Checked items are done (built, or a deliberate decision with reasoning);
-everything else is open. See `README.md` for the design rationale these
-build on.
+everything else is open. See [`design.md`](./design.md) for the design
+rationale these build on, and [`IDEAS.md`](./IDEAS.md) for speculative
+future directions that aren't scoped or scheduled work yet.
+
+## Tooling
+
+- [x] ~~Remove `tools/corner-editor/`~~ -- done: it never connected to
+      this repository's actual build pipeline (Azrienoch's letterforms
+      come from Roboto Flex via `tools/roboto_source.py`, not from
+      hand-drawn extremes -- see `design.md`), and had grown into a
+      separate, much larger project in its own right. Continues as
+      [Morphont](https://github.com/HereLiesAz/morphont), a standalone
+      Compose Multiplatform (Kotlin/Wasm) PWA that can shape glyphs by
+      hand across five weight/width anchors or import an existing
+      variable TTF (Azrienoch's own compiled font included) and
+      extract those anchors automatically.
 
 ## Glyph coverage
 
