@@ -542,6 +542,13 @@ full measured stem width to 40% of it (`run_w * 0.4`), so a foot reads
 as a small nub relative to the stroke it grows from at every weight,
 thin ones included, not a block half as tall as the stroke is wide.
 
+**That height pass overcorrected.** The very next comparison called it
+too short -- the flare length itself (`extra`, left at 0.3) was fine;
+only the height needed to come back up. Foot height's coefficient
+moved to 0.35 (was 0.42, then 0.28) and its cap to 60% of the measured
+stem width (was 100%, then 40%), landing between the original,
+too-tall setting and the too-short one that immediately followed it.
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the

@@ -323,8 +323,8 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
             x0 -= extra
         elif right_ext:
             x1 += extra
-        foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.28) / 100.0
-        foot_h = min(foot_h, run_w * 0.4)  # a foot reads as a nub, not a block half as tall as the stem is wide
+        foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.35) / 100.0
+        foot_h = min(foot_h, run_w * 0.6)  # a foot reads as a nub, not a block half as tall as the stem is wide
         y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
 
         pen = glyph.getPointPen()
