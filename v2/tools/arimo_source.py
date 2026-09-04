@@ -212,24 +212,27 @@ def _jost_name() -> str:
     return _jost_name_cache
 
 
-_alpha_cache: dict[int, float] = {}
+_alpha_cache: dict[tuple[int, int], float] = {}
 
 
-def _calibrated_alpha(wght: int) -> float:
+def _calibrated_alpha(wght: int, grad: int = 0) -> float:
     """The Arimo interpolation parameter (0 = Regular, 1 = Bold, outside
     that range an extrapolation) that scales Arimo's own 's' stroke
     width by the same ratio Jost's own ORIGINAL 's' stroke width has at
-    this `wght` relative to its own 400 reference -- see module
-    docstring."""
-    if wght in _alpha_cache:
-        return _alpha_cache[wght]
+    this `wght` (and `grad`, approximated the same way
+    `jost_source.extract` approximates it for every Jost-sourced letter
+    -- see that module's own docstring) relative to its own 400/grad=0
+    reference -- see module docstring."""
+    key = (wght, grad)
+    if key in _alpha_cache:
+        return _alpha_cache[key]
 
     jost_name = _jost_name()
     scan_y = _CALIBRATION_JOST_Y
 
     jost_ref_value, _ = jost_source.extract(jost_name, int(_REGULAR_WGHT), 100)
     jost_ref_width = _ring_wall_width(jost_ref_value, scan_y)
-    jost_target_value, _ = jost_source.extract(jost_name, wght, 100)
+    jost_target_value, _ = jost_source.extract(jost_name, wght, 100, grad)
     jost_target_width = _ring_wall_width(jost_target_value, scan_y)
     ratio = jost_target_width / jost_ref_width
 
@@ -239,18 +242,24 @@ def _calibrated_alpha(wght: int) -> float:
 
     desired_width = regular_width * ratio
     alpha = (desired_width - regular_width) / (bold_width - regular_width)
-    _alpha_cache[wght] = alpha
+    _alpha_cache[key] = alpha
     return alpha
 
 
-def extract(ch: str, wght: int, wdth: int):
+def extract(ch: str, wght: int, wdth: int, grad: int = 0):
     """Returns (pen_value, width) for 's', interpolated/extrapolated
     between Arimo Regular (400) and Bold (700) using `_calibrated_alpha`
     (Jost's own weight curve, not Arimo's own labels -- see module
     docstring) and rescaled into Azrienoch v2's coordinate space -- same
     return shape as `jost_source.extract`. `ch` is always "s"; kept as a
-    parameter for a uniform call signature with `jost_source.extract`."""
-    alpha = _calibrated_alpha(wght)
+    parameter for a uniform call signature with `jost_source.extract`.
+
+    `grad` shifts the calibration target the same way it shifts every
+    Jost-sourced letter's own shape (see `jost_source.extract`'s own
+    docstring), but the returned advance WIDTH is still overridden back
+    to `grad`=0's own value -- same width-preservation contract as
+    every other letter's own `grad` handling."""
+    alpha = _calibrated_alpha(wght, grad)
     pen_value, width = _interpolate_at(alpha)
     scale = params.X_HEIGHT / ARIMO_X_HEIGHT
 
@@ -262,4 +271,6 @@ def extract(ch: str, wght: int, wdth: int):
 
     if wdth != 100:
         out, width = condense.condense_x(out, width, wdth / 100.0)
+    if grad:
+        _, width = extract(ch, wght, wdth, 0)
     return out, width

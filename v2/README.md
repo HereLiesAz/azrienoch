@@ -164,11 +164,33 @@ plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
 decomposed on extraction (`jost_source.py` uses fontTools'
 `DecomposingRecordingPen`, not a plain one) so every downstream
 consumer only ever sees plain outline data, never a component
-reference. One genuinely new axis this expansion doesn't add: v1 also
-has a `GRAD` (grade) axis, passed straight through to Roboto Flex's own
-native `GRAD`; Jost has no such axis to pass through, so v2 would need
-its own from-scratch implementation (stroke-weight offsetting that
-doesn't change advance width) -- not attempted yet.
+reference.
+
+- **A fourth axis, `GRAD` (Grade, -50 to 50)**, now exists too --
+  v1 gets a real one for free, passed straight through to Roboto
+  Flex's own native `GRAD` (drawn by that font's own designers); Jost
+  has no such axis to draw from at all. `jost_source.extract` (and
+  `arimo_source.extract`, for `s`) approximates it instead: sample
+  Jost's own outline at a NEARBY `wght` (a fixed ratio of `grad` units
+  to `wght` units, clamped to Jost's own 100-900 range) for SHAPE,
+  while keeping the ADVANCE WIDTH from the requested `wght` itself --
+  reusing gvar interpolation Jost's own designers already drew
+  correctly, rather than a from-scratch outline-offset (stroke-
+  emboldening) algorithm, which risks the same class of self-
+  intersection failure this project has hit repeatedly with hand-
+  rolled geometric transforms elsewhere. Confirmed directly: advance
+  width is bit-for-bit identical at `GRAD`=-50/0/50 for a given
+  `wght`/`wdth` while the ink visibly thickens/thins, and point
+  topology stays identical across the whole grid (Jost's own gvar
+  already guarantees this for any `wght` it samples). Not a true
+  optical grade redraw the way a real one is (it doesn't hold stroke
+  CONTRAST or x-height fixed independently of `wght`, since it's
+  literally borrowing `wght`'s own interpolation to fake the effect),
+  but the specific property `GRAD` exists for -- text reads
+  bolder/lighter without reflowing a layout measured against the
+  un-graded widths -- holds exactly, by construction. Triples the
+  master grid from 12 to 36 (crossed with `GRAD_SAMPLES` the same way
+  `wdth`/`SERF` already are).
 
 - **`c`/`e` are built directly from this master's own `o`**
   (`tools/ring_derived.py`), not from a separate donor font. `o`'s own
@@ -387,11 +409,12 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Greek**, a `GRAD` axis, and extending `quirks.py`/`serifs.py`/
-  `kerning.py`'s per-glyph refinements past the original 62 ASCII
-  letters/digits to the newly added punctuation/Latin-1/Latin
-  Extended-A/Cyrillic set (see "Status" above for the full account of
-  what's covered and what isn't).
+- **Greek**, and extending `quirks.py`/`serifs.py`/`kerning.py`'s
+  per-glyph refinements past the original 62 ASCII letters/digits to
+  the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set
+  (see "Status" above for the full account of what's covered and what
+  isn't). `GRAD` (see "Status") is done, if only an approximation of a
+  true optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing

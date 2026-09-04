@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Edieresis" format="2">
+  <advance width="550"/>
+  <unicode hex="00CB"/>
+  <outline>
+    <contour>
+      <point x="159" y="0" type="line"/>
+      <point x="512" y="0" type="line"/>
+      <point x="512" y="112" type="line"/>
+      <point x="159" y="112" type="line"/>
+    </contour>
+    <contour>
+      <point x="159" y="588" type="line"/>
+      <point x="512" y="588" type="line"/>
+      <point x="512" y="700" type="line"/>
+      <point x="159" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="159" y="318" type="line"/>
+      <point x="492" y="318" type="line"/>
+      <point x="492" y="428" type="line"/>
+      <point x="159" y="428" type="line"/>
+    </contour>
+    <contour>
+      <point x="77" y="700" type="line"/>
+      <point x="77" y="0" type="line"/>
+      <point x="204" y="0" type="line"/>
+      <point x="204" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="340" y="856" type="qcurve" smooth="yes"/>
+      <point x="340" y="827"/>
+      <point x="383" y="787"/>
+      <point x="413" y="787" type="qcurve" smooth="yes"/>
+      <point x="444" y="787"/>
+      <point x="486" y="827"/>
+      <point x="486" y="856" type="qcurve" smooth="yes"/>
+      <point x="486" y="886"/>
+      <point x="444" y="926"/>
+      <point x="413" y="926" type="qcurve" smooth="yes"/>
+      <point x="383" y="926"/>
+      <point x="340" y="886"/>
+    </contour>
+    <contour>
+      <point x="116" y="856" type="qcurve" smooth="yes"/>
+      <point x="116" y="827"/>
+      <point x="160" y="787"/>
+      <point x="189" y="787" type="qcurve" smooth="yes"/>
+      <point x="220" y="787"/>
+      <point x="262" y="827"/>
+      <point x="262" y="856" type="qcurve" smooth="yes"/>
+      <point x="262" y="886"/>
+      <point x="220" y="926"/>
+      <point x="189" y="926" type="qcurve" smooth="yes"/>
+      <point x="160" y="926"/>
+      <point x="116" y="886"/>
+    </contour>
+    <contour>
+      <point x="80.0" y="0.0" type="line"/>
+      <point x="165.0" y="0.0" type="line"/>
+      <point x="165.0" y="1.0" type="line"/>
+      <point x="80.0" y="1.0" type="line"/>
+    </contour>
+  </outline>
+</glyph>

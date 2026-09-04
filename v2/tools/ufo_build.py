@@ -116,7 +116,7 @@ def _o_inner_contour(o_glyph):
     return min(o_glyph.contours, key=_contour_area)
 
 
-def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
+def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     """Extracts every glyph from Jost -- except 's', pulled from the
     vendored Arimo instead (see `arimo_source.py`: an open, metric-
     compatible Helvetica/Arial workalike, used because 's' is meant to
@@ -140,9 +140,9 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
         glyph = font.newGlyph(_glyph_name(ch))
         glyph.unicodes = [ord(ch)]
         if ch in _ARIMO_CHARS:
-            pen_value, width = arimo_source.extract(ch, wght, wdth)
+            pen_value, width = arimo_source.extract(ch, wght, wdth, grad)
         else:
-            pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
+            pen_value, width = jost_source.extract(jost_names[ch], wght, wdth, grad)
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
@@ -196,8 +196,8 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
     return cache
 
 
-def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
-    font = _build_raw_glyphs(wght, wdth)
+def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
+    font = _build_raw_glyphs(wght, wdth, grad)
     font.info.unitsPerEm = params.UPM
     font.info.ascender = params.ASCENDER
     font.info.descender = params.DESCENDER
@@ -213,7 +213,7 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     # name -- confirmed by dumping the compiled font's name table and
     # finding "Azrienoch V2 Wght400_Wdth100_Serf0" where "Azrienoch V2"/
     # "Regular" belonged.
-    font.info.styleName = params.instance_style_name(wght, wdth, serf)
+    font.info.styleName = params.instance_style_name(wght, wdth, serf, grad)
     font.info.versionMajor = 0
     font.info.versionMinor = 1
 
@@ -225,14 +225,14 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     for (left, right), value in kerning.pairs_for(wdth).items():
         font.kerning[(left, right)] = value
 
-    path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth, serf)}.ufo"
+    path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth, serf, grad)}.ufo"
     font.save(path, overwrite=True)
     return path
 
 
 def build_all() -> list[Path]:
     SOURCES_DIR.mkdir(parents=True, exist_ok=True)
-    return [build_master_ufo(wght, wdth, serf) for wght, wdth, serf in params.MASTER_GRID]
+    return [build_master_ufo(wght, wdth, serf, grad) for wght, wdth, serf, grad in params.MASTER_GRID]
 
 
 if __name__ == "__main__":

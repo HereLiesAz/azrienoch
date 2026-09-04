@@ -60,15 +60,43 @@ def glyph_names_for_chars(chars: str) -> dict[str, str]:
     return result
 
 
-def extract(glyph_name: str, wght: int, wdth: int) -> tuple[list, float]:
-    """Returns (pen_value, advance_width) for `glyph_name` at (wght, wdth).
+GRAD_TO_WGHT = 3.0  # 1 GRAD unit ~ 3 wght units; see extract()'s own docstring
+
+
+def extract(glyph_name: str, wght: int, wdth: int, grad: int = 0) -> tuple[list, float]:
+    """Returns (pen_value, advance_width) for `glyph_name` at
+    (wght, wdth, grad).
 
     `pen_value` is a fontTools RecordingPen's `.value` -- a list of
     (operator, args) tuples, replayable onto another pen via `replay`.
     `wdth` != 100 runs `condense.condense_x` (see module docstring);
     coordinates are rounded to integers same as any font's units must be.
+
+    `grad` (a registered OpenType axis: make text read bolder or
+    lighter, e.g. for dark-mode legibility, WITHOUT reflowing a layout
+    that was measured against the un-graded advance widths) has no
+    native axis of its own in vendored Jost to sample the way `wght`
+    does -- the repository root's own v1 pipeline gets a real one for
+    free because its own donor, Roboto Flex, happens to already have a
+    native `GRAD` axis, drawn by that font's own designers; Jost has
+    nothing analogous to draw from. This approximates it instead by
+    sampling Jost's own outline at a NEARBY `wght` (`GRAD_TO_WGHT`
+    units of `wght` per unit of `grad`, clamped to Jost's own 100-900
+    range) for SHAPE, while keeping the ADVANCE WIDTH from the
+    requested `wght` itself, unclamped -- reusing the interpolation
+    Jost's own gvar already draws correctly, rather than inventing a
+    from-scratch outline-offset (stroke emboldening) algorithm, which
+    risks the same class of self-intersection failure this project has
+    hit repeatedly with hand-rolled geometric transforms. Not a true
+    optical grade redraw (a real one holds stroke CONTRAST and x-height
+    fixed while `wght` alone does not, across Jost's own wide weight
+    range), but the width-preservation property `GRAD` exists for
+    holds exactly, by construction.
     """
-    font = _instance_at(wght)
+    effective_wght = wght
+    if grad:
+        effective_wght = max(100, min(900, wght + round(grad * GRAD_TO_WGHT)))
+    font = _instance_at(effective_wght)
     glyph_set = font.getGlyphSet()
     if glyph_name not in glyph_set:
         raise KeyError(f"Jost has no glyph named {glyph_name!r}")
@@ -90,7 +118,9 @@ def extract(glyph_name: str, wght: int, wdth: int) -> tuple[list, float]:
     value, width = condense.condense_x(pen.value, width, wdth / 100.0)
     rounded = [(op, tuple(None if pt is None else (round(pt[0]), round(pt[1])) for pt in args)) for op, args in value]
     if wdth != 100:
-        _match_closing_duplicates(rounded, _reference_closing_state(glyph_name, wght))
+        _match_closing_duplicates(rounded, _reference_closing_state(glyph_name, effective_wght))
+    if grad:
+        _, width = extract(glyph_name, wght, wdth, 0)
     return rounded, width
 
 

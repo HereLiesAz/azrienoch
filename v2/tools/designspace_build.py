@@ -27,11 +27,20 @@ OUTPUT_TTF = FONTS_DIR / "AzrienochV2-VF.ttf"
 # axis tag -> {axis value: name} for the STAT table's own axis-value
 # labels (params.py's WGHT_NAMES/WDTH_NAMES/SERF_NAMES, keyed the same
 # way as params.AXES's own tags).
-_AXIS_VALUE_NAMES = {"wght": params.WGHT_NAMES, "wdth": params.WDTH_NAMES, "SERF": params.SERF_NAMES}
+_AXIS_VALUE_NAMES = {
+    "wght": params.WGHT_NAMES, "wdth": params.WDTH_NAMES, "SERF": params.SERF_NAMES, "GRAD": params.GRAD_NAMES,
+}
 
 
 def _add_axis_labels(axis: AxisDescriptor, value_names: dict, default, elide_default: bool = True) -> None:
     for value, name in value_names.items():
+        if not name:
+            # GRAD's own default (see params.GRAD_NAMES): unlike
+            # wdth/SERF's own defaults ("Normal"/"Sans", real names that
+            # just happen to be elidable), GRAD=0 has no name at all to
+            # begin with -- an empty-string STAT AxisValue would be a
+            # malformed label, not a correctly-elided one.
+            continue
         axis.axisLabels.append(
             AxisLabelDescriptor(name=name, userValue=value, elidable=(elide_default and value == default))
         )
@@ -64,14 +73,14 @@ def write_designspace(ufo_paths: list[Path]) -> Path:
         )
         doc.addAxis(a)
 
-    for path, (wght, wdth, serf) in zip(ufo_paths, params.MASTER_GRID):
+    for path, (wght, wdth, serf, grad) in zip(ufo_paths, params.MASTER_GRID):
         s = SourceDescriptor()
         s.path = str(path)
-        s.name = params.style_name(wght, wdth, serf)
-        s.styleName = params.style_name(wght, wdth, serf)
+        s.name = params.style_name(wght, wdth, serf, grad)
+        s.styleName = params.style_name(wght, wdth, serf, grad)
         s.familyName = "Azrienoch V2"
-        s.location = {"wght": wght, "wdth": wdth, "SERF": serf}
-        if (wght, wdth, serf) == params.DEFAULT_LOCATION:
+        s.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
+        if (wght, wdth, serf, grad) == params.DEFAULT_LOCATION:
             s.copyLib = True
             s.copyInfo = True
             s.copyGroups = True
@@ -90,8 +99,8 @@ def write_designspace(ufo_paths: list[Path]) -> Path:
         # which was v2's actual bug: 12 real masters, one visible style.
         inst = InstanceDescriptor()
         inst.familyName = "Azrienoch V2"
-        inst.styleName = params.instance_style_name(wght, wdth, serf)
-        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf}
+        inst.styleName = params.instance_style_name(wght, wdth, serf, grad)
+        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
         doc.addInstance(inst)
 
     doc.write(DESIGNSPACE_PATH)

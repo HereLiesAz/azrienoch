@@ -1,0 +1,27 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Wcircumflex" format="2">
+  <advance width="1110"/>
+  <unicode hex="0174"/>
+  <outline>
+    <contour>
+      <point x="734" y="301" type="line"/>
+      <point x="538" y="735" type="line"/>
+      <point x="342" y="301" type="line"/>
+      <point x="219" y="700" type="line"/>
+      <point x="3" y="700" type="line"/>
+      <point x="310" y="-42" type="line"/>
+      <point x="538" y="362" type="line"/>
+      <point x="766" y="-42" type="line"/>
+      <point x="1073" y="700" type="line"/>
+      <point x="856" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="538" y="879" type="line"/>
+      <point x="626" y="795" type="line"/>
+      <point x="741" y="871" type="line"/>
+      <point x="538" y="1011" type="line"/>
+      <point x="335" y="871" type="line"/>
+      <point x="449" y="795" type="line"/>
+    </contour>
+  </outline>
+</glyph>
