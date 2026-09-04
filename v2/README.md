@@ -489,6 +489,33 @@ notching straight into their own counters):
   (`c`/`e` built from `o`, `s` from Arimo -- all four behave
   identically).
 
+**Foot sizing is measured off each master's own actual stem width, not
+the reference instance's.** A real, visible defect the project owner
+caught directly: at any weight thinner than the `wght`=400 reference
+(most obviously Thin), feet sat wider than the stem itself and poked
+out to both sides -- visible even at `SERF`=0, where a foot is meant to
+be an invisible hairline. Root cause: a stem's own stroke thickness
+shrinks with `wght` far faster than the glyph's overall advance width
+does (a Thin letter is only modestly narrower end-to-end, even though
+its stems are dramatically thinner), but `apply_feet` sized every
+foot's base width off `detect_feet`'s reference-instance fraction
+rescaled by THIS master's overall advance width -- treating "fraction
+of total glyph width" as a stand-in for "fraction of stem width," which
+only holds at the reference weight itself. Fixed by measuring the
+actual flat-run width directly off each master's own already-built
+glyph (`serifs.py::_actual_stem_width`) before appending any foot, so
+the base rectangle sits flush with the real stem at every weight, not
+just 400. Foot HEIGHT is now also hard-capped at that same real stem
+width (`foot_h = min(foot_h, run_w)`) per the project owner's own
+explicit requirement: a serif's stroke-perpendicular extension must
+never equal or exceed the stroke it grows from, at any weight, not
+just Black -- the old formula derived height from the same
+wrongly-overshot width, so at Thin it could produce a foot taller than
+the actual (thin) stroke itself, not merely wider. Confirmed by
+rendering Thin, Regular, Black, and Thin+Condensed side by side with
+`SERF`=100: feet now stay proportional to each master's own stem at
+every point across the range, instead of only looking right at 400.
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the
