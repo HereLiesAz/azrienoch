@@ -314,7 +314,7 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
             continue
         y = guides[spec["guide"]]
         cx, run_w = measurement
-        extra = serif_amount * (run_w * 0.9) / 100.0
+        extra = serif_amount * (run_w * 0.45) / 100.0
         x0, x1 = cx - run_w / 2, cx + run_w / 2
         left_ext, right_ext = spec["left_ext"], spec["right_ext"]
         if left_ext and right_ext:

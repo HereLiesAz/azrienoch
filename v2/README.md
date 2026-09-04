@@ -516,6 +516,19 @@ rendering Thin, Regular, Black, and Thin+Condensed side by side with
 `SERF`=100: feet now stay proportional to each master's own stem at
 every point across the range, instead of only looking right at 400.
 
+**The outward flare itself was halved** (`apply_feet`'s `extra`
+coefficient, 0.9 -> 0.45) after a second round of direct inspection:
+`A`'s two feet are geometrically mirror-symmetric (confirmed by
+measuring the compiled font's own points, and by pixel-measuring a
+real browser render -- both sides land on the exact same width), but
+one side was getting clipped by the proof artifact's own display
+container, making the unclipped side look twice as long by comparison.
+Since the correctly-displayed (unclipped) length was itself judged too
+prominent once seen in full, every foot's flare -- upper- and
+lowercase alike, every letter -- was cut to half its previous length,
+a single global scalar rather than a per-letter fix, so the whole
+alphabet's feet move together and stay consistent with each other.
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the
