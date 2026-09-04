@@ -170,6 +170,14 @@ _HORIZONTAL_TERMINALS = {
 _VERTICAL_TERMINALS = {
     "r": [(1, 0, 1)],
     "f": [(1, 0, 1)],
+    # 'r' with a diacritic (Jost's own glyph names for r-acute/r-cedilla/
+    # r-caron): Jost draws these as 'r's own two contours plus one more
+    # for the mark (confirmed directly: 3 contours vs 'r's own 2, at
+    # every one of these three), so 'r's own contour-1/point-0,1
+    # terminal indices still point at the same stem terminal here too.
+    "racute": [(1, 0, 1)],
+    "uni0157": [(1, 0, 1)],
+    "rcaron": [(1, 0, 1)],
 }
 
 

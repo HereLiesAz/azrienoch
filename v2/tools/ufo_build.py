@@ -39,8 +39,9 @@ import string
 from pathlib import Path
 
 import ufoLib2
+from fontTools.pens.recordingPen import RecordingPen
 
-from . import arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a
+from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
@@ -155,6 +156,24 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
 
     for ch in CHARS:
         quirks.apply_terminal_cuts(font[_glyph_name(ch)])
+
+    # Accented 'c'/'e'/'s' variants (see accent_marks.py): re-splice
+    # Jost's own diacritic mark onto THIS project's own finished base
+    # letter (after its terminal cut, above), replacing Jost's own
+    # fused base+mark drawing wholesale -- otherwise every accented 'c'/
+    # 'e'/'s' would carry Jost's own native shape for that letter
+    # instead of this project's own ring-derived/Arimo-sourced one.
+    for ch, base_ch in accent_marks.BASE_OF.items():
+        if ch not in CHARS:
+            continue
+        base_glyph = font[_glyph_name(base_ch)]
+        base_pen = RecordingPen()
+        base_glyph.draw(base_pen)
+        spliced = accent_marks.splice_mark(ch, wght, wdth, grad, base_pen.value)
+        glyph = font[_glyph_name(ch)]
+        glyph.clearContours()
+        jost_source.replay(glyph.getPen(), spliced)
+        glyph.width = base_glyph.width
 
     o_inner_points = _o_inner_contour(font["o"]).points
     for name in quirks.ROUND_COUNTER_GLYPHS:

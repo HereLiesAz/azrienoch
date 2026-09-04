@@ -166,6 +166,31 @@ decomposed on extraction (`jost_source.py` uses fontTools'
 consumer only ever sees plain outline data, never a component
 reference.
 
+- **The one exception to "not yet the same per-glyph refinements":**
+  every accented Latin letter whose base is `c`/`e`/`s` (`ç è é ê ë ć ĉ
+  ċ č ē ĕ ė ę ě ś ŝ ş š`, 18 letters) gets its diacritic mark re-spliced
+  onto THIS project's own finished `c`/`e`/`s` instead of carrying
+  Jost's own native shape for that base letter (`tools/accent_marks.py`)
+  -- without this, e.g. `ć` would read as Jost's own geometric-sans `c`
+  with an accent, sitting oddly next to this project's own
+  Helvetica-derived one right beside it in any real word. Jost's own
+  accented glyphs aren't a base contour byte-identical to the plain
+  letter plus an appended mark contour (confirmed directly: `ę`'s own
+  first contour has a different point count than plain `e`, evidently
+  redrawn slightly to fit the mark) -- but `c`/`e`/`s` are always
+  single-contour in Jost, so contour 0 of any of these accented glyphs
+  is reliably "this letter's own version of the base," and every
+  contour after it is the mark, regardless of whether the base
+  contour matches point-for-point. The mark is repositioned
+  horizontally to this project's own base's center (both letters share
+  the same baseline/cap-height/x-height, so no vertical adjustment is
+  needed -- confirmed by comparing bounding boxes directly). `r`'s own
+  three accented variants (`ŕ ŗ ř`) need no re-splicing -- `r` isn't
+  reshaped by this project, only terminal-cut, and Jost draws these the
+  same way (`r`'s own two contours plus one more for the mark), so
+  `quirks.py`'s existing terminal-cut indices for `r` just needed
+  extending to their own glyph names.
+
 - **A fourth axis, `GRAD` (Grade, -50 to 50)**, now exists too --
   v1 gets a real one for free, passed straight through to Roboto
   Flex's own native `GRAD` (drawn by that font's own designers); Jost
@@ -410,11 +435,12 @@ arch letter's own counter.
 Not yet done, in order:
 
 - **Greek**, and extending `quirks.py`/`serifs.py`/`kerning.py`'s
-  per-glyph refinements past the original 62 ASCII letters/digits to
-  the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set
-  (see "Status" above for the full account of what's covered and what
-  isn't). `GRAD` (see "Status") is done, if only an approximation of a
-  true optical grade.
+  per-glyph refinements past the original 62 ASCII letters/digits (plus
+  the 18 accented `c`/`e`/`s`-based letters and 3 accented `r`-based
+  ones already re-spliced/terminal-cut, see "Status" above) to the rest
+  of the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set.
+  `GRAD` (see "Status") is done, if only an approximation of a true
+  optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing
