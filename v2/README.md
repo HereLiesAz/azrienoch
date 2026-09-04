@@ -529,6 +529,19 @@ lowercase alike, every letter -- was cut to half its previous length,
 a single global scalar rather than a per-letter fix, so the whole
 alphabet's feet move together and stay consistent with each other.
 
+**Two more rounds after that, per further direct comparison**: the
+flare was cut again, to 2/3 of THAT already-halved length (`extra`'s
+coefficient 0.45 -> 0.3, i.e. 1/3 of the original 0.9), and the foot
+HEIGHT formula was independently tightened specifically because it
+still read as too tall at the thinnest weights even after the earlier
+"cap it at the stem's own width" fix -- capping at the full stem width
+still let a thin stem's foot reach roughly half that stem's own
+thickness, visually chunky against a delicate stroke. Foot height's
+own coefficient dropped 0.42 -> 0.28 and its cap tightened from the
+full measured stem width to 40% of it (`run_w * 0.4`), so a foot reads
+as a small nub relative to the stroke it grows from at every weight,
+thin ones included, not a block half as tall as the stroke is wide.
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the
