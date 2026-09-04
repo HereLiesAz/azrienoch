@@ -549,26 +549,30 @@ moved to 0.35 (was 0.42, then 0.28) and its cap to 60% of the measured
 stem width (was 100%, then 40%), landing between the original,
 too-tall setting and the too-short one that immediately followed it.
 
-**Still invisible at Thin -- not a sizing bug, a rendering-scale one.**
-Pixel-exact inspection (a tight, font-unit-scale SVG crop of a single
-foot, not a full-glyph screenshot) showed the foot WAS present and
-correctly proportioned even at Thin -- but a normal-size render of the
-same glyph showed no visible height at all, only the width flare.
-Root cause: at Thin a stem's own width is small enough that a height
-purely proportional to it (the formula above) rounds to a handful of
-units out of a 1000-unit em -- sub-pixel at any ordinary display size,
-confirmed directly. The width flare survives the same antialiasing
-because it has more on-screen pixels to work with, so the letter
-LOOKED like only its width had grown, never its height, even though
-both were scaled by the same stem-proportional logic. Fixed with an
-absolute floor on foot height (`max(foot_h, serif_amount * 0.12)`,
-before the never-exceed-the-stem cap) that guarantees the height stays
-visible on the thinnest stems regardless of how small a fraction of
-the stem's own width it would otherwise compute to -- at the cost of
-letting it approach (not exceed) the full stem width there, rather
-than staying a small fraction of it the way it still does on a thick
-stem, where the floor has no effect (comfortably under the
-proportional formula's own result).
+**Still disproportionately tall at Thin -- wrong fix attempted first.**
+A first attempt diagnosed this as a rendering-scale problem (foot
+height too small in absolute units to survive antialiasing) and
+responded by adding an absolute floor that made Thin's foot height
+approach its own full stem width -- exactly backwards from the actual,
+repeated direction to decrease height at the thinnest weight, not
+increase it. Reverted outright.
+
+The real, measurable cause: the formula added a flat `MIN_FOOT_H`
+bonus on top of the proportional term unconditionally, and a flat
+bonus is negligible against a thick stem's large proportional term but
+NOT against a thin stem's small one -- computed directly on `H`'s own
+two feet, Black's height came out to 35.5% of its own stem width,
+Thin's to 42.1%, purely from that same flat +1 unit being ~1% of one
+and ~17% of the other. That gap -- not absolute size, not rendering
+resolution -- is what made Thin's foot read as too tall relative to
+its own (thin) stroke even after several rounds of adjusting the
+proportional coefficient alone. Fixed by interpolating from the
+hairline (`SERF`=0) straight to the fully-proportional target
+(`SERF`=100) instead of always adding the hairline as a bonus on top:
+at full `SERF`, height is now exactly the stem's own 0.35 fraction at
+every weight -- confirmed directly: recomputing both extremes with the
+new formula gives an identical 35% ratio at Thin and at Black, where
+before Thin ran measurably higher.
 
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)

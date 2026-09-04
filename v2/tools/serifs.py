@@ -323,22 +323,24 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
             x0 -= extra
         elif right_ext:
             x1 += extra
-        foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.35) / 100.0
-        # A height that's purely proportional to run_w disappears at Thin:
-        # a thin stem's own run_w is small enough that the proportional
-        # foot_h above rounds to a handful of units out of a 1000-unit em
-        # -- sub-pixel at any normal display size, confirmed directly by
-        # rendering (a tight, font-unit-scale SVG crop showed the foot
-        # WAS there and correctly proportioned, but a normal-size browser
-        # render of the same glyph showed no visible height at all, only
-        # the width flare, which has more on-screen pixels to survive
-        # antialiasing with). This absolute floor (scaled by serif_amount
-        # so SERF=0 stays a true hairline) guarantees the height itself
-        # stays visible even on the thinnest stems, at the cost of
-        # letting it approach (not exceed -- see the cap right after)
-        # the stem's own width there, rather than staying a small
-        # fraction of it the way it does on a thick stem.
-        foot_h = max(foot_h, serif_amount * 0.12)
+        # A flat "+ MIN_FOOT_H" on top of the proportional term (the old
+        # formula) is negligible for a thick stem but NOT for a thin one
+        # -- confirmed directly by computing the actual ratio at both
+        # extremes: Black's foot came out to 35.5% of its own stem width,
+        # Thin's to 42.1%, purely because the same flat +1 unit is ~1% of
+        # Black's ~78-unit height but ~17% of Thin's ~6-unit height. That
+        # is a real, measurable reason Thin's foot reads disproportionately
+        # taller relative to its own (thin) stroke than Black's does
+        # relative to its own -- exactly the opposite of decreasing height
+        # at the thinnest weight specifically, which is what was asked
+        # for. Fixed by interpolating from the hairline (serif_amount=0)
+        # straight to the fully-proportional target (serif_amount=100)
+        # instead of always adding the hairline as a bonus on top: at full
+        # SERF, height is now EXACTLY run_w's own 0.35 fraction at every
+        # weight, thin included, matching Black's own already-correct
+        # ratio instead of exceeding it there.
+        t = serif_amount / 100.0
+        foot_h = MIN_FOOT_H * (1 - t) + (run_w * 0.35) * t
         foot_h = min(foot_h, run_w)  # never taller than the stem it grows from
         y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
 
