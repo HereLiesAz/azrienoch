@@ -150,23 +150,45 @@ below), with a first pass of Azrienoch-specific modifications on top
 **Character set is not yet Greek** -- Jost itself barely has any Greek
 glyphs (4 codepoints total), so it needs a separate donor font this
 project doesn't vendor yet; the repository root's own v1 pipeline
-covers Greek via Roboto Flex. `quirks.py`'s terminal-cut/round-counter
-treatments and `serifs.py`'s per-letter-class foot rules are also still
-scoped to the original 62 -- accented Latin and Cyrillic glyphs get
-Jost's own raw shape (correctly weighted/condensed/serifed at the
-whole-letter level, since those axes apply generically) but not yet
-the same per-glyph refinements as their base letters (e.g. `ā`'s
-counter isn't forced to match `o`'s the way `a`'s is). `kerning.py`,
-unlike those two, is NOT scoped to the original 62 -- see "Kerning"
-below, it covers this project's full character set. Jost's own
-accented glyphs that are TrueType composites (a base letter
-plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
-decomposed on extraction (`jost_source.py` uses fontTools'
-`DecomposingRecordingPen`, not a plain one) so every downstream
-consumer only ever sees plain outline data, never a component
-reference.
+covers Greek via Roboto Flex. `kerning.py` covers this project's full
+character set already (see "Kerning" below). Jost's own accented
+glyphs that are TrueType composites (a base letter plus a separately
+drawn diacritic component, e.g. `Ohungarumlaut`) are decomposed on
+extraction (`jost_source.py` uses fontTools' `DecomposingRecordingPen`,
+not a plain one) so every downstream consumer only ever sees plain
+outline data, never a component reference.
 
-- **The one exception to "not yet the same per-glyph refinements":**
+- **`quirks.py`'s round-counter reshaping and `serifs.py`'s
+  per-letter-class foot rules now extend to every accented Latin
+  letter**, not just the original 62 ASCII letters/digits, via
+  `params.base_letter` -- Unicode NFD decomposition strips a letter's
+  own combining accent (`ē` -> `e`, `ō` -> `o`, `ń` -> `n`), so an
+  accented glyph gets exactly the same classification its plain base
+  letter does: `ō`'s counter is reshaped to match `o`'s own (the same
+  structural point-topology match `reshape_counter_to_o` already used,
+  just now offered more glyphs to check), and every accented letter
+  grows serif feet at the guide lines and flare directions its base
+  letter's own letter-class dictates -- including a real, previously
+  wrong case this surfaced directly: accented `n` (`ń ň ñ ņ`, and
+  Cyrillic has no equivalent since it doesn't decompose to a Latin
+  base) used to fall through to the generic uppercase/digit
+  "baseline-only, no flare restriction" bucket (its literal,
+  non-ASCII character not matching any of `serifs.py`'s ASCII-keyed
+  class sets), keeping a foot on BOTH of its stems -- `n` itself is
+  declared `SINGLE_STORY` (documented as "gets exactly two feet"), so
+  its accented variants now correctly drop the left stem's foot the
+  same way plain `n` always has. Cyrillic still has no equivalent
+  per-letter-class treatment (no Latin base to resolve to), so it
+  keeps Jost's raw shape at the whole-letter level only, same as
+  before. `quirks.py`'s terminal-cut treatment covers the 18 c/e/s-
+  based accented letters (via mark-splicing, below) plus 3 r-based
+  ones directly, described next.
+
+- **`c`/`e`/`s`'s own accented variants need more than the base-letter
+  resolution above** (their base letters aren't built from Jost's raw
+  shape at all -- `c`/`e` are ring-derived, `s` is Arimo-sourced -- so
+  there's no Jost outline for those accented glyphs to inherit
+  correctly-shaped serif feet or counters from in the first place):
   every accented Latin letter whose base is `c`/`e`/`s` (`ç è é ê ë ć ĉ
   ċ č ē ĕ ė ę ě ś ŝ ş š`, 18 letters) gets its diacritic mark re-spliced
   onto THIS project's own finished `c`/`e`/`s` instead of carrying
@@ -434,14 +456,21 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Greek**, and extending `quirks.py`/`serifs.py`'s per-glyph
-  refinements past the original 62 ASCII letters/digits (plus the 18
-  accented `c`/`e`/`s`-based letters and 3 accented `r`-based ones
-  already re-spliced/terminal-cut, see "Status" above) to the rest of
-  the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set.
-  `kerning.py` no longer needs this: it already covers the full
-  character set (see "Kerning" below). `GRAD` (see "Status") is done,
-  if only an approximation of a true optical grade.
+- **Greek**, and Cyrillic's own per-letter-class refinements.
+  `serifs.py`'s foot rules and `quirks.py`'s round-counter reshaping now
+  extend to every accented Latin letter via `params.base_letter`
+  (NFD decomposition -- see "Status" above), and terminal-cut treatment
+  already covers the 18 accented `c`/`e`/`s`-based letters and 3
+  accented `r`-based ones (re-spliced/terminal-cut directly, since
+  their base letters aren't Jost's raw shape to begin with). Cyrillic
+  has no Latin base to decompose to, so it still gets Jost's raw shape
+  at the whole-letter level only; fixing that means either hand-mapping
+  visually-equivalent Cyrillic/Latin letter pairs (о/o, с/c, е/e are
+  visually round/single-story the same way) or building a Cyrillic-
+  specific classification, neither attempted yet. `kerning.py` doesn't
+  need any of this: it already covers the full character set (see
+  "Kerning" below). `GRAD` (see "Status") is done, if only an
+  approximation of a true optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing

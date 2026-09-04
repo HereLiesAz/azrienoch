@@ -216,7 +216,9 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
             right_ext=right_ext,
             positive_winding=_signed_area(contour.points) >= 0,
         ))
-    return _apply_outward_flares(specs, ch in SINGLE_STORY)
+    # Same base-letter resolution as `guides_for` -- an accented single-
+    # story letter still gets exactly two feet, not one per stem.
+    return _apply_outward_flares(specs, params.base_letter(ch) in SINGLE_STORY)
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):
@@ -262,7 +264,15 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
     of those guide NAMES this letter is actually allowed to grow a foot
     at -- see module docstring for the per-letter-class rule. Returns
     only the allowed subset, already filtered, since detect_feet and
-    apply_feet both just take "the guides that apply here"."""
+    apply_feet both just take "the guides that apply here".
+
+    `ch` is resolved to its plain-Latin base (`params.base_letter`)
+    before the class lookup below, so an accented letter (e.g. 'ē')
+    gets the same guide set as its base ('e') rather than falling
+    through to the uppercase/digit default -- a diacritic doesn't
+    change where a letter's own stem terminals sit. Cyrillic and
+    unaccented punctuation/digits don't decompose to a Latin base and
+    so keep the baseline-only default, same as uppercase."""
     all_guides = {
         "baseline": 0.0,
         "xheight": params.X_HEIGHT,
@@ -270,6 +280,7 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
         "cap": params.CAP_HEIGHT,
         "descender": glyph_min_y,
     }
+    ch = params.base_letter(ch)
     if ch in SINGLE_STORY:
         allowed = {"baseline", "xheight"}
     elif ch in ASCENDER:

@@ -10,16 +10,21 @@ so needs a separate donor font, not yet vendored here. All plain
 contours in vendored Jost (no composites to decompose) for every
 character in this set, confirmed directly rather than assumed.
 
-Extending PAST plain extraction: `quirks.py`'s terminal-cut and
-round-counter treatments, and `serifs.py`'s per-letter-class foot
-rules, are still scoped to the original 62 ASCII letters/digits --
-accented Latin and Cyrillic glyphs get Jost's own raw shape (still
-correctly condensed/weighted/serifed at the whole-letter level, since
-those axes apply generically) but not yet the same Azrienoch-specific
-per-glyph refinements as their base letters (e.g. `ā`'s counter isn't
-forced to match `o`'s the way `a`'s underlying `d` is). `kerning.py`
-is similarly still scoped to the original 62 -- the new glyphs compile
-and render but are unkerned against everything, including each other.
+Extending PAST plain extraction: `quirks.py`'s round-counter treatment
+and `serifs.py`'s per-letter-class foot rules now extend to accented
+Latin variants too, via `params.base_letter` (NFD-decomposition-based:
+'ē' resolves to 'e', 'ō' to 'o', etc.) -- an accented o/b/d/p/q/g gets
+its counter reshaped to match plain 'o's the same way its base letter
+does, and every accented letter grows serif feet at the same guide
+lines its base letter would, rather than falling through to the
+uppercase/digit baseline-only default. `quirks.py`'s terminal-cut
+treatment covers the 18 c/e/s-based accented letters (via
+`accent_marks.py`'s mark-splicing, see below) plus 3 r-based ones
+directly; Cyrillic has no equivalent per-letter-class treatment yet
+(no NFD-decomposable base to resolve to), so it still gets Jost's raw
+shape at the whole-letter level only. `kerning.py`, unlike the above,
+is NOT similarly scoped -- it already covers the full character set
+(see its own module docstring).
 
 Serif feet (the SERF axis) are detected ONCE per glyph, on a single
 reference instance (wght=400, wdth=100, before any foot is applied --
@@ -159,8 +164,17 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         glyph.width = base_glyph.width
 
     o_inner_points = _o_inner_contour(font["o"]).points
-    for name in quirks.ROUND_COUNTER_GLYPHS:
-        quirks.reshape_counter_to_o(font[name], o_inner_points)
+    for ch in CHARS:
+        # Extends past the original 62: any accented Latin variant of
+        # o/b/d/p/q/g (params.base_letter strips the diacritic) gets the
+        # same counter-reshape as its base letter -- 'reshape_counter_to_o'
+        # already matches purely by point-topology, not by name, so this
+        # is just widening WHICH glyphs get offered to it, not new logic.
+        # Non-Latin/unaccented characters (Cyrillic, digits, punctuation)
+        # resolve to themselves and are skipped unless already a base name.
+        if params.base_letter(ch) not in quirks.ROUND_COUNTER_GLYPHS:
+            continue
+        quirks.reshape_counter_to_o(font[_glyph_name(ch)], o_inner_points)
 
     # 'a' is single-story, built directly from 'd's own (by now fully
     # finalized -- counter already reshaped to 'o's own) outline, per the

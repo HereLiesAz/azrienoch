@@ -14,6 +14,7 @@ README.md -- so no override is needed there).
 from __future__ import annotations
 
 import string
+import unicodedata
 
 # Same character sets as the repository root's own v1 pipeline, minus
 # GREEK (Jost itself has almost none -- see ufo_build.py's own module
@@ -36,6 +37,22 @@ CHARS = (
     string.ascii_uppercase + string.ascii_lowercase + string.digits
     + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
 )
+
+def base_letter(ch: str) -> str:
+    """The plain Latin letter `ch` is a diacritic variant of, via Unicode
+    NFD decomposition (e.g. 'é'/'ē'/'ě' -> 'e', 'Ł' -> 'L' -- stroke-
+    through letters don't decompose this way and fall through to
+    themselves, same as any character with no accent to strip). Used to
+    extend per-letter-class logic (`serifs.py`'s guide selection,
+    `quirks.py`'s round-counter reshaping) from the original 62 ASCII
+    letters to their accented Latin-1/Latin Extended-A counterparts
+    without hardcoding a lookup table for all ~130 of them: a 'ē' should
+    grow serif feet exactly where a plain 'e' does, and its counter
+    should get reshaped to match 'o's the same way 'e' does, since it's
+    the same base letterform with a mark added, not a different design."""
+    decomposed = unicodedata.normalize("NFD", ch)
+    return decomposed[0] if decomposed else ch
+
 
 UPM = 1000
 
