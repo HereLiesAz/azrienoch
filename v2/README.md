@@ -140,23 +140,48 @@ uses.
 
 ## Status
 
-338 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`), digits
-(`0`-`9`), punctuation, Latin-1 Supplement, Latin Extended-A, and
-Cyrillic -- copied from Jost across all 12 masters (except `c`/`e`,
-built from this project's own `o`, and `s`, sourced from Arimo -- see
-below), with a first pass of Azrienoch-specific modifications on top
-(`tools/quirks.py`) for the original 62 ASCII letters/digits.
+408 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`), digits
+(`0`-`9`), punctuation, Latin-1 Supplement, Latin Extended-A, Greek,
+and Cyrillic -- the same character set the repository root's own v1
+pipeline covers, in full. Latin/Cyrillic/punctuation/digits are copied
+from Jost across all 36 masters (except `c`/`e`, built from this
+project's own `o`, and `s`, sourced from Arimo -- see below), with a
+first pass of Azrienoch-specific modifications on top (`tools/quirks.py`)
+for the original 62 ASCII letters/digits, now extended to accented
+Latin and select Cyrillic letters too (see below).
 
-**Character set is not yet Greek** -- Jost itself barely has any Greek
-glyphs (4 codepoints total), so it needs a separate donor font this
-project doesn't vendor yet; the repository root's own v1 pipeline
-covers Greek via Roboto Flex. `kerning.py` covers this project's full
-character set already (see "Kerning" below). Jost's own accented
-glyphs that are TrueType composites (a base letter plus a separately
-drawn diacritic component, e.g. `Ohungarumlaut`) are decomposed on
-extraction (`jost_source.py` uses fontTools' `DecomposingRecordingPen`,
-not a plain one) so every downstream consumer only ever sees plain
-outline data, never a component reference.
+**Greek is sourced from the repository root's own vendored Roboto
+Flex**, not Jost -- Jost itself has almost no Greek coverage (4
+codepoints total, confirmed directly against its own cmap), so it
+needs a separate donor; rather than vendoring a second new font and
+re-solving "how do you get a sane per-weight stroke/height progression
+out of an independent-parametric-axes variable font" from scratch,
+`roboto_flex_source.py` reuses v1's own already-tuned
+`tools/roboto_source.py::roboto_location` wholesale via a read-only
+import (no v1 file touched) -- v2's own `wdth` (75-100) and `GRAD`
+(-50 to 50) ranges are numerically identical to v1's own, so both pass
+straight through with no rescaling; only `wght` is floor-clamped to
+180 (v1's own floor -- everything below it was confirmed, repeatedly,
+to self-intersect somewhere in Roboto Flex's own gvar deltas at this
+axis combination, a font-data limitation predating this project).
+Greek necessarily looks like Roboto Flex's own grotesque design, not
+Jost's geometric one -- a real, visible style seam against the
+Latin/Cyrillic alphabet, the same class of tradeoff already made for
+'s' (Arimo/Helvetica-derived). No Azrienoch-specific quirks/serifs
+refinement is applied to Greek, and it has no kerning of its own (see
+"Kerning" below) -- it compiles and renders correctly (confirmed:
+full 36-master grid compiles with identical point topology, and Greek
+was rendered and checked at several master combinations, including
+Black+Condensed+Slab, with no defects) but carries none of the
+per-letter-class treatment Latin/Cyrillic now get.
+
+Jost's own accented glyphs that are TrueType composites (a base letter
+plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
+decomposed on extraction (`jost_source.py` uses fontTools'
+`DecomposingRecordingPen`, not a plain one) so every downstream
+consumer only ever sees plain outline data, never a component
+reference; `roboto_flex_source.py` does the same for Roboto Flex's own
+composites.
 
 - **`quirks.py`'s round-counter reshaping and `serifs.py`'s
   per-letter-class foot rules now extend to every accented Latin
@@ -475,26 +500,33 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Greek**, and the remaining ~23 Cyrillic lowercase letters with no
-  clean single-Latin-letter structural analog (`б в г д ж з и й к л н
-  п т ф ц ч ш щ ъ ы ь ю я` -- see "Status" above). `serifs.py`'s foot
-  rules and `quirks.py`'s round-counter reshaping now extend to every
-  accented Latin letter via `params.base_letter` (NFD decomposition),
-  plus nine lowercase Cyrillic letters confirmed to share a Latin
-  letter's structure (`_CYRILLIC_ANALOG`, same function), and
-  terminal-cut treatment already covers the 18 accented `c`/`e`/`s`-
-  based letters and 3 accented `r`-based ones (re-spliced/terminal-cut
-  directly, since their base letters aren't Jost's raw shape to begin
-  with). The rest of Cyrillic has no clean analog to map to -- forcing
-  one onto a genuinely different letterform (a bridge/ladder shape like
-  `н`/`п`, which looks like a lowercase Latin "H", not "n") would be
-  worse than the generic unclassified default it already gets, which
-  happens to be correct for those shapes. Greek needs an entirely
-  separate donor font (Jost has almost none), a distinct sourcing task
-  from anything `base_letter` can help with. `kerning.py` doesn't need
-  any of this: it already covers the full character set (see "Kerning"
-  below). `GRAD` (see "Status") is done, if only an approximation of a
-  true optical grade.
+- **Greek's own per-letter-class refinement and kerning**, and the
+  remaining ~23 Cyrillic lowercase letters with no clean
+  single-Latin-letter structural analog (`б в г д ж з и й к л н п т ф
+  ц ч ш щ ъ ы ь ю я` -- see "Status" above). Greek itself is no longer
+  missing (see "Status" above -- it's sourced from Roboto Flex now),
+  but it carries none of `serifs.py`'s foot rules, `quirks.py`'s
+  round-counter reshaping, or `kerning.py`'s pairs the way Latin and
+  select Cyrillic do -- Roboto Flex's own outlines are a structurally
+  different donor font (different point topology entirely) from Jost's,
+  so `params.base_letter`'s NFD-decomposition/analog-table approach
+  (which works by finding a shared STRUCTURE with an already-refined
+  Jost/Arimo-derived Latin letter) has nothing to offer it, and its
+  kerning would need extracting and merging a second donor's own GPOS
+  table, not attempted here. `serifs.py`'s foot rules and
+  `quirks.py`'s round-counter reshaping do extend to every accented
+  Latin letter via `params.base_letter` (NFD decomposition), plus nine
+  lowercase Cyrillic letters confirmed to share a Latin letter's
+  structure (`_CYRILLIC_ANALOG`, same function), and terminal-cut
+  treatment already covers the 18 accented `c`/`e`/`s`-based letters
+  and 3 accented `r`-based ones (re-spliced/terminal-cut directly,
+  since their base letters aren't Jost's raw shape to begin with). The
+  rest of Cyrillic has no clean analog to map to -- forcing one onto a
+  genuinely different letterform (a bridge/ladder shape like `н`/`п`,
+  which looks like a lowercase Latin "H", not "n") would be worse than
+  the generic unclassified default it already gets, which happens to
+  be correct for those shapes. `GRAD` (see "Status") is done, if only
+  an approximation of a true optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing
@@ -531,12 +563,17 @@ vendored Jost's own GPOS pair-positioning table rather than hand-tuned
 pipeline uses on Roboto Flex, for the same reason: several thousand
 pairs tuned by eye is its own multi-week type-design task, and Jost
 already did that work. Covers every script this project's own
-character set does (Latin, Latin-1, Latin Extended-A, Cyrillic --
-Jost's own kerning table already has pairs for all of them, the exact
-same donor-kerning logic the original 62-glyph ASCII set already
-rested on, needing no new extraction work when the character set grew
--- see "Status" above), not just the original 62 ASCII letters/digits
-(533 pairs there alone). Jost's own kerning is entirely static across
+character set does EXCEPT Greek (Latin, Latin-1, Latin Extended-A,
+Cyrillic -- Jost's own kerning table already has pairs for all of
+them, the exact same donor-kerning logic the original 62-glyph ASCII
+set already rested on, needing no new extraction work when the
+character set grew -- see "Status" above), not just the original 62
+ASCII letters/digits (533 pairs there alone). Greek is sourced from
+Roboto Flex instead (see "Status" above), which Jost's own GPOS table
+naturally has no glyphs for at all, so Greek pairs get excluded from
+this extraction outright rather than merely unmatched -- a real fix
+means extracting and merging a second donor's own kerning table,
+not attempted here. Jost's own kerning is entirely static across
 its `wght` axis (confirmed by diffing the full extracted table at
 `wght`=100/400/900: zero pairs differ), so one extraction is reused at
 every master, scaled only by that master's own `wdth` fraction (kerning
@@ -578,6 +615,8 @@ v2/tools/designspace_build.py  writes the designspace, runs fontmake
 v2/tools/preview.py            dev-only visual QA render
 v2/tools/arimo_source.py       extracts s from vendored Arimo (Helvetica-derived)
 v2/tools/ring_derived.py       builds c/e from this project's own o (cut-open ring + crossbar)
+v2/tools/roboto_flex_source.py extracts Greek from the repo root's own vendored Roboto Flex
+v2/tools/accent_marks.py       re-splices Jost's own diacritic marks onto this project's c/e/s
 v2/tools/condense.py           the wdth axis: ink-density weighted horizontal compression
 v2/tools/kerning.py            letter-pair kerning, extracted from vendored Jost's own GPOS
 v2/third_party/jost/           vendored Jost source font + its own OFL.txt
@@ -592,7 +631,11 @@ Everything in this directory that touches Jost's outline data is a
 Modified Version of Jost under the SIL Open Font License, Version 1.1
 (`v2/third_party/jost/OFL.txt`; project authors credited there).
 Likewise, `c`/`e`/`s` are a Modified Version of Arimo under the same
-license (`v2/third_party/arimo/OFL.txt`). The root repository's
+license (`v2/third_party/arimo/OFL.txt`). Greek is a Modified Version
+of Roboto Flex, also under the SIL Open Font License, Version 1.1,
+sourced from the repository root's own already-vendored
+`third_party/roboto-flex/` (see that directory's own `OFL.txt`) rather
+than vendoring a second copy under `v2/`. The root repository's
 `OFL.txt` covers the project as a whole.
 
 ## Next steps

@@ -16,9 +16,7 @@ from __future__ import annotations
 import string
 import unicodedata
 
-# Same character sets as the repository root's own v1 pipeline, minus
-# GREEK (Jost itself has almost none -- see ufo_build.py's own module
-# docstring for the full account).
+# Same character sets as the repository root's own v1 pipeline.
 PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
 LATIN1 = (
     "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
@@ -29,14 +27,26 @@ LATIN_EXT_A = (
     "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
     "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
 )
+# Modern monotonic Greek, upper- and lowercase (including final-form
+# sigma 'ς', distinct from medial 'σ'), plus the tonos-accented and
+# dialytika (diaeresis) vowels -- same set as the repository root's own
+# v1 pipeline's GREEK constant. Jost itself has almost none of these (4
+# codepoints total, confirmed directly against its own cmap), so these
+# are sourced from Roboto Flex instead (see `roboto_flex_source.py`).
+GREEK = (
+    "ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩ"
+    "αβγδεζηθικλμνξοπρστυφχψω"
+    "ςΆΈΉΊΌΎΏάέήίόύώΪΫϊϋΐΰ"
+)
 CYRILLIC = (
     "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
     "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
 )
 CHARS = (
     string.ascii_uppercase + string.ascii_lowercase + string.digits
-    + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
+    + PUNCT + LATIN1 + LATIN_EXT_A + GREEK + CYRILLIC
 )
+GREEK_CHARS = set(GREEK)
 
 # Lowercase Cyrillic letters confirmed, by direct rendering (not
 # assumed from the character's name), to share a plain Latin letter's

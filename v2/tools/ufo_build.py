@@ -3,12 +3,16 @@
 Glyph outlines are copied from the vendored Jost variable font
 (see jost_source.py) at each master's (wght, wdth) -- not drawn from
 scratch. Covers the basic Latin alphabet (A-Z, a-z), digits (0-9),
-punctuation, Latin-1 Supplement, Latin Extended-A, and Cyrillic --
-every script the repository root's own v1 pipeline covers except
-Greek, which Jost barely has any glyphs for (4 codepoints total) and
-so needs a separate donor font, not yet vendored here. All plain
-contours in vendored Jost (no composites to decompose) for every
-character in this set, confirmed directly rather than assumed.
+punctuation, Latin-1 Supplement, Latin Extended-A, Greek, and Cyrillic
+-- every script the repository root's own v1 pipeline covers. Greek is
+NOT sourced from Jost, which barely has any glyphs for it (4 codepoints
+total, confirmed directly against its own cmap) -- it's sourced from
+the repository root's own already-vendored Roboto Flex instead (see
+`roboto_flex_source.py`), the same donor v1's own pipeline uses for
+everything, reusing v1's own already-tuned weight/width-to-axis mapping
+via a read-only import rather than re-deriving it. Every other
+character in this set is a plain contour in vendored Jost (no
+composites to decompose), confirmed directly rather than assumed.
 
 Extending PAST plain extraction: `quirks.py`'s round-counter treatment
 and `serifs.py`'s per-letter-class foot rules now extend to accented
@@ -48,10 +52,12 @@ from pathlib import Path
 import ufoLib2
 from fontTools.pens.recordingPen import RecordingPen
 
-from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a
+from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, roboto_flex_source, serifs, single_story_a
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
+_GREEK_CHARS = params.GREEK_CHARS
+_NON_GREEK_CHARS = "".join(ch for ch in params.CHARS if ch not in _GREEK_CHARS)
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -71,14 +77,19 @@ _REFERENCE_WGHT, _REFERENCE_WDTH = 400, 100
 _jost_name_map: dict[str, str] | None = None
 
 
+_roboto_name_map: dict[str, str] | None = None
+
+
 def _glyph_name(ch: str) -> str:
     """The name this project's own UFO/TTF glyph gets for `ch`. Digits
     and space get their own conventional names (kept for backward
     compatibility with `kerning.py` and existing sources, which already
-    key off "zero"/"a"/etc., not a literal "0"/" "); everything else
-    reuses Jost's own glyph name for that character. Jost's own names
-    are already safe, ASCII-only, standard glyph names (e.g. "Agrave",
-    "uni0401") -- using the character itself as a glyph name instead
+    key off "zero"/"a"/etc., not a literal "0"/" "); Greek characters
+    (Jost has almost none) reuse Roboto Flex's own glyph name instead
+    (see `roboto_flex_source.py`); everything else reuses Jost's own
+    glyph name for that character. Both donors' own names are already
+    safe, ASCII-only, standard glyph names (e.g. "Agrave", "uni0401",
+    "uni0391") -- using the character itself as a glyph name instead
     (tried first) compiles fine as a UFO but fails at the very last
     TTF-writing step, where the 'post' table can't encode a non-Latin-1
     glyph name at all -- confirmed directly: fontmake errored trying to
@@ -88,9 +99,14 @@ def _glyph_name(ch: str) -> str:
         return _SPACE_NAME
     if ch in _DIGIT_NAMES:
         return _DIGIT_NAMES[ch]
+    if ch in _GREEK_CHARS:
+        global _roboto_name_map
+        if _roboto_name_map is None:
+            _roboto_name_map = roboto_flex_source.glyph_names_for_chars(params.GREEK)
+        return _roboto_name_map[ch]
     global _jost_name_map
     if _jost_name_map is None:
-        _jost_name_map = jost_source.glyph_names_for_chars(CHARS)
+        _jost_name_map = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
     return _jost_name_map[ch]
 
 
@@ -125,7 +141,7 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     `apply_terminal_cuts` too.
     """
     font = ufoLib2.Font()
-    jost_names = jost_source.glyph_names_for_chars(CHARS)
+    jost_names = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
     for ch in CHARS:
         if ch in _RING_DERIVED_CHARS:
             continue
@@ -133,6 +149,8 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         glyph.unicodes = [ord(ch)]
         if ch in _ARIMO_CHARS:
             pen_value, width = arimo_source.extract(ch, wght, wdth, grad)
+        elif ch in _GREEK_CHARS:
+            pen_value, width = roboto_flex_source.extract(_glyph_name(ch), wght, wdth, grad)
         else:
             pen_value, width = jost_source.extract(jost_names[ch], wght, wdth, grad)
         jost_source.replay(glyph.getPen(), pen_value)
