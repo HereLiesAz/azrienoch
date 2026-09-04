@@ -16,12 +16,19 @@ only by that master's own `wdth` fraction (kerning has no direct
 `SERF`-axis dependence either -- a slab foot changes a stem's terminal,
 not the sidebearing space two letters share).
 
-Filtered down to pairs where BOTH sides are one of Azrienoch's own 62
-glyphs (letters + digits) -- Jost has hundreds of accented and Cyrillic
-glyphs with kerning of their own that's irrelevant here -- 533 pairs
-survive that filter, extracted from a single class-kerning (GPOS
-lookup format 2) subtable; Jost has no format-1 (glyph-to-glyph)
-kerning pairs at all.
+Filtered down to pairs where BOTH sides are one of Azrienoch's own
+NON-GREEK glyphs (`params.CHARS` minus `params.GREEK_CHARS` -- every
+other script this project covers, not just the original 62 ASCII
+letters/digits: Jost's own kerning already covers its Latin-1/Latin
+Extended-A/Cyrillic glyphs too, the exact same donor-kerning logic the
+ASCII set already rests on, needing no new extraction work of its own),
+extracted from a single class-kerning (GPOS lookup format 2) subtable;
+Jost has no format-1 (glyph-to-glyph) kerning pairs at all. Greek is
+excluded outright, not merely unmatched -- it's sourced from Roboto
+Flex instead (see `ufo_build.py`'s own docstring), which Jost's own
+GPOS table naturally has no glyphs for at all, so Greek glyphs get no
+kerning pairs from this extraction; a real fix would mean extracting
+and merging a second donor's own kerning table, not attempted here.
 
 Three simplifications, same spirit as the `wdth` axis's own documented
 placeholder (see `condense.py`):
@@ -53,23 +60,46 @@ placeholder (see `condense.py`):
 
 from __future__ import annotations
 
-import string
-
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
-from . import jost_source
+from . import jost_source, params, roboto_flex_source
 
 JOST_PATH = jost_source.JOST_PATH
-CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
+CHARS = params.CHARS
+_GREEK_CHARS = params.GREEK_CHARS
+_NON_GREEK_CHARS = "".join(ch for ch in CHARS if ch not in _GREEK_CHARS)
 _DIGIT_NAMES = {
     "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
     "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine",
 }
+_SPACE_NAME = "space"
+
+_jost_name_map: dict[str, str] | None = None
+_roboto_name_map: dict[str, str] | None = None
 
 
 def _glyph_name(ch: str) -> str:
-    return _DIGIT_NAMES.get(ch, ch)
+    """Same naming this project's own glyphs actually get
+    (`ufo_build.py::_glyph_name`, duplicated here rather than imported
+    -- `ufo_build.py` itself imports this module, so importing back
+    would be circular): digits and space get their own conventional
+    names, Greek characters (Jost has almost none) reuse Roboto Flex's
+    own glyph name, everything else reuses Jost's own (already
+    ASCII-safe) glyph name for that character."""
+    if ch == " ":
+        return _SPACE_NAME
+    if ch in _DIGIT_NAMES:
+        return _DIGIT_NAMES[ch]
+    if ch in _GREEK_CHARS:
+        global _roboto_name_map
+        if _roboto_name_map is None:
+            _roboto_name_map = roboto_flex_source.glyph_names_for_chars(params.GREEK)
+        return _roboto_name_map[ch]
+    global _jost_name_map
+    if _jost_name_map is None:
+        _jost_name_map = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
+    return _jost_name_map[ch]
 
 
 def _extract_jost_class_pairs() -> dict[tuple[str, str], int]:
@@ -120,8 +150,14 @@ def _base_pairs() -> dict[tuple[str, str], int]:
     if _base_pairs_cache is not None:
         return _base_pairs_cache
 
-    jost_names = jost_source.glyph_names_for_chars(CHARS)
-    jost_to_ours = {jost_names[ch]: _glyph_name(ch) for ch in CHARS}
+    # Greek is excluded from this cross-reference entirely, not just
+    # left unmapped -- Jost's own GPOS table (what `_extract_jost_class_pairs`
+    # reads) has no Greek glyphs to have kerning pairs for in the first
+    # place (see module and `ufo_build.py` docstrings: Greek is sourced
+    # from Roboto Flex instead), so there is nothing here for a Greek
+    # glyph name to ever match against.
+    jost_names = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
+    jost_to_ours = {jost_names[ch]: _glyph_name(ch) for ch in _NON_GREEK_CHARS}
 
     raw = _extract_jost_class_pairs()
     pairs: dict[tuple[str, str], int] = {}
@@ -149,14 +185,20 @@ def _base_pairs() -> dict[tuple[str, str], int]:
         pairs[("a", "a")] = pairs[("d", "d")]
 
     # Manual correction: Jost's own donor values leave "TOY" reading
-    # unevenly kerned -- T-O (-50) closes its ink gap to 0 units, but
-    # O-Y (-30) still leaves 15 units of daylight (measured on the
-    # compiled font: right-ink-x of the left glyph to left-ink-x of the
-    # right, at wght=400/wdth=100). Tightened by that same 15 units so
-    # O-Y reads exactly as close as T-O does, rather than hand-waving a
-    # "looks about right" value.
+    # unevenly kerned -- confirmed by the project owner directly against
+    # the rendered word, not by a geometric proxy: two rounds of
+    # measuring "closeness" as a silhouette-distance metric (first each
+    # glyph's single closest bbox corner, then the true minimum gap
+    # between both letters' full outlines at any shared height) each
+    # matched O-Y's number to T-O's, and the owner still called it too
+    # loose both times -- Y's open diagonal wedge under the touch point
+    # evidently reads as looser than T's overhanging crossbar even at an
+    # identical minimum gap, a perceptual effect no single-point distance
+    # captures. Pushed well past that geometric match instead of
+    # re-deriving a third proxy metric: -100 total (was -73, Jost's own
+    # donor value was -30), to be judged against the actual render again.
     if ("O", "Y") in pairs:
-        pairs[("O", "Y")] -= 15
+        pairs[("O", "Y")] -= 70
 
     _base_pairs_cache = pairs
     return pairs

@@ -2,8 +2,36 @@
 
 Glyph outlines are copied from the vendored Jost variable font
 (see jost_source.py) at each master's (wght, wdth) -- not drawn from
-scratch. Covers the basic Latin alphabet (A-Z, a-z) and digits (0-9),
-62 glyphs, all plain contours in Jost (no composites to decompose).
+scratch. Covers the basic Latin alphabet (A-Z, a-z), digits (0-9),
+punctuation, Latin-1 Supplement, Latin Extended-A, Greek, and Cyrillic
+-- every script the repository root's own v1 pipeline covers. Greek is
+NOT sourced from Jost, which barely has any glyphs for it (4 codepoints
+total, confirmed directly against its own cmap) -- it's sourced from
+the repository root's own already-vendored Roboto Flex instead (see
+`roboto_flex_source.py`), the same donor v1's own pipeline uses for
+everything, reusing v1's own already-tuned weight/width-to-axis mapping
+via a read-only import rather than re-deriving it. Every other
+character in this set is a plain contour in vendored Jost (no
+composites to decompose), confirmed directly rather than assumed.
+
+Extending PAST plain extraction: `quirks.py`'s round-counter treatment
+and `serifs.py`'s per-letter-class foot rules now extend to accented
+Latin variants too, via `params.base_letter` (NFD-decomposition-based:
+'ē' resolves to 'e', 'ō' to 'o', etc.) -- an accented o/b/d/p/q/g gets
+its counter reshaped to match plain 'o's the same way its base letter
+does, and every accented letter grows serif feet at the same guide
+lines its base letter would, rather than falling through to the
+uppercase/digit baseline-only default. The same function also covers
+nine lowercase Cyrillic letters confirmed by direct rendering to share
+a plain Latin letter's structural class (а/е/э/о/с/м/р/у/х -- see
+`params.py`'s own `_CYRILLIC_ANALOG`); every other Cyrillic letter has
+no clean single-Latin-letter analog and is deliberately left
+unclassified rather than forced into a wrong one. `quirks.py`'s
+terminal-cut treatment covers the 18 c/e/s-based accented letters (via
+`accent_marks.py`'s mark-splicing, see below) plus 3 r-based ones
+directly. `kerning.py`, unlike the above, is NOT similarly scoped --
+it already covers the full character set (see its own module
+docstring).
 
 Serif feet (the SERF axis) are detected ONCE per glyph, on a single
 reference instance (wght=400, wdth=100, before any foot is applied --
@@ -19,14 +47,17 @@ own tools/serifs.py this was ported from does too, for the same reason.
 
 from __future__ import annotations
 
-import string
 from pathlib import Path
 
 import ufoLib2
+from fontTools.pens.recordingPen import RecordingPen
 
-from . import arimo_source, jost_source, kerning, params, quirks, serifs, single_story_a
+from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, roboto_flex_source, serifs, single_story_a
 
-_ARIMO_CHARS = {"c", "e", "s"}
+_ARIMO_CHARS = {"s"}
+_RING_DERIVED_CHARS = {"c", "e"}
+_GREEK_CHARS = params.GREEK_CHARS
+_NON_GREEK_CHARS = "".join(ch for ch in params.CHARS if ch not in _GREEK_CHARS)
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -34,13 +65,49 @@ _DIGIT_NAMES = {
     "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
     "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine",
 }
-CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
+_SPACE_NAME = "space"
+
+# Character set (all scripts this project covers except Greek) lives in
+# params.py, not here -- kerning.py (which this module imports) needs
+# the same set without importing this module back (a cycle).
+CHARS = params.CHARS
 
 _REFERENCE_WGHT, _REFERENCE_WDTH = 400, 100
 
+_jost_name_map: dict[str, str] | None = None
+
+
+_roboto_name_map: dict[str, str] | None = None
+
 
 def _glyph_name(ch: str) -> str:
-    return _DIGIT_NAMES.get(ch, ch)
+    """The name this project's own UFO/TTF glyph gets for `ch`. Digits
+    and space get their own conventional names (kept for backward
+    compatibility with `kerning.py` and existing sources, which already
+    key off "zero"/"a"/etc., not a literal "0"/" "); Greek characters
+    (Jost has almost none) reuse Roboto Flex's own glyph name instead
+    (see `roboto_flex_source.py`); everything else reuses Jost's own
+    glyph name for that character. Both donors' own names are already
+    safe, ASCII-only, standard glyph names (e.g. "Agrave", "uni0401",
+    "uni0391") -- using the character itself as a glyph name instead
+    (tried first) compiles fine as a UFO but fails at the very last
+    TTF-writing step, where the 'post' table can't encode a non-Latin-1
+    glyph name at all -- confirmed directly: fontmake errored trying to
+    write "Ā" (U+0100) as a glyph name once this project's own
+    character set grew past ASCII."""
+    if ch == " ":
+        return _SPACE_NAME
+    if ch in _DIGIT_NAMES:
+        return _DIGIT_NAMES[ch]
+    if ch in _GREEK_CHARS:
+        global _roboto_name_map
+        if _roboto_name_map is None:
+            _roboto_name_map = roboto_flex_source.glyph_names_for_chars(params.GREEK)
+        return _roboto_name_map[ch]
+    global _jost_name_map
+    if _jost_name_map is None:
+        _jost_name_map = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
+    return _jost_name_map[ch]
 
 
 def _contour_area(contour) -> float:
@@ -57,29 +124,40 @@ def _o_inner_contour(o_glyph):
     return min(o_glyph.contours, key=_contour_area)
 
 
-def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
-    """Extracts every glyph from Jost -- except 'c'/'e'/'s', pulled from
-    the vendored Arimo instead (see `arimo_source.py`: an open, metric-
-    compatible Helvetica/Arial workalike, used because these three
-    letters are meant to read as Helvetica-derived, and actual
-    Helvetica outline data is proprietary) -- and applies the terminal-
-    cut and round-counter modifications -- everything except serif feet.
-    Arimo's own 'c'/'e'/'s' terminals are close to horizontal but
-    genuinely diagonal by design, so they go through
-    `apply_terminal_cuts` too, just with Arimo's own point indices
-    rather than Jost's.
+def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
+    """Extracts every glyph from Jost -- except 's', pulled from the
+    vendored Arimo instead (see `arimo_source.py`: an open, metric-
+    compatible Helvetica/Arial workalike, used because 's' is meant to
+    read as Helvetica-derived, and actual Helvetica outline data is
+    proprietary), and 'c'/'e', built directly from this master's own
+    'o' (see `ring_derived.py`: a cut-open ring, guaranteeing their
+    bowl/counter shape actually matches 'o's, not just an approximation
+    of it) -- and applies the terminal-cut and round-counter
+    modifications -- everything except serif feet. Arimo's own 's'
+    terminal is close to horizontal but genuinely diagonal by design,
+    and 'c'/'e's own terminals (the straight cuts closing their
+    aperture) aren't quite horizontal either (Bezier subdivision at an
+    exact angle doesn't land the cut flush), so all three go through
+    `apply_terminal_cuts` too.
     """
     font = ufoLib2.Font()
-    jost_names = jost_source.glyph_names_for_chars(CHARS)
+    jost_names = jost_source.glyph_names_for_chars(_NON_GREEK_CHARS)
     for ch in CHARS:
+        if ch in _RING_DERIVED_CHARS:
+            continue
         glyph = font.newGlyph(_glyph_name(ch))
         glyph.unicodes = [ord(ch)]
         if ch in _ARIMO_CHARS:
-            pen_value, width = arimo_source.extract(ch, wght, wdth)
+            pen_value, width = arimo_source.extract(ch, wght, wdth, grad)
+        elif ch in _GREEK_CHARS:
+            pen_value, width = roboto_flex_source.extract(_glyph_name(ch), wght, wdth, grad)
         else:
-            pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
+            pen_value, width = jost_source.extract(jost_names[ch], wght, wdth, grad)
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
+
+    font["c"], _ = ring_derived.build_c_from_o(font["o"])
+    font["e"], _ = ring_derived.build_e_from_o(font["o"])
 
     quirks.fix_y_crotch(font["y"])
     quirks.fix_six_nine_notch(font["six"])
@@ -88,9 +166,36 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
     for ch in CHARS:
         quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
+    # Accented 'c'/'e'/'s' variants (see accent_marks.py): re-splice
+    # Jost's own diacritic mark onto THIS project's own finished base
+    # letter (after its terminal cut, above), replacing Jost's own
+    # fused base+mark drawing wholesale -- otherwise every accented 'c'/
+    # 'e'/'s' would carry Jost's own native shape for that letter
+    # instead of this project's own ring-derived/Arimo-sourced one.
+    for ch, base_ch in accent_marks.BASE_OF.items():
+        if ch not in CHARS:
+            continue
+        base_glyph = font[_glyph_name(base_ch)]
+        base_pen = RecordingPen()
+        base_glyph.draw(base_pen)
+        spliced = accent_marks.splice_mark(ch, wght, wdth, grad, base_pen.value)
+        glyph = font[_glyph_name(ch)]
+        glyph.clearContours()
+        jost_source.replay(glyph.getPen(), spliced)
+        glyph.width = base_glyph.width
+
     o_inner_points = _o_inner_contour(font["o"]).points
-    for name in quirks.ROUND_COUNTER_GLYPHS:
-        quirks.reshape_counter_to_o(font[name], o_inner_points)
+    for ch in CHARS:
+        # Extends past the original 62: any accented Latin variant of
+        # o/b/d/p/q/g (params.base_letter strips the diacritic) gets the
+        # same counter-reshape as its base letter -- 'reshape_counter_to_o'
+        # already matches purely by point-topology, not by name, so this
+        # is just widening WHICH glyphs get offered to it, not new logic.
+        # Non-Latin/unaccented characters (Cyrillic, digits, punctuation)
+        # resolve to themselves and are skipped unless already a base name.
+        if params.base_letter(ch) not in quirks.ROUND_COUNTER_GLYPHS:
+            continue
+        quirks.reshape_counter_to_o(font[_glyph_name(ch)], o_inner_points)
 
     # 'a' is single-story, built directly from 'd's own (by now fully
     # finalized -- counter already reshaped to 'o's own) outline, per the
@@ -115,6 +220,11 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
     cache = {}
     for ch in CHARS:
         glyph = reference_font[_glyph_name(ch)]
+        if not glyph.contours:
+            # 'space' (and any other whitespace-only glyph) has no ink
+            # to grow a foot on at all.
+            cache[ch] = ([], {})
+            continue
         min_y = min(p.y for c in glyph.contours for p in c.points)
         guides = serifs.guides_for(ch, min_y)
         specs = serifs.detect_feet(glyph, guides, ch)
@@ -123,8 +233,8 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
     return cache
 
 
-def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
-    font = _build_raw_glyphs(wght, wdth)
+def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
+    font = _build_raw_glyphs(wght, wdth, grad)
     font.info.unitsPerEm = params.UPM
     font.info.ascender = params.ASCENDER
     font.info.descender = params.DESCENDER
@@ -140,7 +250,7 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     # name -- confirmed by dumping the compiled font's name table and
     # finding "Azrienoch V2 Wght400_Wdth100_Serf0" where "Azrienoch V2"/
     # "Regular" belonged.
-    font.info.styleName = params.instance_style_name(wght, wdth, serf)
+    font.info.styleName = params.instance_style_name(wght, wdth, serf, grad)
     font.info.versionMajor = 0
     font.info.versionMinor = 1
 
@@ -152,14 +262,14 @@ def build_master_ufo(wght: int, wdth: int, serf: int) -> Path:
     for (left, right), value in kerning.pairs_for(wdth).items():
         font.kerning[(left, right)] = value
 
-    path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth, serf)}.ufo"
+    path = SOURCES_DIR / f"AzrienochV2-{params.style_name(wght, wdth, serf, grad)}.ufo"
     font.save(path, overwrite=True)
     return path
 
 
 def build_all() -> list[Path]:
     SOURCES_DIR.mkdir(parents=True, exist_ok=True)
-    return [build_master_ufo(wght, wdth, serf) for wght, wdth, serf in params.MASTER_GRID]
+    return [build_master_ufo(wght, wdth, serf, grad) for wght, wdth, serf, grad in params.MASTER_GRID]
 
 
 if __name__ == "__main__":

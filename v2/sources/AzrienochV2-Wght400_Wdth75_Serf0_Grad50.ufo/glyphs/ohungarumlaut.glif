@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="ohungarumlaut" format="2">
+  <advance width="409.5"/>
+  <unicode hex="0151"/>
+  <outline>
+    <contour>
+      <point x="143" y="530" type="line"/>
+      <point x="250" y="717" type="line"/>
+      <point x="171" y="742" type="line"/>
+      <point x="84" y="552" type="line"/>
+    </contour>
+    <contour>
+      <point x="278" y="530" type="line"/>
+      <point x="394" y="717" type="line"/>
+      <point x="307" y="742" type="line"/>
+      <point x="223" y="552" type="line"/>
+    </contour>
+    <contour>
+      <point x="19" y="230" type="qcurve" smooth="yes"/>
+      <point x="19" y="159"/>
+      <point x="66" y="51"/>
+      <point x="157" y="-10"/>
+      <point x="212" y="-10" type="qcurve" smooth="yes"/>
+      <point x="266" y="-10"/>
+      <point x="361" y="51"/>
+      <point x="408" y="159"/>
+      <point x="408" y="230" type="qcurve" smooth="yes"/>
+      <point x="408" y="302"/>
+      <point x="361" y="410"/>
+      <point x="266" y="470"/>
+      <point x="212" y="470" type="qcurve" smooth="yes"/>
+      <point x="157" y="470"/>
+      <point x="66" y="410"/>
+      <point x="19" y="302"/>
+    </contour>
+    <contour>
+      <point x="109.99999999999999" y="230.0" type="qcurve" smooth="yes"/>
+      <point x="109.99999999999999" y="271.0"/>
+      <point x="139.14871794871794" y="334.0"/>
+      <point x="184.95384615384614" y="368.0"/>
+      <point x="212.02051282051283" y="368.0" type="qcurve" smooth="yes"/>
+      <point x="239.0871794871795" y="368.0"/>
+      <point x="284.89230769230767" y="334.0"/>
+      <point x="313.0" y="271.0"/>
+      <point x="313.0" y="230.0" type="qcurve" smooth="yes"/>
+      <point x="313.0" y="189.0"/>
+      <point x="284.89230769230767" y="127.0"/>
+      <point x="239.0871794871795" y="92.0"/>
+      <point x="212.02051282051283" y="92.0" type="qcurve" smooth="yes"/>
+      <point x="184.95384615384614" y="92.0"/>
+      <point x="139.14871794871794" y="127.0"/>
+      <point x="109.99999999999999" y="189.0"/>
+    </contour>
+  </outline>
+</glyph>

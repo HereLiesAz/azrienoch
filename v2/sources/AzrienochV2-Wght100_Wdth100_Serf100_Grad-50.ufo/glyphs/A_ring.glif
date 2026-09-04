@@ -1,0 +1,65 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Aring" format="2">
+  <advance width="600"/>
+  <unicode hex="00C5"/>
+  <outline>
+    <contour>
+      <point x="127" y="272" type="line"/>
+      <point x="472" y="272" type="line"/>
+      <point x="472" y="282" type="line"/>
+      <point x="127" y="282" type="line"/>
+    </contour>
+    <contour>
+      <point x="300" y="688" type="line"/>
+      <point x="465" y="276" type="line"/>
+      <point x="466" y="273" type="line"/>
+      <point x="573" y="0" type="line"/>
+      <point x="585" y="0" type="line"/>
+      <point x="300" y="715" type="line"/>
+      <point x="15" y="0" type="line"/>
+      <point x="27" y="0" type="line"/>
+      <point x="135" y="273" type="line"/>
+      <point x="136" y="277" type="line"/>
+    </contour>
+    <contour>
+      <point x="198" y="808" type="qcurve" smooth="yes"/>
+      <point x="198" y="763"/>
+      <point x="261" y="708"/>
+      <point x="300" y="708" type="qcurve" smooth="yes"/>
+      <point x="339" y="708"/>
+      <point x="402" y="763"/>
+      <point x="402" y="808" type="qcurve" smooth="yes"/>
+      <point x="402" y="853"/>
+      <point x="339" y="908"/>
+      <point x="300" y="908" type="qcurve" smooth="yes"/>
+      <point x="261" y="908"/>
+      <point x="198" y="853"/>
+    </contour>
+    <contour>
+      <point x="208" y="808" type="qcurve" smooth="yes"/>
+      <point x="208" y="848"/>
+      <point x="264" y="898"/>
+      <point x="300" y="898" type="qcurve" smooth="yes"/>
+      <point x="336" y="898"/>
+      <point x="392" y="848"/>
+      <point x="392" y="808" type="qcurve" smooth="yes"/>
+      <point x="392" y="768"/>
+      <point x="336" y="718"/>
+      <point x="300" y="718" type="qcurve" smooth="yes"/>
+      <point x="264" y="718"/>
+      <point x="208" y="768"/>
+    </contour>
+    <contour>
+      <point x="573.0" y="0.0" type="line"/>
+      <point x="595.8" y="0.0" type="line"/>
+      <point x="595.8" y="6.04" type="line"/>
+      <point x="573.0" y="6.04" type="line"/>
+    </contour>
+    <contour>
+      <point x="4.2" y="0.0" type="line"/>
+      <point x="27.0" y="0.0" type="line"/>
+      <point x="27.0" y="6.04" type="line"/>
+      <point x="4.2" y="6.04" type="line"/>
+    </contour>
+  </outline>
+</glyph>

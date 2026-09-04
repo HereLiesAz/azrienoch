@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Ibreve" format="2">
+  <advance width="273.75000000000006"/>
+  <unicode hex="012C"/>
+  <outline>
+    <contour>
+      <point x="32" y="700" type="line"/>
+      <point x="32" y="0" type="line"/>
+      <point x="241" y="0" type="line"/>
+      <point x="241" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="6" y="930" type="line"/>
+      <point x="6" y="886"/>
+      <point x="24" y="818"/>
+      <point x="89" y="780"/>
+      <point x="136" y="780" type="qcurve" smooth="yes"/>
+      <point x="185" y="780"/>
+      <point x="249" y="818"/>
+      <point x="268" y="886"/>
+      <point x="268" y="930" type="qcurve"/>
+      <point x="184" y="930" type="line"/>
+      <point x="184" y="910"/>
+      <point x="167" y="888"/>
+      <point x="146" y="880"/>
+      <point x="136" y="880" type="qcurve" smooth="yes"/>
+      <point x="127" y="880"/>
+      <point x="105" y="888"/>
+      <point x="89" y="910"/>
+      <point x="89" y="930" type="qcurve"/>
+    </contour>
+    <contour>
+      <point x="46.65" y="0.0" type="line"/>
+      <point x="227.1" y="0.0" type="line"/>
+      <point x="227.1" y="40.89" type="line"/>
+      <point x="46.65" y="40.89" type="line"/>
+    </contour>
+  </outline>
+</glyph>

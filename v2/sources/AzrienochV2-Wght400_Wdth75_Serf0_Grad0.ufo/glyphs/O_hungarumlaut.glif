@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Ohungarumlaut" format="2">
+  <advance width="592.4999999999998"/>
+  <unicode hex="0150"/>
+  <outline>
+    <contour>
+      <point x="233" y="770" type="line"/>
+      <point x="334" y="961" type="line"/>
+      <point x="272" y="981" type="line"/>
+      <point x="194" y="787" type="line"/>
+    </contour>
+    <contour>
+      <point x="356" y="770" type="line"/>
+      <point x="460" y="961" type="line"/>
+      <point x="396" y="981" type="line"/>
+      <point x="319" y="787" type="line"/>
+    </contour>
+    <contour>
+      <point x="97" y="350" type="qcurve" smooth="yes"/>
+      <point x="97" y="429"/>
+      <point x="149" y="553"/>
+      <point x="237" y="625"/>
+      <point x="295" y="625" type="qcurve" smooth="yes"/>
+      <point x="352" y="625"/>
+      <point x="443" y="553"/>
+      <point x="496" y="429"/>
+      <point x="496" y="350" type="qcurve" smooth="yes"/>
+      <point x="496" y="271"/>
+      <point x="443" y="147"/>
+      <point x="352" y="75"/>
+      <point x="295" y="75" type="qcurve" smooth="yes"/>
+      <point x="237" y="75"/>
+      <point x="149" y="147"/>
+      <point x="97" y="271"/>
+    </contour>
+    <contour>
+      <point x="27" y="350" type="qcurve" smooth="yes"/>
+      <point x="27" y="274"/>
+      <point x="66" y="142"/>
+      <point x="142" y="45"/>
+      <point x="237" y="-10"/>
+      <point x="295" y="-10" type="qcurve" smooth="yes"/>
+      <point x="352" y="-10"/>
+      <point x="451" y="45"/>
+      <point x="526" y="142"/>
+      <point x="566" y="274"/>
+      <point x="566" y="350" type="qcurve" smooth="yes"/>
+      <point x="566" y="427"/>
+      <point x="526" y="558"/>
+      <point x="451" y="655"/>
+      <point x="352" y="710"/>
+      <point x="295" y="710" type="qcurve" smooth="yes"/>
+      <point x="237" y="710"/>
+      <point x="142" y="655"/>
+      <point x="66" y="558"/>
+      <point x="27" y="427"/>
+    </contour>
+  </outline>
+</glyph>

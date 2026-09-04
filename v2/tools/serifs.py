@@ -216,7 +216,9 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
             right_ext=right_ext,
             positive_winding=_signed_area(contour.points) >= 0,
         ))
-    return _apply_outward_flares(specs, ch in SINGLE_STORY)
+    # Same base-letter resolution as `guides_for` -- an accented single-
+    # story letter still gets exactly two feet, not one per stem.
+    return _apply_outward_flares(specs, params.base_letter(ch) in SINGLE_STORY)
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):
@@ -226,17 +228,92 @@ def _rect_points(x0, y0, x1, y1, positive_winding: bool):
     return pts
 
 
+def _actual_stem_width(glyph, guide_y: float, x_hint: float) -> tuple[float, float] | None:
+    """The REAL flat-run width (and center x) at this master, measured
+    directly off `glyph`'s own current outline at (guide_y, near
+    x_hint) -- not `detect_feet`'s reference-instance fraction rescaled
+    by this master's overall advance width.
+
+    Those are NOT the same quantity, and treating them as
+    interchangeable was a real, visible bug: a stem's own stroke
+    thickness shrinks with `wght` much faster than the glyph's overall
+    advance width does (a Thin letter is only modestly narrower
+    end-to-end, even though its stems are dramatically thinner), so
+    `run_frac * this_master's_width` overshoots the actual Thin stem
+    width by a wide margin -- confirmed directly by comparing this
+    function's own measurement against that computation at wght=100
+    for several stems, off by roughly 2x. The base foot rectangle
+    (before any flare) was sized to that overshot width, so even at
+    `SERF`=0 (meant to be an invisible hairline) it already sat wider
+    than the actual thin stem beneath it, poking out to both sides --
+    exactly the visible defect reported directly. Returns None if no
+    matching run is found (shouldn't normally happen, since
+    `detect_feet` found one here on the reference instance and this
+    project's own masters share point topology), letting the caller
+    fall back to the old approximation rather than crash.
+    """
+    best = None
+    best_dist = None
+    for _contour, x0, x1, y, _is_top, _left_ext, _right_ext in _flat_runs(glyph):
+        if abs(y - guide_y) > TOLERANCE:
+            continue
+        mid = (x0 + x1) / 2.0
+        dist = abs(mid - x_hint)
+        if best_dist is None or dist < best_dist:
+            best_dist = dist
+            best = (mid, x1 - x0)
+    return best
+
+
 def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_amount: float) -> None:
     """Appends one rectangle contour per foot spec, always (even at
     serif_amount=0 -- a collapsed hairline, not a skipped contour, so
-    every master keeps identical topology)."""
+    every master keeps identical topology).
+
+    The foot's own width and height are both sized off THIS master's
+    actual stem thickness (`_actual_stem_width`), not the reference
+    instance's fraction-of-advance-width approximation -- see that
+    function's own docstring for why those diverge badly at weights
+    away from the reference. Foot height is additionally hard-capped at
+    the stem's own actual width: a serif foot's stroke-perpendicular
+    extension should never rival or exceed the stroke it's growing
+    from, and the old, uncapped formula (a fixed fraction of the
+    wrongly-overshot reference-based width) could and did exceed a
+    thin stem's real width entirely, per the project owner's own direct
+    observation, not just poke out to the sides.
+
+    Every spec's actual stem width is measured BEFORE any foot is
+    appended, all at once -- appending a foot rectangle mutates
+    `glyph`'s own contours, and its own flat top/bottom edge sits
+    exactly ON the guide line by construction, so measuring stem by
+    stem interleaved with appending risks a later spec's measurement
+    picking up an EARLIER spec's own just-appended foot as if it were
+    a second stem at that guide (confirmed directly: two same-guide
+    stems on one letter reproduced exactly this after the first foot
+    landed, dodged the same way here).
+    """
     width = glyph.width or 1
+    measurements = []
     for spec in foot_specs:
         if spec["guide"] not in guides:
+            measurements.append(None)
             continue
-        cx = spec["x_frac"] * width
-        run_w = max(spec["run_frac"] * width, 4.0)
         y = guides[spec["guide"]]
+        cx_hint = spec["x_frac"] * width
+        measured = _actual_stem_width(glyph, y, cx_hint)
+        if measured is not None:
+            cx, run_w = measured
+            run_w = max(run_w, 4.0)
+        else:
+            cx = cx_hint
+            run_w = max(spec["run_frac"] * width, 4.0)
+        measurements.append((cx, run_w))
+
+    for spec, measurement in zip(foot_specs, measurements):
+        if spec["guide"] not in guides:
+            continue
+        y = guides[spec["guide"]]
+        cx, run_w = measurement
         extra = serif_amount * (run_w * 0.9) / 100.0
         x0, x1 = cx - run_w / 2, cx + run_w / 2
         left_ext, right_ext = spec["left_ext"], spec["right_ext"]
@@ -247,6 +324,7 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
         elif right_ext:
             x1 += extra
         foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.42) / 100.0
+        foot_h = min(foot_h, run_w)  # never taller than the stem it grows from
         y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
 
         pen = glyph.getPointPen()
@@ -262,7 +340,15 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
     of those guide NAMES this letter is actually allowed to grow a foot
     at -- see module docstring for the per-letter-class rule. Returns
     only the allowed subset, already filtered, since detect_feet and
-    apply_feet both just take "the guides that apply here"."""
+    apply_feet both just take "the guides that apply here".
+
+    `ch` is resolved to its plain-Latin base (`params.base_letter`)
+    before the class lookup below, so an accented letter (e.g. 'ē')
+    gets the same guide set as its base ('e') rather than falling
+    through to the uppercase/digit default -- a diacritic doesn't
+    change where a letter's own stem terminals sit. Cyrillic and
+    unaccented punctuation/digits don't decompose to a Latin base and
+    so keep the baseline-only default, same as uppercase."""
     all_guides = {
         "baseline": 0.0,
         "xheight": params.X_HEIGHT,
@@ -270,6 +356,7 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
         "cap": params.CAP_HEIGHT,
         "descender": glyph_min_y,
     }
+    ch = params.base_letter(ch)
     if ch in SINGLE_STORY:
         allowed = {"baseline", "xheight"}
     elif ch in ASCENDER:

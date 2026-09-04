@@ -146,15 +146,23 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
 
 # glyph name -> (contour index, point index 1, point index 2), horizontal cut
 _HORIZONTAL_TERMINALS = {
-    # Arimo's own 'c'/'e' terminals are close to horizontal but genuinely
+    # 'c'/'e' are now built directly from 'o's own ring (see
+    # `ring_derived.py`), not Arimo -- their two terminal-cut point
+    # pairs (the straight lines closing the aperture, top and bottom)
+    # are `ring_derived.build_c_from_o`/`build_e_from_o`'s own return
+    # value, verified stable across the whole wght/wdth/SERF grid (that
+    # module pins the cut geometry to a single reference instance for
+    # exactly this reason) and hardcoded here the same way every other
+    # entry in this table is.
+    "c": [(0, 20, 21), (0, 45, 0)],
+    "e": [(0, 24, 25), (0, 36, 0)],
+    # Arimo's own 's' terminals are close to horizontal but genuinely
     # diagonal by design (~12-14 units of rise across the cut, confirmed
     # by dumping Arimo's own raw points directly, not assumed from how
     # they looked) -- these indices are Arimo's point layout (via
     # arimo_source.py), found once against its own topology, which
     # `arimo_source.extract`'s point-for-point interpolation between
     # Regular and Bold keeps identical at every wght sample.
-    "c": [(0, 9, 10), (0, 22, 23)],
-    "e": [(0, 6, 7)],
     "s": [(0, 6, 7), (0, 29, 30)],
 }
 
@@ -162,6 +170,14 @@ _HORIZONTAL_TERMINALS = {
 _VERTICAL_TERMINALS = {
     "r": [(1, 0, 1)],
     "f": [(1, 0, 1)],
+    # 'r' with a diacritic (Jost's own glyph names for r-acute/r-cedilla/
+    # r-caron): Jost draws these as 'r's own two contours plus one more
+    # for the mark (confirmed directly: 3 contours vs 'r's own 2, at
+    # every one of these three), so 'r's own contour-1/point-0,1
+    # terminal indices still point at the same stem terminal here too.
+    "racute": [(1, 0, 1)],
+    "uni0157": [(1, 0, 1)],
+    "rcaron": [(1, 0, 1)],
 }
 
 

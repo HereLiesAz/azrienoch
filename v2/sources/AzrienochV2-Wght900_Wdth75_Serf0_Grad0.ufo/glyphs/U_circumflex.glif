@@ -1,0 +1,39 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Ucircumflex" format="2">
+  <advance width="559.5"/>
+  <unicode hex="00DB"/>
+  <outline>
+    <contour>
+      <point x="34" y="700" type="line"/>
+      <point x="34" y="230" type="line" smooth="yes"/>
+      <point x="34" y="155"/>
+      <point x="72" y="52"/>
+      <point x="144" y="-11"/>
+      <point x="237" y="-40"/>
+      <point x="280" y="-40" type="qcurve" smooth="yes"/>
+      <point x="322" y="-40"/>
+      <point x="416" y="-11"/>
+      <point x="487" y="52"/>
+      <point x="526" y="155"/>
+      <point x="526" y="230" type="qcurve" smooth="yes"/>
+      <point x="526" y="700" type="line"/>
+      <point x="340" y="700" type="line"/>
+      <point x="340" y="250" type="line" smooth="yes"/>
+      <point x="340" y="208"/>
+      <point x="311" y="155"/>
+      <point x="280" y="155" type="qcurve" smooth="yes"/>
+      <point x="249" y="155"/>
+      <point x="219" y="208"/>
+      <point x="219" y="250" type="qcurve" smooth="yes"/>
+      <point x="219" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="280" y="860" type="line"/>
+      <point x="335" y="780" type="line"/>
+      <point x="456" y="870" type="line"/>
+      <point x="280" y="1010" type="line"/>
+      <point x="104" y="870" type="line"/>
+      <point x="225" y="780" type="line"/>
+    </contour>
+  </outline>
+</glyph>

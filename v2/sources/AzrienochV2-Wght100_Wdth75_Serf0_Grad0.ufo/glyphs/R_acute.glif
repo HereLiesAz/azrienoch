@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Racute" format="2">
+  <advance width="350.99999999999994"/>
+  <unicode hex="0154"/>
+  <outline>
+    <contour>
+      <point x="149" y="317" type="line"/>
+      <point x="314" y="0" type="line"/>
+      <point x="325" y="0" type="line"/>
+      <point x="158" y="317" type="line"/>
+    </contour>
+    <contour>
+      <point x="67" y="700" type="line"/>
+      <point x="67" y="0" type="line"/>
+      <point x="77" y="0" type="line"/>
+      <point x="77" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="69" y="689" type="line"/>
+      <point x="154" y="689" type="line" smooth="yes"/>
+      <point x="203" y="689"/>
+      <point x="279" y="649"/>
+      <point x="323" y="569"/>
+      <point x="323" y="507" type="qcurve" smooth="yes"/>
+      <point x="323" y="446"/>
+      <point x="280" y="364"/>
+      <point x="203" y="324"/>
+      <point x="154" y="324" type="qcurve" smooth="yes"/>
+      <point x="69" y="324" type="line"/>
+      <point x="69" y="314" type="line"/>
+      <point x="154" y="314" type="line" smooth="yes"/>
+      <point x="204" y="314"/>
+      <point x="284" y="357"/>
+      <point x="331" y="443"/>
+      <point x="331" y="507" type="qcurve" smooth="yes"/>
+      <point x="331" y="572"/>
+      <point x="284" y="657"/>
+      <point x="204" y="700"/>
+      <point x="154" y="700" type="qcurve" smooth="yes"/>
+      <point x="69" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="272" y="925" type="line"/>
+      <point x="266" y="933" type="line"/>
+      <point x="139" y="773" type="line"/>
+      <point x="142" y="768" type="line"/>
+    </contour>
+    <contour>
+      <point x="314.0" y="0.0" type="line"/>
+      <point x="325.0" y="0.0" type="line"/>
+      <point x="325.0" y="1.0" type="line"/>
+      <point x="314.0" y="1.0" type="line"/>
+    </contour>
+    <contour>
+      <point x="67.0" y="0.0" type="line"/>
+      <point x="77.0" y="0.0" type="line"/>
+      <point x="77.0" y="1.0" type="line"/>
+      <point x="67.0" y="1.0" type="line"/>
+    </contour>
+  </outline>
+</glyph>
