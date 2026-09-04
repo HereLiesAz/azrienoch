@@ -24,9 +24,10 @@ from pathlib import Path
 
 import ufoLib2
 
-from . import arimo_source, jost_source, kerning, params, quirks, serifs, single_story_a
+from . import arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a
 
-_ARIMO_CHARS = {"c", "e", "s"}
+_ARIMO_CHARS = {"s"}
+_RING_DERIVED_CHARS = {"c", "e"}
 
 SOURCES_DIR = Path(__file__).resolve().parent.parent / "sources"
 
@@ -58,20 +59,26 @@ def _o_inner_contour(o_glyph):
 
 
 def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
-    """Extracts every glyph from Jost -- except 'c'/'e'/'s', pulled from
-    the vendored Arimo instead (see `arimo_source.py`: an open, metric-
-    compatible Helvetica/Arial workalike, used because these three
-    letters are meant to read as Helvetica-derived, and actual
-    Helvetica outline data is proprietary) -- and applies the terminal-
-    cut and round-counter modifications -- everything except serif feet.
-    Arimo's own 'c'/'e'/'s' terminals are close to horizontal but
-    genuinely diagonal by design, so they go through
-    `apply_terminal_cuts` too, just with Arimo's own point indices
-    rather than Jost's.
+    """Extracts every glyph from Jost -- except 's', pulled from the
+    vendored Arimo instead (see `arimo_source.py`: an open, metric-
+    compatible Helvetica/Arial workalike, used because 's' is meant to
+    read as Helvetica-derived, and actual Helvetica outline data is
+    proprietary), and 'c'/'e', built directly from this master's own
+    'o' (see `ring_derived.py`: a cut-open ring, guaranteeing their
+    bowl/counter shape actually matches 'o's, not just an approximation
+    of it) -- and applies the terminal-cut and round-counter
+    modifications -- everything except serif feet. Arimo's own 's'
+    terminal is close to horizontal but genuinely diagonal by design,
+    and 'c'/'e's own terminals (the straight cuts closing their
+    aperture) aren't quite horizontal either (Bezier subdivision at an
+    exact angle doesn't land the cut flush), so all three go through
+    `apply_terminal_cuts` too.
     """
     font = ufoLib2.Font()
     jost_names = jost_source.glyph_names_for_chars(CHARS)
     for ch in CHARS:
+        if ch in _RING_DERIVED_CHARS:
+            continue
         glyph = font.newGlyph(_glyph_name(ch))
         glyph.unicodes = [ord(ch)]
         if ch in _ARIMO_CHARS:
@@ -80,6 +87,9 @@ def _build_raw_glyphs(wght: int, wdth: int) -> ufoLib2.Font:
             pen_value, width = jost_source.extract(jost_names[ch], wght, wdth)
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
+
+    font["c"], _ = ring_derived.build_c_from_o(font["o"])
+    font["e"], _ = ring_derived.build_e_from_o(font["o"])
 
     quirks.fix_y_crotch(font["y"])
     quirks.fix_six_nine_notch(font["six"])
