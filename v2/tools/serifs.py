@@ -324,7 +324,22 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
         elif right_ext:
             x1 += extra
         foot_h = MIN_FOOT_H + serif_amount * (run_w * 0.35) / 100.0
-        foot_h = min(foot_h, run_w * 0.6)  # a foot reads as a nub, not a block half as tall as the stem is wide
+        # A height that's purely proportional to run_w disappears at Thin:
+        # a thin stem's own run_w is small enough that the proportional
+        # foot_h above rounds to a handful of units out of a 1000-unit em
+        # -- sub-pixel at any normal display size, confirmed directly by
+        # rendering (a tight, font-unit-scale SVG crop showed the foot
+        # WAS there and correctly proportioned, but a normal-size browser
+        # render of the same glyph showed no visible height at all, only
+        # the width flare, which has more on-screen pixels to survive
+        # antialiasing with). This absolute floor (scaled by serif_amount
+        # so SERF=0 stays a true hairline) guarantees the height itself
+        # stays visible even on the thinnest stems, at the cost of
+        # letting it approach (not exceed -- see the cap right after)
+        # the stem's own width there, rather than staying a small
+        # fraction of it the way it does on a thick stem.
+        foot_h = max(foot_h, serif_amount * 0.12)
+        foot_h = min(foot_h, run_w)  # never taller than the stem it grows from
         y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
 
         pen = glyph.getPointPen()

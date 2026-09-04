@@ -549,6 +549,27 @@ moved to 0.35 (was 0.42, then 0.28) and its cap to 60% of the measured
 stem width (was 100%, then 40%), landing between the original,
 too-tall setting and the too-short one that immediately followed it.
 
+**Still invisible at Thin -- not a sizing bug, a rendering-scale one.**
+Pixel-exact inspection (a tight, font-unit-scale SVG crop of a single
+foot, not a full-glyph screenshot) showed the foot WAS present and
+correctly proportioned even at Thin -- but a normal-size render of the
+same glyph showed no visible height at all, only the width flare.
+Root cause: at Thin a stem's own width is small enough that a height
+purely proportional to it (the formula above) rounds to a handful of
+units out of a 1000-unit em -- sub-pixel at any ordinary display size,
+confirmed directly. The width flare survives the same antialiasing
+because it has more on-screen pixels to work with, so the letter
+LOOKED like only its width had grown, never its height, even though
+both were scaled by the same stem-proportional logic. Fixed with an
+absolute floor on foot height (`max(foot_h, serif_amount * 0.12)`,
+before the never-exceed-the-stem cap) that guarantees the height stays
+visible on the thinnest stems regardless of how small a fraction of
+the stem's own width it would otherwise compute to -- at the cost of
+letting it approach (not exceed) the full stem width there, rather
+than staying a small fraction of it the way it still does on a thick
+stem, where the floor has no effect (comfortably under the
+proportional formula's own result).
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the
