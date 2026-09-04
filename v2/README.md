@@ -266,15 +266,19 @@ doesn't change advance width) -- not attempted yet.
   the drawing intends one). Both fixed in `quirks.py`
   (`fix_y_crotch`/`fix_six_nine_notch`) by moving the offending points to
   where the geometry actually intends them to meet, not by adding or
-  removing a point. A fourth finding, digit `4`'s technically
-  self-intersecting crossbar/stem junction, was confirmed by the same
-  audit to render with no visible artifact (a harmless T-junction under
-  nonzero-winding fill) and needed no fix. A fifth, capital `B`'s
-  self-intersecting waist (two overlapping spine segments in its
-  single-contour "keyhole" construction), is real but not yet fixed --
-  safely untangling it needs tracing the letter's full counter-bridge
-  topology rather than a quick point nudge, deferred rather than risked
-  under time pressure.
+  removing a point. Two further findings, digit `4`'s technically
+  self-intersecting crossbar/stem junction and capital `B`'s
+  technically self-intersecting waist (two overlapping, collinear
+  spine segments in its single-contour "keyhole" construction, where
+  the corridor connecting the outer silhouette to each counter
+  retraces part of the same stem edge), were both confirmed by direct
+  rendering -- not just the geometric self-intersection test that
+  first flagged them -- to draw with no visible artifact at every
+  weight/width combination checked (a harmless retrace/T-junction under
+  nonzero-winding fill, the overlapping segments contributing no net
+  area). Needed no fix, same conclusion for both, though `B`'s was
+  initially assumed to need one and left deferred before actually being
+  rendered and checked.
 - **Every terminal reorientation** (`quirks.py::_reorient_cut`, used for
   `c`/`e`/`s`'s horizontal cut and `r`/`f`'s vertical one) transforms
   not just the two
@@ -394,8 +398,6 @@ Not yet done, in order:
   them, but it's still a global per-x warp with no counter actually
   reshaped -- a real condensed cut redraws counters and adjusts
   spacing by hand, which this project doesn't do.
-- **Capital `B`'s self-intersecting waist**, inherited from Jost --
-  flagged by a Glee stability audit, not yet fixed (see "Status" above).
 - **`s`'s advance width doesn't track `o`'s own `wght`-relative
   proportions** (see "Status" above). `c`/`e` no longer have this
   problem (both now derive their whole shape, width included, from
