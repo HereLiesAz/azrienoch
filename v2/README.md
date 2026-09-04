@@ -169,20 +169,39 @@ outline data, never a component reference.
   just now offered more glyphs to check), and every accented letter
   grows serif feet at the guide lines and flare directions its base
   letter's own letter-class dictates -- including a real, previously
-  wrong case this surfaced directly: accented `n` (`ń ň ñ ņ`, and
-  Cyrillic has no equivalent since it doesn't decompose to a Latin
-  base) used to fall through to the generic uppercase/digit
-  "baseline-only, no flare restriction" bucket (its literal,
-  non-ASCII character not matching any of `serifs.py`'s ASCII-keyed
-  class sets), keeping a foot on BOTH of its stems -- `n` itself is
-  declared `SINGLE_STORY` (documented as "gets exactly two feet"), so
-  its accented variants now correctly drop the left stem's foot the
-  same way plain `n` always has. Cyrillic still has no equivalent
-  per-letter-class treatment (no Latin base to resolve to), so it
-  keeps Jost's raw shape at the whole-letter level only, same as
-  before. `quirks.py`'s terminal-cut treatment covers the 18 c/e/s-
-  based accented letters (via mark-splicing, below) plus 3 r-based
-  ones directly, described next.
+  wrong case this surfaced directly: accented `n` (`ń ň ñ ņ`) used to
+  fall through to the generic uppercase/digit "baseline-only, no flare
+  restriction" bucket (its literal, non-ASCII character not matching
+  any of `serifs.py`'s ASCII-keyed class sets), keeping a foot on BOTH
+  of its stems -- `n` itself is declared `SINGLE_STORY` (documented as
+  "gets exactly two feet"), so its accented variants now correctly
+  drop the left stem's foot the same way plain `n` always has.
+  `quirks.py`'s terminal-cut treatment covers the 18 c/e/s-based
+  accented letters (via mark-splicing, below) plus 3 r-based ones
+  directly, described next.
+
+- **Nine lowercase Cyrillic letters get the same treatment too**, via a
+  small hand-checked `_CYRILLIC_ANALOG` table in `params.py` (NFD
+  decomposition doesn't relate Cyrillic to Latin at all, so this part
+  isn't automatic): `а`/`е`/`э`/`о`/`с`/`м`/`р`/`у`/`х` were each
+  rendered and confirmed by direct inspection to share a plain Latin
+  letter's structural class -- `о`/`с` are pure round bowls (`o`/`c`),
+  `е`/`э` share `e`'s aperture-cut shape (mirrored, for `э`), `м` is a
+  three-legged bridge identical to `m`, `р` is a bowl-plus-descender
+  identical to `p` (so its bowl's counter now reshapes to match `o`'s
+  too, the same as `p`'s own), `у` is a v-bowl-plus-descender-tail
+  identical to `y`, and `х` is pure diagonal crossing strokes like `x`
+  (grows no feet regardless, same as `x`). Every other Cyrillic
+  lowercase letter (`б в г д ж з и й к л н п т ф ц ч ш щ ъ ы ь ю я`) was
+  rendered and checked too but has no clean single-Latin-letter
+  structural analog -- bridge/ladder shapes like `н`/`п` (which
+  resemble a lowercase Latin "H", not "n") already get the right
+  generic two-stem-outward-flare treatment from the unclassified
+  default, so forcing a wrong analog onto them would make things worse,
+  not better, and they're deliberately left alone. Cyrillic uppercase
+  needs no equivalent work: it already gets the same baseline-only
+  treatment Latin uppercase does, correctly, from the same
+  unclassified default.
 
 - **`c`/`e`/`s`'s own accented variants need more than the base-letter
   resolution above** (their base letters aren't built from Jost's raw
@@ -456,21 +475,26 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Greek**, and Cyrillic's own per-letter-class refinements.
-  `serifs.py`'s foot rules and `quirks.py`'s round-counter reshaping now
-  extend to every accented Latin letter via `params.base_letter`
-  (NFD decomposition -- see "Status" above), and terminal-cut treatment
-  already covers the 18 accented `c`/`e`/`s`-based letters and 3
-  accented `r`-based ones (re-spliced/terminal-cut directly, since
-  their base letters aren't Jost's raw shape to begin with). Cyrillic
-  has no Latin base to decompose to, so it still gets Jost's raw shape
-  at the whole-letter level only; fixing that means either hand-mapping
-  visually-equivalent Cyrillic/Latin letter pairs (о/o, с/c, е/e are
-  visually round/single-story the same way) or building a Cyrillic-
-  specific classification, neither attempted yet. `kerning.py` doesn't
-  need any of this: it already covers the full character set (see
-  "Kerning" below). `GRAD` (see "Status") is done, if only an
-  approximation of a true optical grade.
+- **Greek**, and the remaining ~23 Cyrillic lowercase letters with no
+  clean single-Latin-letter structural analog (`б в г д ж з и й к л н
+  п т ф ц ч ш щ ъ ы ь ю я` -- see "Status" above). `serifs.py`'s foot
+  rules and `quirks.py`'s round-counter reshaping now extend to every
+  accented Latin letter via `params.base_letter` (NFD decomposition),
+  plus nine lowercase Cyrillic letters confirmed to share a Latin
+  letter's structure (`_CYRILLIC_ANALOG`, same function), and
+  terminal-cut treatment already covers the 18 accented `c`/`e`/`s`-
+  based letters and 3 accented `r`-based ones (re-spliced/terminal-cut
+  directly, since their base letters aren't Jost's raw shape to begin
+  with). The rest of Cyrillic has no clean analog to map to -- forcing
+  one onto a genuinely different letterform (a bridge/ladder shape like
+  `н`/`п`, which looks like a lowercase Latin "H", not "n") would be
+  worse than the generic unclassified default it already gets, which
+  happens to be correct for those shapes. Greek needs an entirely
+  separate donor font (Jost has almost none), a distinct sourcing task
+  from anything `base_letter` can help with. `kerning.py` doesn't need
+  any of this: it already covers the full character set (see "Kerning"
+  below). `GRAD` (see "Status") is done, if only an approximation of a
+  true optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing

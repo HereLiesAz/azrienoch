@@ -17,14 +17,17 @@ Latin variants too, via `params.base_letter` (NFD-decomposition-based:
 its counter reshaped to match plain 'o's the same way its base letter
 does, and every accented letter grows serif feet at the same guide
 lines its base letter would, rather than falling through to the
-uppercase/digit baseline-only default. `quirks.py`'s terminal-cut
-treatment covers the 18 c/e/s-based accented letters (via
+uppercase/digit baseline-only default. The same function also covers
+nine lowercase Cyrillic letters confirmed by direct rendering to share
+a plain Latin letter's structural class (а/е/э/о/с/м/р/у/х -- see
+`params.py`'s own `_CYRILLIC_ANALOG`); every other Cyrillic letter has
+no clean single-Latin-letter analog and is deliberately left
+unclassified rather than forced into a wrong one. `quirks.py`'s
+terminal-cut treatment covers the 18 c/e/s-based accented letters (via
 `accent_marks.py`'s mark-splicing, see below) plus 3 r-based ones
-directly; Cyrillic has no equivalent per-letter-class treatment yet
-(no NFD-decomposable base to resolve to), so it still gets Jost's raw
-shape at the whole-letter level only. `kerning.py`, unlike the above,
-is NOT similarly scoped -- it already covers the full character set
-(see its own module docstring).
+directly. `kerning.py`, unlike the above, is NOT similarly scoped --
+it already covers the full character set (see its own module
+docstring).
 
 Serif feet (the SERF axis) are detected ONCE per glyph, on a single
 reference instance (wght=400, wdth=100, before any foot is applied --

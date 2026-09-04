@@ -38,18 +38,49 @@ CHARS = (
     + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
 )
 
+# Lowercase Cyrillic letters confirmed, by direct rendering (not
+# assumed from the character's name), to share a plain Latin letter's
+# structural class -- same stem/bowl layout, not just a visual
+# resemblance in passing:
+#   а single-story bowl (a), е identical aperture-cut shape (e), э the
+#   same shape mirrored (e), о a pure round bowl (o), с a pure round
+#   open form (c), м a three-legged bridge (m), р a bowl-plus-descender
+#   (p), у a v-bowl-plus-descender-tail (y), х pure diagonal crossing
+#   strokes (x, which grows no feet at all regardless -- see
+#   serifs.py's own module docstring on diagonal-only letters).
+# Every other Cyrillic lowercase letter (б, в, г, д, ж, з, и, й, к, л,
+# н, п, т, ф, ц, ч, ш, щ, ъ, ы, ь, ю, я) was rendered and checked too,
+# but has no clean single-Latin-letter structural analog (bridge/ladder
+# shapes like н/п already get the right generic treatment from the
+# unclassified default -- see `serifs.py::guides_for`'s own docstring
+# on the else branch -- rather than a forced, wrong mapping), so they're
+# deliberately left out rather than guessed at.
+_CYRILLIC_ANALOG = {
+    "а": "a", "е": "e", "э": "e", "о": "o", "с": "c",
+    "м": "m", "р": "p", "у": "y", "х": "x",
+}
+
+
 def base_letter(ch: str) -> str:
     """The plain Latin letter `ch` is a diacritic variant of, via Unicode
     NFD decomposition (e.g. 'é'/'ē'/'ě' -> 'e', 'Ł' -> 'L' -- stroke-
     through letters don't decompose this way and fall through to
-    themselves, same as any character with no accent to strip). Used to
-    extend per-letter-class logic (`serifs.py`'s guide selection,
-    `quirks.py`'s round-counter reshaping) from the original 62 ASCII
-    letters to their accented Latin-1/Latin Extended-A counterparts
-    without hardcoding a lookup table for all ~130 of them: a 'ē' should
-    grow serif feet exactly where a plain 'e' does, and its counter
-    should get reshaped to match 'o's the same way 'e' does, since it's
-    the same base letterform with a mark added, not a different design."""
+    themselves, same as any character with no accent to strip), or the
+    Latin letter a lowercase Cyrillic letter structurally resembles
+    (`_CYRILLIC_ANALOG` above, checked first since NFD doesn't relate
+    Cyrillic to Latin at all). Used to extend per-letter-class logic
+    (`serifs.py`'s guide selection, `quirks.py`'s round-counter
+    reshaping) from the original 62 ASCII letters to their accented
+    Latin-1/Latin Extended-A counterparts and select Cyrillic ones
+    without hardcoding a lookup table for all ~130 accented letters: a
+    'ē' should grow serif feet exactly where a plain 'e' does, and its
+    counter should get reshaped to match 'o's the same way 'e' does,
+    since it's the same base letterform with a mark added, not a
+    different design -- and a Cyrillic 'о' should get the same
+    treatment as Latin 'o' for the same reason: it's the same round
+    bowl shape, not a different design needing its own rule."""
+    if ch in _CYRILLIC_ANALOG:
+        return _CYRILLIC_ANALOG[ch]
     decomposed = unicodedata.normalize("NFD", ch)
     return decomposed[0] if decomposed else ch
 
