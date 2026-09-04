@@ -16,12 +16,14 @@ only by that master's own `wdth` fraction (kerning has no direct
 `SERF`-axis dependence either -- a slab foot changes a stem's terminal,
 not the sidebearing space two letters share).
 
-Filtered down to pairs where BOTH sides are one of Azrienoch's own 62
-glyphs (letters + digits) -- Jost has hundreds of accented and Cyrillic
-glyphs with kerning of their own that's irrelevant here -- 533 pairs
-survive that filter, extracted from a single class-kerning (GPOS
-lookup format 2) subtable; Jost has no format-1 (glyph-to-glyph)
-kerning pairs at all.
+Filtered down to pairs where BOTH sides are one of Azrienoch's own
+glyphs (`params.CHARS` -- every script this project covers except
+Greek, not just the original 62 ASCII letters/digits: Jost's own
+kerning already covers its Latin-1/Latin Extended-A/Cyrillic glyphs
+too, the exact same donor-kerning logic the ASCII set already rests
+on, needing no new extraction work of its own), extracted from a
+single class-kerning (GPOS lookup format 2) subtable; Jost has no
+format-1 (glyph-to-glyph) kerning pairs at all.
 
 Three simplifications, same spirit as the `wdth` axis's own documented
 placeholder (see `condense.py`):
@@ -53,23 +55,37 @@ placeholder (see `condense.py`):
 
 from __future__ import annotations
 
-import string
-
 from fontTools.ttLib import TTFont
 from fontTools.varLib.instancer import instantiateVariableFont
 
-from . import jost_source
+from . import jost_source, params
 
 JOST_PATH = jost_source.JOST_PATH
-CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
+CHARS = params.CHARS
 _DIGIT_NAMES = {
     "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
     "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine",
 }
+_SPACE_NAME = "space"
+
+_jost_name_map: dict[str, str] | None = None
 
 
 def _glyph_name(ch: str) -> str:
-    return _DIGIT_NAMES.get(ch, ch)
+    """Same naming this project's own glyphs actually get
+    (`ufo_build.py::_glyph_name`, duplicated here rather than imported
+    -- `ufo_build.py` itself imports this module, so importing back
+    would be circular): digits and space get their own conventional
+    names, everything else reuses Jost's own (already ASCII-safe)
+    glyph name for that character."""
+    if ch == " ":
+        return _SPACE_NAME
+    if ch in _DIGIT_NAMES:
+        return _DIGIT_NAMES[ch]
+    global _jost_name_map
+    if _jost_name_map is None:
+        _jost_name_map = jost_source.glyph_names_for_chars(CHARS)
+    return _jost_name_map[ch]
 
 
 def _extract_jost_class_pairs() -> dict[tuple[str, str], int]:

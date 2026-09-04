@@ -156,10 +156,10 @@ scoped to the original 62 -- accented Latin and Cyrillic glyphs get
 Jost's own raw shape (correctly weighted/condensed/serifed at the
 whole-letter level, since those axes apply generically) but not yet
 the same per-glyph refinements as their base letters (e.g. `ā`'s
-counter isn't forced to match `o`'s the way `a`'s is). `kerning.py` is
-similarly still scoped to the original 62 -- every other glyph compiles
-and renders but is unkerned against everything, including itself.
-Jost's own accented glyphs that are TrueType composites (a base letter
+counter isn't forced to match `o`'s the way `a`'s is). `kerning.py`,
+unlike those two, is NOT scoped to the original 62 -- see "Kerning"
+below, it covers this project's full character set. Jost's own
+accented glyphs that are TrueType composites (a base letter
 plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
 decomposed on extraction (`jost_source.py` uses fontTools'
 `DecomposingRecordingPen`, not a plain one) so every downstream
@@ -434,13 +434,14 @@ arch letter's own counter.
 
 Not yet done, in order:
 
-- **Greek**, and extending `quirks.py`/`serifs.py`/`kerning.py`'s
-  per-glyph refinements past the original 62 ASCII letters/digits (plus
-  the 18 accented `c`/`e`/`s`-based letters and 3 accented `r`-based
-  ones already re-spliced/terminal-cut, see "Status" above) to the rest
-  of the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set.
-  `GRAD` (see "Status") is done, if only an approximation of a true
-  optical grade.
+- **Greek**, and extending `quirks.py`/`serifs.py`'s per-glyph
+  refinements past the original 62 ASCII letters/digits (plus the 18
+  accented `c`/`e`/`s`-based letters and 3 accented `r`-based ones
+  already re-spliced/terminal-cut, see "Status" above) to the rest of
+  the newly added punctuation/Latin-1/Latin Extended-A/Cyrillic set.
+  `kerning.py` no longer needs this: it already covers the full
+  character set (see "Kerning" below). `GRAD` (see "Status") is done,
+  if only an approximation of a true optical grade.
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing
@@ -471,13 +472,19 @@ Not yet done, in order:
 
 ## Kerning
 
-533 letter-pair corrections (`tools/kerning.py`), extracted from
+7,774 letter-pair corrections (`tools/kerning.py`), extracted from
 vendored Jost's own GPOS pair-positioning table rather than hand-tuned
 -- the same donor-kerning approach the repository root's own v1
 pipeline uses on Roboto Flex, for the same reason: several thousand
 pairs tuned by eye is its own multi-week type-design task, and Jost
-already did that work. Jost's own kerning is entirely static across its
-`wght` axis (confirmed by diffing the full extracted table at
+already did that work. Covers every script this project's own
+character set does (Latin, Latin-1, Latin Extended-A, Cyrillic --
+Jost's own kerning table already has pairs for all of them, the exact
+same donor-kerning logic the original 62-glyph ASCII set already
+rested on, needing no new extraction work when the character set grew
+-- see "Status" above), not just the original 62 ASCII letters/digits
+(533 pairs there alone). Jost's own kerning is entirely static across
+its `wght` axis (confirmed by diffing the full extracted table at
 `wght`=100/400/900: zero pairs differ), so one extraction is reused at
 every master, scaled only by that master's own `wdth` fraction (kerning
 has no direct `SERF` dependence either). `c`/`e`/`s` (no longer all

@@ -1,4 +1,7 @@
-"""Axis model for Azrienoch v2.
+"""Axis model for Azrienoch v2, plus the shared character-set
+constants (below) both ufo_build.py and kerning.py need -- kept here,
+not in ufo_build.py itself, so kerning.py (which ufo_build.py imports)
+can use the same character set without a circular import.
 
 Glyph outlines come from the vendored Jost variable font (see
 jost_source.py). This module is the single place that defines the axis
@@ -9,6 +12,30 @@ README.md -- so no override is needed there).
 """
 
 from __future__ import annotations
+
+import string
+
+# Same character sets as the repository root's own v1 pipeline, minus
+# GREEK (Jost itself has almost none -- see ufo_build.py's own module
+# docstring for the full account).
+PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
+LATIN1 = (
+    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
+    "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+    "¡¿°µ"
+)
+LATIN_EXT_A = (
+    "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
+    "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
+)
+CYRILLIC = (
+    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+)
+CHARS = (
+    string.ascii_uppercase + string.ascii_lowercase + string.digits
+    + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
+)
 
 UPM = 1000
 

@@ -35,7 +35,6 @@ own tools/serifs.py this was ported from does too, for the same reason.
 
 from __future__ import annotations
 
-import string
 from pathlib import Path
 
 import ufoLib2
@@ -54,26 +53,10 @@ _DIGIT_NAMES = {
 }
 _SPACE_NAME = "space"
 
-# Same character sets as the repository root's own v1 pipeline
-# (tools/ufo_build.py), minus GREEK (see module docstring).
-PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
-LATIN1 = (
-    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
-    "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
-    "¡¿°µ"
-)
-LATIN_EXT_A = (
-    "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
-    "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
-)
-CYRILLIC = (
-    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
-    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
-)
-CHARS = (
-    string.ascii_uppercase + string.ascii_lowercase + string.digits
-    + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
-)
+# Character set (all scripts this project covers except Greek) lives in
+# params.py, not here -- kerning.py (which this module imports) needs
+# the same set without importing this module back (a cycle).
+CHARS = params.CHARS
 
 _REFERENCE_WGHT, _REFERENCE_WDTH = 400, 100
 
