@@ -1,0 +1,61 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="dcaron" format="2">
+  <advance width="427.4999999999999"/>
+  <unicode hex="010F"/>
+  <outline>
+    <contour>
+      <point x="305" y="780" type="line"/>
+      <point x="305" y="0" type="line"/>
+      <point x="381" y="0" type="line"/>
+      <point x="381" y="780" type="line"/>
+    </contour>
+    <contour>
+      <point x="22" y="230" type="qcurve" smooth="yes"/>
+      <point x="22" y="156"/>
+      <point x="69" y="48"/>
+      <point x="147" y="-10"/>
+      <point x="192" y="-10" type="qcurve" smooth="yes"/>
+      <point x="233" y="-10"/>
+      <point x="295" y="48"/>
+      <point x="338" y="156"/>
+      <point x="338" y="230" type="qcurve" smooth="yes"/>
+      <point x="338" y="305"/>
+      <point x="295" y="412"/>
+      <point x="233" y="470"/>
+      <point x="192" y="470" type="qcurve" smooth="yes"/>
+      <point x="147" y="470"/>
+      <point x="69" y="412"/>
+      <point x="22" y="305"/>
+    </contour>
+    <contour>
+      <point x="84" y="230" type="qcurve" smooth="yes"/>
+      <point x="84" y="283"/>
+      <point x="117" y="357"/>
+      <point x="169" y="395"/>
+      <point x="199" y="395" type="qcurve" smooth="yes"/>
+      <point x="224" y="395"/>
+      <point x="272" y="357"/>
+      <point x="305" y="283"/>
+      <point x="305" y="230" type="qcurve" smooth="yes"/>
+      <point x="305" y="177"/>
+      <point x="272" y="103"/>
+      <point x="224" y="65"/>
+      <point x="199" y="65" type="qcurve" smooth="yes"/>
+      <point x="169" y="65"/>
+      <point x="117" y="103"/>
+      <point x="84" y="177"/>
+    </contour>
+    <contour>
+      <point x="427" y="780" type="line"/>
+      <point x="401" y="521" type="line"/>
+      <point x="427" y="500" type="line"/>
+      <point x="427" y="750" type="line"/>
+    </contour>
+    <contour>
+      <point x="288.0" y="0.0" type="line"/>
+      <point x="402.0" y="0.0" type="line"/>
+      <point x="402.0" y="26.2" type="line"/>
+      <point x="288.0" y="26.2" type="line"/>
+    </contour>
+  </outline>
+</glyph>

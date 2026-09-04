@@ -1,0 +1,51 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Edotaccent" format="2">
+  <advance width="412.5"/>
+  <unicode hex="0116"/>
+  <outline>
+    <contour>
+      <point x="96" y="0" type="line"/>
+      <point x="367" y="0" type="line"/>
+      <point x="367" y="80" type="line"/>
+      <point x="96" y="80" type="line"/>
+    </contour>
+    <contour>
+      <point x="96" y="620" type="line"/>
+      <point x="367" y="620" type="line"/>
+      <point x="367" y="700" type="line"/>
+      <point x="96" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="96" y="340" type="line"/>
+      <point x="352" y="340" type="line"/>
+      <point x="352" y="420" type="line"/>
+      <point x="96" y="420" type="line"/>
+    </contour>
+    <contour>
+      <point x="52" y="700" type="line"/>
+      <point x="52" y="0" type="line"/>
+      <point x="127" y="0" type="line"/>
+      <point x="127" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="172" y="825" type="qcurve" smooth="yes"/>
+      <point x="172" y="803"/>
+      <point x="198" y="770"/>
+      <point x="215" y="770" type="qcurve" smooth="yes"/>
+      <point x="233" y="770"/>
+      <point x="258" y="803"/>
+      <point x="258" y="825" type="qcurve" smooth="yes"/>
+      <point x="258" y="848"/>
+      <point x="233" y="880"/>
+      <point x="215" y="880" type="qcurve" smooth="yes"/>
+      <point x="198" y="880"/>
+      <point x="172" y="848"/>
+    </contour>
+    <contour>
+      <point x="60.0" y="0.0" type="line"/>
+      <point x="123.75" y="0.0" type="line"/>
+      <point x="123.75" y="1.0" type="line"/>
+      <point x="60.0" y="1.0" type="line"/>
+    </contour>
+  </outline>
+</glyph>

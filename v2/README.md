@@ -140,11 +140,35 @@ uses.
 
 ## Status
 
-62 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`) and digits
-(`0`-`9`) -- copied from Jost across all 12 masters (except `c`/`e`,
+338 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`), digits
+(`0`-`9`), punctuation, Latin-1 Supplement, Latin Extended-A, and
+Cyrillic -- copied from Jost across all 12 masters (except `c`/`e`,
 built from this project's own `o`, and `s`, sourced from Arimo -- see
 below), with a first pass of Azrienoch-specific modifications on top
-(`tools/quirks.py`):
+(`tools/quirks.py`) for the original 62 ASCII letters/digits.
+
+**Character set is not yet Greek** -- Jost itself barely has any Greek
+glyphs (4 codepoints total), so it needs a separate donor font this
+project doesn't vendor yet; the repository root's own v1 pipeline
+covers Greek via Roboto Flex. `quirks.py`'s terminal-cut/round-counter
+treatments and `serifs.py`'s per-letter-class foot rules are also still
+scoped to the original 62 -- accented Latin and Cyrillic glyphs get
+Jost's own raw shape (correctly weighted/condensed/serifed at the
+whole-letter level, since those axes apply generically) but not yet
+the same per-glyph refinements as their base letters (e.g. `ā`'s
+counter isn't forced to match `o`'s the way `a`'s is). `kerning.py` is
+similarly still scoped to the original 62 -- every other glyph compiles
+and renders but is unkerned against everything, including itself.
+Jost's own accented glyphs that are TrueType composites (a base letter
+plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
+decomposed on extraction (`jost_source.py` uses fontTools'
+`DecomposingRecordingPen`, not a plain one) so every downstream
+consumer only ever sees plain outline data, never a component
+reference. One genuinely new axis this expansion doesn't add: v1 also
+has a `GRAD` (grade) axis, passed straight through to Roboto Flex's own
+native `GRAD`; Jost has no such axis to pass through, so v2 would need
+its own from-scratch implementation (stroke-weight offsetting that
+doesn't change advance width) -- not attempted yet.
 
 - **`c`/`e` are built directly from this master's own `o`**
   (`tools/ring_derived.py`), not from a separate donor font. `o`'s own
@@ -359,6 +383,11 @@ arch letter's own counter.
 
 Not yet done, in order:
 
+- **Greek**, a `GRAD` axis, and extending `quirks.py`/`serifs.py`/
+  `kerning.py`'s per-glyph refinements past the original 62 ASCII
+  letters/digits to the newly added punctuation/Latin-1/Latin
+  Extended-A/Cyrillic set (see "Status" above for the full account of
+  what's covered and what isn't).
 - **A true optically condensed `wdth` cut.** `condense.py`'s ink-density
   weighted compression (see above) keeps stems close to their full
   width at heavy/condensed combinations instead of uniformly squishing

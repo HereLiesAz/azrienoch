@@ -2,8 +2,24 @@
 
 Glyph outlines are copied from the vendored Jost variable font
 (see jost_source.py) at each master's (wght, wdth) -- not drawn from
-scratch. Covers the basic Latin alphabet (A-Z, a-z) and digits (0-9),
-62 glyphs, all plain contours in Jost (no composites to decompose).
+scratch. Covers the basic Latin alphabet (A-Z, a-z), digits (0-9),
+punctuation, Latin-1 Supplement, Latin Extended-A, and Cyrillic --
+every script the repository root's own v1 pipeline covers except
+Greek, which Jost barely has any glyphs for (4 codepoints total) and
+so needs a separate donor font, not yet vendored here. All plain
+contours in vendored Jost (no composites to decompose) for every
+character in this set, confirmed directly rather than assumed.
+
+Extending PAST plain extraction: `quirks.py`'s terminal-cut and
+round-counter treatments, and `serifs.py`'s per-letter-class foot
+rules, are still scoped to the original 62 ASCII letters/digits --
+accented Latin and Cyrillic glyphs get Jost's own raw shape (still
+correctly condensed/weighted/serifed at the whole-letter level, since
+those axes apply generically) but not yet the same Azrienoch-specific
+per-glyph refinements as their base letters (e.g. `ā`'s counter isn't
+forced to match `o`'s the way `a`'s underlying `d` is). `kerning.py`
+is similarly still scoped to the original 62 -- the new glyphs compile
+and render but are unkerned against everything, including each other.
 
 Serif feet (the SERF axis) are detected ONCE per glyph, on a single
 reference instance (wght=400, wdth=100, before any foot is applied --
@@ -35,13 +51,55 @@ _DIGIT_NAMES = {
     "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
     "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine",
 }
-CHARS = string.ascii_uppercase + string.ascii_lowercase + string.digits
+_SPACE_NAME = "space"
+
+# Same character sets as the repository root's own v1 pipeline
+# (tools/ufo_build.py), minus GREEK (see module docstring).
+PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
+LATIN1 = (
+    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
+    "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+    "¡¿°µ"
+)
+LATIN_EXT_A = (
+    "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
+    "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
+)
+CYRILLIC = (
+    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+)
+CHARS = (
+    string.ascii_uppercase + string.ascii_lowercase + string.digits
+    + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
+)
 
 _REFERENCE_WGHT, _REFERENCE_WDTH = 400, 100
 
+_jost_name_map: dict[str, str] | None = None
+
 
 def _glyph_name(ch: str) -> str:
-    return _DIGIT_NAMES.get(ch, ch)
+    """The name this project's own UFO/TTF glyph gets for `ch`. Digits
+    and space get their own conventional names (kept for backward
+    compatibility with `kerning.py` and existing sources, which already
+    key off "zero"/"a"/etc., not a literal "0"/" "); everything else
+    reuses Jost's own glyph name for that character. Jost's own names
+    are already safe, ASCII-only, standard glyph names (e.g. "Agrave",
+    "uni0401") -- using the character itself as a glyph name instead
+    (tried first) compiles fine as a UFO but fails at the very last
+    TTF-writing step, where the 'post' table can't encode a non-Latin-1
+    glyph name at all -- confirmed directly: fontmake errored trying to
+    write "Ā" (U+0100) as a glyph name once this project's own
+    character set grew past ASCII."""
+    if ch == " ":
+        return _SPACE_NAME
+    if ch in _DIGIT_NAMES:
+        return _DIGIT_NAMES[ch]
+    global _jost_name_map
+    if _jost_name_map is None:
+        _jost_name_map = jost_source.glyph_names_for_chars(CHARS)
+    return _jost_name_map[ch]
 
 
 def _contour_area(contour) -> float:
@@ -125,6 +183,11 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
     cache = {}
     for ch in CHARS:
         glyph = reference_font[_glyph_name(ch)]
+        if not glyph.contours:
+            # 'space' (and any other whitespace-only glyph) has no ink
+            # to grow a foot on at all.
+            cache[ch] = ([], {})
+            continue
         min_y = min(p.y for c in glyph.contours for p in c.points)
         guides = serifs.guides_for(ch, min_y)
         specs = serifs.detect_feet(glyph, guides, ch)
