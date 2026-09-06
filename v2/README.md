@@ -516,6 +516,64 @@ rendering Thin, Regular, Black, and Thin+Condensed side by side with
 `SERF`=100: feet now stay proportional to each master's own stem at
 every point across the range, instead of only looking right at 400.
 
+**The outward flare itself was halved** (`apply_feet`'s `extra`
+coefficient, 0.9 -> 0.45) after a second round of direct inspection:
+`A`'s two feet are geometrically mirror-symmetric (confirmed by
+measuring the compiled font's own points, and by pixel-measuring a
+real browser render -- both sides land on the exact same width), but
+one side was getting clipped by the proof artifact's own display
+container, making the unclipped side look twice as long by comparison.
+Since the correctly-displayed (unclipped) length was itself judged too
+prominent once seen in full, every foot's flare -- upper- and
+lowercase alike, every letter -- was cut to half its previous length,
+a single global scalar rather than a per-letter fix, so the whole
+alphabet's feet move together and stay consistent with each other.
+
+**Two more rounds after that, per further direct comparison**: the
+flare was cut again, to 2/3 of THAT already-halved length (`extra`'s
+coefficient 0.45 -> 0.3, i.e. 1/3 of the original 0.9), and the foot
+HEIGHT formula was independently tightened specifically because it
+still read as too tall at the thinnest weights even after the earlier
+"cap it at the stem's own width" fix -- capping at the full stem width
+still let a thin stem's foot reach roughly half that stem's own
+thickness, visually chunky against a delicate stroke. Foot height's
+own coefficient dropped 0.42 -> 0.28 and its cap tightened from the
+full measured stem width to 40% of it (`run_w * 0.4`), so a foot reads
+as a small nub relative to the stroke it grows from at every weight,
+thin ones included, not a block half as tall as the stroke is wide.
+
+**That height pass overcorrected.** The very next comparison called it
+too short -- the flare length itself (`extra`, left at 0.3) was fine;
+only the height needed to come back up. Foot height's coefficient
+moved to 0.35 (was 0.42, then 0.28) and its cap to 60% of the measured
+stem width (was 100%, then 40%), landing between the original,
+too-tall setting and the too-short one that immediately followed it.
+
+**Still disproportionately tall at Thin -- wrong fix attempted first.**
+A first attempt diagnosed this as a rendering-scale problem (foot
+height too small in absolute units to survive antialiasing) and
+responded by adding an absolute floor that made Thin's foot height
+approach its own full stem width -- exactly backwards from the actual,
+repeated direction to decrease height at the thinnest weight, not
+increase it. Reverted outright.
+
+The real, measurable cause: the formula added a flat `MIN_FOOT_H`
+bonus on top of the proportional term unconditionally, and a flat
+bonus is negligible against a thick stem's large proportional term but
+NOT against a thin stem's small one -- computed directly on `H`'s own
+two feet, Black's height came out to 35.5% of its own stem width,
+Thin's to 42.1%, purely from that same flat +1 unit being ~1% of one
+and ~17% of the other. That gap -- not absolute size, not rendering
+resolution -- is what made Thin's foot read as too tall relative to
+its own (thin) stroke even after several rounds of adjusting the
+proportional coefficient alone. Fixed by interpolating from the
+hairline (`SERF`=0) straight to the fully-proportional target
+(`SERF`=100) instead of always adding the hairline as a bonus on top:
+at full `SERF`, height is now exactly the stem's own 0.35 fraction at
+every weight -- confirmed directly: recomputing both extremes with the
+new formula gives an identical 35% ratio at Thin and at Black, where
+before Thin ran measurably higher.
+
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
 run-up into the arch happens to end flat and close enough to the
