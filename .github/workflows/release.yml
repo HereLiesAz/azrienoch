@@ -52,7 +52,7 @@ jobs:
       - name: Build and validate the font
         env:
           AZRIENOCH_VERSION: ${{ steps.release_info.outputs.version }}
-        run: PYTHONPATH=. python3 tools/designspace_build.py
+        run: python3 -m tools.designspace_build
 
       - name: Publish release
         uses: softprops/action-gh-release@v2
