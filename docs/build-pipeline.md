@@ -4,102 +4,109 @@
 
 ```
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
-sources/*.ufo                     the 48 (wght x wdth x SERF x GRAD) UFO masters (build output)
+fonts/variable/Azrienoch-VF.woff2 same font, WOFF2 container (build output)
+sources/*.ufo                     the 36 (wght x wdth x SERF x GRAD) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
-third_party/roboto-flex/          vendored Roboto Flex source font + its own OFL.txt/AUTHORS.txt
+third_party/jost/                 vendored Jost source font + its own OFL.txt
+third_party/arimo/                vendored Arimo Regular/Bold + its own OFL.txt
 tools/                            the build pipeline (below)
-specimen/                         specimen renders + the interactive specimen page (index.html)
+specimen/                         the interactive specimen page (index.html)
 docs/                             this documentation
 ```
 
 `sources/*.ufo`, `sources/Azrienoch.designspace` and
-`fonts/variable/Azrienoch-VF.ttf` are build output, checked in so the
-compiled font is usable without running Python -- regenerate them any
-time `tools/` or `third_party/roboto-flex/` changes:
+`fonts/variable/Azrienoch-VF.{ttf,woff2}` are build output, checked in
+so the compiled font is usable without running Python -- regenerate
+them any time `tools/` or `third_party/` changes:
 
 ```
 pip install -r requirements.txt
 python3 -m tools.designspace_build
 ```
 
-This regenerates the masters, the designspace, and the compiled
-variable TTF, and validates the result.
+This regenerates the masters, the designspace, the compiled variable
+TTF and its WOFF2, validates the result, and re-embeds the font into
+`specimen/index.html`.
 
 ## `tools/`
 
 In roughly build order:
 
-- **`params.py`** -- the axis model: master grid, and the (registered)
-  axis definitions. Start here to understand what actually varies.
-- **`roboto_source.py`** -- maps an Azrienoch `(wght, wdth, GRAD)` onto
-  a point in Roboto Flex's axis space, instances the vendored variable
-  font there with `fontTools.varLib.instancer`, and extracts glyph
-  outlines, advance widths and kerning.
-- **`serifs.py`** -- detects candidate stem feet once from a reference
-  instance, then adds the *same* foot contours (by fractional
-  position) to every master, sized by that master's own `SERF` value.
-  Every master of a glyph gets identical topology this way -- collapsed
-  to a hairline at `SERF=0`, grown to a full slab at `SERF=100` --
-  which is what makes the axis interpolate at all rather than failing
-  to compile. Each foot only grows on the side(s) that border a real
-  stem rather than the letter's own counter (checked via the adjacent
-  contour segment's length), which is what keeps it from notching into
-  arch letters like 'n'/'m'/'p'/'r'/'h'.
-- **`quirks.py`** -- the 'G' spur, 'R' leg kick, 'e'/'g's flat
-  terminals, 'v'/'w's sharp baseline point, and the 'A'/'e'
-  self-intersection fixes (see [`design.md`](./design.md) and
-  [`TODO.md`](./TODO.md)).
-- **`dots.py`** -- the weight-tapered dot boost and the 'i'/'j' tittle
-  reposition-to-ascender-height fix.
-- **`single_story_a.py`** -- builds 'a' from 'd's own outline.
-- **`round_contrast.py`** -- thins 'o'/'c'/'e' at top and bottom to
-  match a bowl's own neck thickness.
-- **`arch_symmetry.py`** -- symmetrizes 'n'/'h'/'m'/'u's arch-spring
-  heights.
-- **`arch_shape.py`** -- rounds 'n'/'h'/'m'/'u's arch counters to match
-  'o's own shape.
-- **`counter_shape.py`** -- shrinks the flat "waist" on a counter's
-  round sides; mostly superseded by `canonical_counter.py` below for
-  the glyphs that structurally match, still applied first as a
-  harmless no-op/fallback pass.
-- **`canonical_counter.py`** -- reshapes 'o'/'d'/'b'/'p'/'q'/'g'/'a's
-  inner counters into true affine-scaled copies of 'o's own outer
-  contour.
-- **`ufo_build.py`** -- assembles the 48 master UFOs, copying each
-  glyph's quadratic outline through unmodified (no curve conversion --
-  gvar already guarantees the same point topology across masters, so
-  nothing needs re-fitting; only `serifs.py`'s added rectangles are
-  new points). Composite glyphs (accents, '%') are decomposed against
-  Roboto Flex's own glyphset first, so what lands in the UFO is always
-  plain contours. Also ports Roboto Flex's `pnum` (proportional
-  figures) `GSUB` feature: each digit's alternate proportional-width
-  outline (`uniXXXX.prop`) is imported alongside the default tabular
-  one, with a `feature pnum { ... }` block substituting between them,
-  subject to the same `SERF`-axis feet as its default counterpart.
+- **`params.py`** -- the axis model: master grid, axis definitions, and
+  the shared character-set constants `ufo_build.py`/`kerning.py` both
+  need. Start here to understand what actually varies.
+- **`jost_source.py`** -- extracts glyph outlines from the vendored
+  Jost variable font at a given `(wght, wdth, grad)`: instances Jost at
+  the requested `wght` (`grad` approximated by sampling a nearby `wght`
+  for shape while keeping the requested `wght`'s own advance width --
+  Jost has no native `GRAD` axis to sample directly), then runs
+  `condense.py`'s per-x compression for `wdth != 100`.
+- **`condense.py`** -- the `wdth` axis: an ink-density weighted
+  horizontal compression (not a flat scale, and not a true optically
+  condensed redraw -- no counter is actually reshaped; see
+  [`design.md`](./design.md)).
+- **`arimo_source.py`** -- extracts 's' from vendored Arimo (an open,
+  metric-compatible Helvetica/Arial workalike), interpolated/
+  extrapolated along Jost's own weight curve rather than Arimo's own.
+- **`ring_derived.py`** -- builds 'c'/'e' directly from that master's
+  own 'o' (a cut-open ring plus a crossbar for 'e'), guaranteeing their
+  bowl/counter shape actually matches 'o's.
+- **`single_story_a.py`** -- builds 'a' from 'd's own outline (single-
+  story, not the double-story convention most grotesques inherit from
+  print).
+- **`quirks.py`** -- terminal-cut reorientation (true horizontal/
+  vertical cuts on 'c'/'e'/'s'/'r'/'f'), canonical round-counter
+  reshaping (every round counter becomes an affine-scaled copy of
+  'o's own), and a couple of micro-notch fixes to defects present in
+  Jost's own raw outline.
+- **`accent_marks.py`** -- re-splices Jost's own diacritic marks onto
+  this project's own (ring-derived/Arimo-sourced) 'c'/'e'/'s', since
+  those base letters no longer carry Jost's own native shape for Jost's
+  own accented glyphs to build on.
+- **`serifs.py`** -- the `SERF` axis: detects candidate stem feet once
+  from a reference instance, then adds the *same* foot contours (by
+  fractional position, but sized off each master's own actual stem
+  width) to every master. Every master of a glyph gets identical
+  topology this way -- collapsed to a hairline at `SERF=0`, grown to a
+  proportioned slab at `SERF=100` -- which is what makes the axis
+  interpolate at all rather than failing to compile. Each foot only
+  grows on the side(s) that border a real stem rather than the
+  letter's own counter, and per-letter-class rules (single-story
+  letters get exactly two feet, an ascender letter's foot lands only at
+  the baseline, etc.) follow the shape of handwriting rather than
+  "widen wherever there's room."
+- **`kerning.py`** -- letter-pair kerning extracted from vendored
+  Jost's own GPOS pair-positioning table, covering the full character
+  set.
+- **`ufo_build.py`** -- assembles the 36 master UFOs: extracts every
+  glyph (routing 's' to Arimo, 'c'/'e' to `ring_derived.py`, 'a' to
+  `single_story_a.py`, everything else to Jost), applies `quirks.py`'s
+  terminal cuts and round-counter reshaping, splices accent marks, then
+  applies `serifs.py`'s feet and `kerning.py`'s pairs.
 - **`designspace_build.py`** -- writes the `.designspace` (axes,
-  sources, named instances, `STAT` axis-value labels) and runs
-  `fontmake` to compile the variable TTF, then runs `validate_build.py`.
+  sources, named instances, `STAT` axis-value labels), runs `fontmake`
+  to compile the variable TTF, wraps it in a WOFF2 container, then runs
+  `validate_build.py` and `update_specimen.py`.
 - **`validate_build.py`** -- sanity-checks the build: `fvar`
   axes/instances match `params.py`, every master has the same glyph
   set, and every glyph has identical contour/point topology across all
-  48 masters. Runnable on its own: `python3 -m tools.validate_build`.
-- **`geometry.py`** -- the rectangle-contour primitive `serifs.py`
-  builds feet from.
+  36 masters. Runnable on its own: `python3 -m tools.validate_build`.
 - **`preview.py`** -- a matplotlib-based text renderer (from the
   compiled variable font, at any axis location) used for visual QA
-  during development; also runnable directly:
-  `python3 -m tools.preview "text" wght wdth SERF GRAD out.png`.
+  during development.
+- **`export_ufo.py`** -- builds and saves a single UFO master on
+  demand, for opening directly in an external point editor, without
+  regenerating the whole grid.
+- **`point_editor_server.py`** + **`point_editor.html`** -- a local,
+  drag-the-points glyph editor that reads and writes UFO master sources
+  directly. A hand-editing/demonstration tool for working out what a
+  shape should be, not a replacement for the generative `quirks.py`
+  pipeline -- a rebuild overwrites any hand edit not also encoded as a
+  real rule in `quirks.py`.
 - **`next_version.py`** -- computes the release version; see
   [`versioning.md`](./versioning.md).
-- **`update_specimen.py`** -- regenerates `specimen/index.html`'s
-  embedded font and preset data from the current build.
-
-Point-editor-style hand tooling (drawing glyphs at explicit weight/
-width extremes and extrapolating the rest) is not part of this
-pipeline -- Azrienoch's letterforms come from Roboto Flex, transformed
-in code. That approach now lives in a separate project,
-[Morphont](https://github.com/HereLiesAz/morphont); see
-[`docs/README.md`](./README.md#related-tooling).
+- **`update_specimen.py`** -- re-embeds the current compiled font into
+  `specimen/index.html`.
 
 ## Validation
 
@@ -109,13 +116,14 @@ build or validation never gets released). It checks:
 
 - `fvar` axes and named instances match `params.py`.
 - Every master UFO has the same glyph set.
-- Every glyph has identical contour/point topology across all 48
-  masters (the invariant gvar interpolation depends on).
+- Every glyph has identical contour/point topology across all 36
+  masters (the invariant gvar interpolation, and specifically the
+  `SERF` axis, depends on).
 
 ## Specimen
 
 `specimen/index.html` is a self-contained (font embedded) interactive
-specimen: live `wght`/`wdth`/`SERF` sliders, all named-instance
+specimen: live `wght`/`wdth`/`SERF`/`GRAD` sliders, all named-instance
 presets, an editable hero sample, and a glyph-set showcase. Open it
 directly in a browser -- no server needed. `.github/workflows/pages.yml`
 publishes it to GitHub Pages on every change to `specimen/**` on

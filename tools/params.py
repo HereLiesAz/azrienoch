@@ -1,92 +1,183 @@
-"""Azrienoch axis model: the master grid and the (registered) axis definitions.
+"""Axis model for Azrienoch, plus the shared character-set
+constants (below) both ufo_build.py and kerning.py need -- kept here,
+not in ufo_build.py itself, so kerning.py (which ufo_build.py imports)
+can use the same character set without a circular import.
 
-Four variable axes:
-
-* ``wght`` (180-900) -- registered weight axis. Also drives glyph height
-  (see ``roboto_source.py``'s "height as weight" mapping) and stroke
-  thickness/contrast, via correlated Roboto Flex parametric-axis values.
-* ``wdth`` (75-100)  -- registered width axis, mapped onto a moderately
-  condensed range of Roboto Flex's own `wdth` (see
-  ``roboto_source.roboto_location``).
-* ``SERF`` (0-100)   -- custom axis. Azrienoch is sans by default
-  (SERF=0); raising it grows slab feet at stem terminals (``serifs.py``),
-  always cut flat/horizontal, matching the terminal rule.
-* ``GRAD`` (-50-50)  -- registered grade axis, passed straight through to
-  Roboto Flex's own `GRAD` (see ``roboto_source.roboto_location``). Unlike
-  `wght`, grade changes stroke weight without changing advance widths or
-  glyph metrics, so it's safe to nudge for optical compensation (e.g.
-  dark-on-light vs. light-on-dark) without reflowing text. Three samples,
-  not two: `fontmake` requires an actual source at a designspace's default
-  location on every axis, so 0 (neutral grade) has to be a real master
-  alongside the -50/50 extremes, not just their interpolated midpoint.
-
-``opsz`` (optical size) and ``slnt`` (slant) are deliberately not
-exposed -- see docs/axes.md for why.
+Glyph outlines come from the vendored Jost variable font (see
+jost_source.py). This module is the single place that defines the axis
+grid Jost gets sampled at, and the vertical metrics the build asserts
+(Jost's own cap-height/x-height already happen to be fixed across its
+wght range, confirmed against the vendored font directly -- see
+README.md -- so no override is needed there).
 """
 
 from __future__ import annotations
 
-# (tag, min, default, max)
-WGHT_AXIS = ("wght", 180, 400, 900)
-WDTH_AXIS = ("wdth", 75, 100, 100)
-SERF_AXIS = ("SERF", 0, 0, 100)
-GRAD_AXIS = ("GRAD", -50, 0, 50)
+import string
+import unicodedata
 
-# The axis floor is 180, not Roboto Flex's own 100: every weight below
-# that -- confirmed repeatedly, across v/V/w/W and other letters, via a
-# direct self-intersection sweep of the compiled font -- renders with
-# some contour turned "inside out" (a real edge-edge crossing, not
-# merely an aesthetic flatness issue). Rather than keep chasing that
-# letter by letter, the axis itself no longer offers a weight where it
-# can happen: 180 was confirmed clean (see taper_align.py/quirks.py's
-# own v/w fixes, and the general self-intersection sweeps run alongside
-# them) and is close enough to Roboto Flex's own floor that the
-# lightest instance still reads as a genuine hairline weight, not a
-# compromise.
-WGHT_MASTERS = (180, 250, 400, 700, 900)
-# Which of WGHT_MASTERS get their own full set of named fvar instances
-# (crossed with every wdth/SERF/GRAD combo) rather than existing purely
-# as an interpolation source. 250 exists only to shorten the Thin-to-
-# Regular jump gvar has to interpolate across in one step -- see
-# rotation_align.py/taper_align.py's docstrings for why a 300-unit span
-# (the original 100-400 gap) was long enough for a few letters' own
-# point correspondence to drift out of sync with itself between the two
-# ends, badly enough for 'o' and its symmetric relatives to visibly
-# flatten to a near-illegible sliver partway through it. With the axis
-# floor now at 180 (see WGHT_AXIS's own comment), the remaining 180-400
-# gap is under half that original span, comfortably inside what a
-# single extra stop at 250 already keeps clean -- confirmed by the same
-# sweep that set the floor itself. 250 was never designed as its own
-# weight the way Thin/Regular/Bold/Black were, so it doesn't get a
-# user-facing style name of its own -- it just cuts the design space's
-# own worst remaining interpolation gap in half.
-WGHT_INSTANCE_MASTERS = (180, 400, 700, 900)
-WDTH_MASTERS = (75, 100)
-SERF_MASTERS = (0, 100)
-GRAD_MASTERS = (-50, 0, 50)
+PUNCT = " .,:;!?'\"()-–—/&@#*+=%·[]"
+LATIN1 = (
+    "ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖØÙÚÛÜÝÞß"
+    "àáâãäåæçèéêëìíîïðñòóôõöøùúûüýþÿ"
+    "¡¿°µ"
+)
+LATIN_EXT_A = (
+    "ĀāĂăĄąĆćĈĉĊċČčĎďĐđĒēĔĕĖėĘęĚěĜĝĞğĠġĢģĤĥĦħĨĩĪīĬĭĮįİıĲĳĴĵĶķ"
+    "ĹĺĻļĽľŁłŃńŅņŇňŌōŎŏŐőŒœŔŕŖŗŘřŚśŜŝŞşŠšŢţŤťŨũŪūŬŭŮůŰűŲųŴŵŶŷŸŹźŻżŽž"
+)
+# No Greek: Jost, this project's only letterform donor, has almost none
+# of it (4 codepoints total, confirmed directly against its own cmap),
+# and sourcing it from a second donor font was tried and then dropped
+# by direct decision -- Greek is simply out of scope for this project.
+CYRILLIC = (
+    "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ"
+    "абвгдеёжзийклмнопрстуфхцчшщъыьэюя"
+)
+CHARS = (
+    string.ascii_uppercase + string.ascii_lowercase + string.digits
+    + PUNCT + LATIN1 + LATIN_EXT_A + CYRILLIC
+)
 
-WGHT_NAMES = {
-    180: "Thin",
-    250: "ExtraLight",
-    400: "Regular",
-    700: "Bold",
-    900: "Black",
+# Lowercase Cyrillic letters confirmed, by direct rendering (not
+# assumed from the character's name), to share a plain Latin letter's
+# structural class -- same stem/bowl layout, not just a visual
+# resemblance in passing:
+#   а single-story bowl (a), е identical aperture-cut shape (e), э the
+#   same shape mirrored (e), о a pure round bowl (o), с a pure round
+#   open form (c), м a three-legged bridge (m), р a bowl-plus-descender
+#   (p), у a v-bowl-plus-descender-tail (y), х pure diagonal crossing
+#   strokes (x, which grows no feet at all regardless -- see
+#   serifs.py's own module docstring on diagonal-only letters).
+# Every other Cyrillic lowercase letter (б, в, г, д, ж, з, и, й, к, л,
+# н, п, т, ф, ц, ч, ш, щ, ъ, ы, ь, ю, я) was rendered and checked too,
+# but has no clean single-Latin-letter structural analog (bridge/ladder
+# shapes like н/п already get the right generic treatment from the
+# unclassified default -- see `serifs.py::guides_for`'s own docstring
+# on the else branch -- rather than a forced, wrong mapping), so they're
+# deliberately left out rather than guessed at.
+_CYRILLIC_ANALOG = {
+    "а": "a", "е": "e", "э": "e", "о": "o", "с": "c",
+    "м": "m", "р": "p", "у": "y", "х": "x",
 }
-GRAD_NAMES = {-50: "GradeLow", 0: "", 50: "GradeHigh"}
 
 
-def master_grid():
-    """All (wght, wdth, serf, grad) master locations to instantiate as UFOs."""
-    for wght in WGHT_MASTERS:
-        for wdth in WDTH_MASTERS:
-            for serf in SERF_MASTERS:
-                for grad in GRAD_MASTERS:
-                    yield wght, wdth, serf, grad
+def base_letter(ch: str) -> str:
+    """The plain Latin letter `ch` is a diacritic variant of, via Unicode
+    NFD decomposition (e.g. 'é'/'ē'/'ě' -> 'e', 'Ł' -> 'L' -- stroke-
+    through letters don't decompose this way and fall through to
+    themselves, same as any character with no accent to strip), or the
+    Latin letter a lowercase Cyrillic letter structurally resembles
+    (`_CYRILLIC_ANALOG` above, checked first since NFD doesn't relate
+    Cyrillic to Latin at all). Used to extend per-letter-class logic
+    (`serifs.py`'s guide selection, `quirks.py`'s round-counter
+    reshaping) from the original 62 ASCII letters to their accented
+    Latin-1/Latin Extended-A counterparts and select Cyrillic ones
+    without hardcoding a lookup table for all ~130 accented letters: a
+    'ē' should grow serif feet exactly where a plain 'e' does, and its
+    counter should get reshaped to match 'o's the same way 'e' does,
+    since it's the same base letterform with a mark added, not a
+    different design -- and a Cyrillic 'о' should get the same
+    treatment as Latin 'o' for the same reason: it's the same round
+    bowl shape, not a different design needing its own rule."""
+    if ch in _CYRILLIC_ANALOG:
+        return _CYRILLIC_ANALOG[ch]
+    decomposed = unicodedata.normalize("NFD", ch)
+    return decomposed[0] if decomposed else ch
 
 
-def master_name(wght, wdth, serf, grad):
-    w = WGHT_NAMES[wght]
-    d = {75: "Condensed", 100: "Normal"}[wdth]
-    s = "Serif" if serf else "Sans"
-    g = GRAD_NAMES[grad]
-    return f"{d}{w}{s}{g}"
+UPM = 1000
+
+# Vertical metrics are fixed across the whole wght range on purpose: a
+# heavy and a light line share the same cap-height/x-height/baseline, so
+# mixed-weight multi-line layouts (the whole point of this font) align
+# without any per-weight size compensation.
+#
+# These are Jost's own measured values (confirmed directly against the
+# vendored font's actual glyph coordinates, not assumed): H's cap is
+# exactly 700; o/r/m's x-height is 470 (u's own stem reaches only 460 --
+# a ~10-unit letter-to-letter variance Jost's own design already has,
+# not something to paper over with a falsely-precise shared constant);
+# b/d/l's ascender is 780; g's descender is -230 (q's own is -220 --
+# same kind of small per-letter variance, which is why serifs.py reads
+# each descender glyph's own lowest point directly rather than using
+# this constant to detect anything).
+CAP_HEIGHT = 700
+X_HEIGHT = 470
+ASCENDER = 780
+DESCENDER = -230
+
+WGHT_MIN, WGHT_MAX, WGHT_DEFAULT = 100, 900, 400
+WDTH_MIN, WDTH_MAX, WDTH_DEFAULT = 75, 100, 100
+SERF_MIN, SERF_MAX, SERF_DEFAULT = 0, 100, 0  # sans by default
+GRAD_MIN, GRAD_MAX, GRAD_DEFAULT = -50, 50, 0  # a modest, safe compensation swing, not an extreme one
+
+AXES = [
+    {"tag": "wght", "name": "Weight", "minimum": WGHT_MIN, "default": WGHT_DEFAULT, "maximum": WGHT_MAX},
+    {"tag": "wdth", "name": "Width", "minimum": WDTH_MIN, "default": WDTH_DEFAULT, "maximum": WDTH_MAX},
+    {"tag": "SERF", "name": "Serif", "minimum": SERF_MIN, "default": SERF_DEFAULT, "maximum": SERF_MAX},
+    {"tag": "GRAD", "name": "Grade", "minimum": GRAD_MIN, "default": GRAD_DEFAULT, "maximum": GRAD_MAX},
+]
+
+# One master at every grid corner plus the wght midpoint, so the default
+# location (400, 100, 0, 0) is itself a real source -- required for a
+# well-formed designspace -- and wght gets a bend partway through its
+# range rather than a single straight interpolation.
+WGHT_SAMPLES = (WGHT_MIN, WGHT_DEFAULT, WGHT_MAX)
+WDTH_SAMPLES = (WDTH_MIN, WDTH_MAX)
+SERF_SAMPLES = (SERF_MIN, SERF_MAX)
+GRAD_SAMPLES = (GRAD_MIN, GRAD_DEFAULT, GRAD_MAX)
+
+MASTER_GRID = [
+    (wght, wdth, serf, grad)
+    for wght in WGHT_SAMPLES
+    for wdth in WDTH_SAMPLES
+    for serf in SERF_SAMPLES
+    for grad in GRAD_SAMPLES
+]
+DEFAULT_LOCATION = (WGHT_DEFAULT, WDTH_DEFAULT, SERF_DEFAULT, GRAD_DEFAULT)
+
+# Human-facing names for each axis stop actually sampled as a master
+# (WGHT_SAMPLES/WDTH_SAMPLES/SERF_SAMPLES above) -- feeds both the STAT
+# table's axis-value labels (so a design app shows a real "Weight"/
+# "Width"/"Serif" style picker instead of a raw numeric slider) and the
+# fvar named instance generated at every master grid point below. A
+# variable font with no named instances still interpolates its full
+# range correctly, but most apps' style pickers list only the named
+# instances -- with none defined beyond the implicit default, that's
+# "Regular" and nothing else, regardless of how many masters the font
+# actually has (confirmed: a real early bug -- MASTER_GRID already had
+# 12 real masters spanning Thin-to-Black, Normal-to-Condensed,
+# Sans-to-Slab, but `designspace_build.py` never turned any of them
+# into an `InstanceDescriptor`, so only Regular ever showed up outside
+# a raw axis-slider view).
+WGHT_NAMES = {WGHT_MIN: "Thin", WGHT_DEFAULT: "Regular", WGHT_MAX: "Black"}
+WDTH_NAMES = {WDTH_MAX: "Normal", WDTH_MIN: "Condensed"}
+SERF_NAMES = {SERF_MIN: "Sans", SERF_MAX: "Slab"}
+# The default grade doesn't add a word to the instance name at all (not
+# even an elided one -- there's no "Grade0" to elide), only the
+# low/high extremes do.
+GRAD_NAMES = {GRAD_MIN: "GradeLow", GRAD_DEFAULT: "", GRAD_MAX: "GradeHigh"}
+
+
+def style_name(wght: int, wdth: int, serf: int, grad: int = GRAD_DEFAULT) -> str:
+    return f"Wght{wght}_Wdth{wdth}_Serf{serf}_Grad{grad}"
+
+
+def instance_style_name(wght: int, wdth: int, serf: int, grad: int = GRAD_DEFAULT) -> str:
+    """The public subfamily name for the fvar named instance at this
+    master grid point -- e.g. (900, 75, 100, 50) -> 'Condensed Slab
+    Black GradeHigh', (400, 100, 0, 0) -> 'Regular'. Width, Serif and
+    Grade only appear when they're off their default (Normal/Sans/
+    Grade0), same elision rule the STAT table's own axis labels use, so
+    the default corner of the grid is still plain 'Regular' rather than
+    'Normal Sans Regular Grade0'."""
+    parts = []
+    if wdth != WDTH_DEFAULT:
+        parts.append(WDTH_NAMES[wdth])
+    if serf != SERF_DEFAULT:
+        parts.append(SERF_NAMES[serf])
+    parts.append(WGHT_NAMES[wght])
+    if grad != GRAD_DEFAULT:
+        parts.append(GRAD_NAMES[grad])
+    return " ".join(parts)

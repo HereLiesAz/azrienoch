@@ -1,12 +1,14 @@
-Copyright 2011 The Roboto Flex Project Authors (https://github.com/googlefonts/roboto-flex)
+Copyright 2020 The Jost Project Authors (https://github.com/indestructible-type)
+Copyright 2020 The Arimo Project Authors (https://github.com/googlefonts/arimo)
 Copyright 2026 The Azrienoch Project Authors
 
-Azrienoch is a Modified Version of Roboto Flex: it reuses Roboto Flex's
-letterform outlines, spacing and kerning, extracted at chosen points in
-its variable-font design space, and adds a new variable serif axis
-(SERF) and a new weight/height coupling on top. See README.md for
-details and third_party/roboto-flex/OFL.txt for Roboto Flex's own
-license text and authors.
+Azrienoch is a Modified Version of Jost: it reuses Jost's own outlines,
+sampled across its own weight axis, and adds a new variable serif axis
+(SERF) that grows a slab foot from nothing, a new grade axis (GRAD),
+and Helvetica-inspired terminal/counter adjustments. 'c'/'e'/'s' are
+additionally derived from/sourced from Arimo. See README.md for
+details, third_party/jost/OFL.txt for Jost's own license text and
+authors, and third_party/arimo/OFL.txt for Arimo's.
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
