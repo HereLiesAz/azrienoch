@@ -1,10 +1,12 @@
-"""Write Azrienoch's .designspace and compile the variable font with fontmake."""
+"""Writes sources/Azrienoch.designspace and compiles the variable TTF
+via fontmake. Run as `python3 -m tools.designspace_build` from the
+repo root."""
 
 from __future__ import annotations
 
-import pathlib
 import subprocess
 import sys
+from pathlib import Path
 
 from fontTools.designspaceLib import (
     AxisDescriptor,
@@ -14,95 +16,109 @@ from fontTools.designspaceLib import (
     SourceDescriptor,
 )
 
-from tools import params as P
-from tools import ufo_build as U
+from . import params
+from .ufo_build import SOURCES_DIR, build_all
 
-HERE = pathlib.Path(__file__).resolve().parent.parent
-DESIGNSPACE_PATH = HERE / "sources" / "Azrienoch.designspace"
-OUTPUT_TTF = HERE / "fonts" / "variable" / "Azrienoch-VF.ttf"
-OUTPUT_WOFF2 = HERE / "fonts" / "variable" / "Azrienoch-VF.woff2"
+ROOT = Path(__file__).resolve().parent.parent
+DESIGNSPACE_PATH = SOURCES_DIR / "Azrienoch.designspace"
+FONTS_DIR = ROOT / "fonts" / "variable"
+OUTPUT_TTF = FONTS_DIR / "Azrienoch-VF.ttf"
+OUTPUT_WOFF2 = FONTS_DIR / "Azrienoch-VF.woff2"
 
-# STAT axis-value stops for each axis, keyed by the same values used in the
-# master grid -- feeds both the STAT table (so design apps show a proper
-# "Weight"/"Width"/"Serif" style picker instead of raw axis sliders) and
-# the family-name half of each named instance below.
-WGHT_LABELS = {180: "Thin", 250: "ExtraLight", 400: "Regular", 700: "Bold", 900: "Black"}
-WDTH_LABELS = {75: "Condensed", 100: "Normal"}
-SERF_LABELS = {0: "Sans", 100: "Serif"}
-GRAD_LABELS = {-50: "Low", 0: "Regular", 50: "High"}
+# axis tag -> {axis value: name} for the STAT table's own axis-value
+# labels (params.py's WGHT_NAMES/WDTH_NAMES/SERF_NAMES, keyed the same
+# way as params.AXES's own tags).
+_AXIS_VALUE_NAMES = {
+    "wght": params.WGHT_NAMES, "wdth": params.WDTH_NAMES, "SERF": params.SERF_NAMES, "GRAD": params.GRAD_NAMES,
+}
 
 
-def _add_axis_labels(axis, value_labels: dict, default):
-    for value, name in value_labels.items():
+def _add_axis_labels(axis: AxisDescriptor, value_names: dict, default, elide_default: bool = True) -> None:
+    for value, name in value_names.items():
+        if not name:
+            # GRAD's own default (see params.GRAD_NAMES): unlike
+            # wdth/SERF's own defaults ("Normal"/"Sans", real names that
+            # just happen to be elidable), GRAD=0 has no name at all to
+            # begin with -- an empty-string STAT AxisValue would be a
+            # malformed label, not a correctly-elided one.
+            continue
         axis.axisLabels.append(
-            AxisLabelDescriptor(name=name, userValue=value, elidable=(value == default))
+            AxisLabelDescriptor(name=name, userValue=value, elidable=(elide_default and value == default))
         )
 
 
-def write_designspace(ufo_paths: dict) -> pathlib.Path:
+def write_designspace(ufo_paths: list[Path]) -> Path:
     doc = DesignSpaceDocument()
 
-    for tag, minimum, default, maximum, label, value_labels in (
-        ("wght", *P.WGHT_AXIS[1:], "Weight", WGHT_LABELS),
-        ("wdth", *P.WDTH_AXIS[1:], "Width", WDTH_LABELS),
-        ("SERF", *P.SERF_AXIS[1:], "Serif", SERF_LABELS),
-        ("GRAD", *P.GRAD_AXIS[1:], "Grade", GRAD_LABELS),
-    ):
-        axis = AxisDescriptor()
-        axis.tag = tag
-        axis.name = tag
-        axis.minimum = minimum
-        axis.default = default
-        axis.maximum = maximum
-        axis.labelNames = {"en": label}
-        _add_axis_labels(axis, value_labels, default)
-        doc.addAxis(axis)
+    for axis in params.AXES:
+        a = AxisDescriptor()
+        a.tag = axis["tag"]
+        a.name = axis["tag"]
+        a.labelNames = {"en": axis["name"]}
+        a.minimum = axis["minimum"]
+        a.default = axis["default"]
+        a.maximum = axis["maximum"]
+        # wght's own default ("Regular") is never elided: fontTools
+        # derives each named instance's actual subfamily name from
+        # these STAT axis labels' elision rules, not from the
+        # InstanceDescriptor.styleName set below -- eliding wght's
+        # default the normal way (matching wdth/SERF, where it's
+        # correct: "Normal"/"Sans" should drop out of "Thin Condensed",
+        # not linger as "Thin Condensed Normal Sans") made "Regular"
+        # vanish from EVERY instance that shares its weight, not just
+        # the one truly-default instance -- "Condensed"/"Slab" instead
+        # of the intended "Condensed Regular"/"Slab Regular" (confirmed
+        # by dumping fvar's own instances after the first attempt).
+        _add_axis_labels(
+            a, _AXIS_VALUE_NAMES[axis["tag"]], axis["default"], elide_default=(axis["tag"] != "wght")
+        )
+        doc.addAxis(a)
 
-    for (wght, wdth, serf, grad), path in ufo_paths.items():
-        src = SourceDescriptor()
-        src.path = str(path)
-        src.name = f"source.{P.master_name(wght, wdth, serf, grad)}"
-        src.familyName = "Azrienoch"
-        src.styleName = P.master_name(wght, wdth, serf, grad)
-        src.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
-        if (wght, wdth, serf, grad) == (400, 100, 0, 0):
-            src.copyLib = True
-            src.copyInfo = True
-            src.copyGroups = True
-            src.copyFeatures = True
-        doc.addSource(src)
+    for path, (wght, wdth, serf, grad) in zip(ufo_paths, params.MASTER_GRID):
+        s = SourceDescriptor()
+        s.path = str(path)
+        s.name = params.style_name(wght, wdth, serf, grad)
+        s.styleName = params.style_name(wght, wdth, serf, grad)
+        s.familyName = "Azrienoch"
+        s.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
+        if (wght, wdth, serf, grad) == params.DEFAULT_LOCATION:
+            s.copyLib = True
+            s.copyInfo = True
+            s.copyGroups = True
+            s.copyFeatures = True
+        doc.addSource(s)
 
-        # Every master grid point needs a source (gvar interpolates from
-        # all of them), but not every one is meant to be a user-facing
-        # named style -- wght=250 exists purely to shorten the Thin-to-
-        # Regular interpolation gap (see params.py::WGHT_INSTANCE_MASTERS)
-        # and was never designed as its own weight, so it doesn't get an
-        # fvar named instance the way Thin/Regular/Bold/Black do.
-        if wght in P.WGHT_INSTANCE_MASTERS:
-            inst = InstanceDescriptor()
-            inst.familyName = "Azrienoch"
-            inst.styleName = P.master_name(wght, wdth, serf, grad)
-            inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
-            doc.addInstance(inst)
+        # Every master grid point is a real, deliberately-designed style,
+        # so every one of them gets an fvar named instance, not just the
+        # default location. Without this, the font's full Thin-to-Black,
+        # Normal-to-Condensed, Sans-to-Slab range still interpolates
+        # correctly, but no style picker outside a raw axis-slider view
+        # can reach any of it except the implicit default ("Regular") --
+        # a real bug caught early on: many real masters, one visible style.
+        inst = InstanceDescriptor()
+        inst.familyName = "Azrienoch"
+        inst.styleName = params.instance_style_name(wght, wdth, serf, grad)
+        inst.location = {"wght": wght, "wdth": wdth, "SERF": serf, "GRAD": grad}
+        doc.addInstance(inst)
 
-    doc.write(str(DESIGNSPACE_PATH))
+    doc.write(DESIGNSPACE_PATH)
     return DESIGNSPACE_PATH
 
 
-def compile_variable_font():
-    OUTPUT_TTF.parent.mkdir(parents=True, exist_ok=True)
-    cmd = [
-        sys.executable, "-m", "fontmake",
-        "-m", str(DESIGNSPACE_PATH),
-        "-o", "variable",
-        "--output-path", str(OUTPUT_TTF),
-        "--verbose", "WARNING",
-    ]
-    subprocess.run(cmd, check=True, cwd=str(HERE))
-    print("compiled", OUTPUT_TTF)
+def compile_variable_font(designspace_path: Path) -> None:
+    FONTS_DIR.mkdir(parents=True, exist_ok=True)
+    subprocess.run(
+        [
+            sys.executable, "-m", "fontmake",
+            "-m", str(designspace_path),
+            "-o", "variable",
+            "--output-path", str(OUTPUT_TTF),
+        ],
+        check=True,
+    )
 
 
-def compile_woff2():
+def compile_woff2() -> None:
     """Wrap the already-compiled variable TTF's own outlines and tables
     in a WOFF2 container -- brotli-compressed, the format browsers
     expect for @font-face -- rather than building a second font from
@@ -117,17 +133,21 @@ def compile_woff2():
     print("compiled", OUTPUT_WOFF2)
 
 
-if __name__ == "__main__":
-    paths = U.build_all()
-    ds_path = write_designspace(paths)
-    print("wrote", ds_path)
-    compile_variable_font()
+def main() -> None:
+    ufo_paths = build_all()
+    designspace_path = write_designspace(ufo_paths)
+    compile_variable_font(designspace_path)
     compile_woff2()
+    print(f"Built {OUTPUT_TTF}")
 
-    from tools import validate_build
+    from . import validate_build
 
     validate_build.main()
 
-    from tools import update_specimen
+    from . import update_specimen
 
     update_specimen.update_specimen()
+
+
+if __name__ == "__main__":
+    main()

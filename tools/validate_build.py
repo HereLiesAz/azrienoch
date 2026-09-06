@@ -34,16 +34,15 @@ def check_fvar(errors):
     font = TTFont(str(COMPILED_TTF))
     axes = {a.axisTag: (a.minValue, a.defaultValue, a.maxValue) for a in font["fvar"].axes}
     expected = {
-        "wght": tuple(P.WGHT_AXIS[1:]),
-        "wdth": tuple(P.WDTH_AXIS[1:]),
-        "SERF": tuple(P.SERF_AXIS[1:]),
-        "GRAD": tuple(P.GRAD_AXIS[1:]),
+        axis["tag"]: (axis["minimum"], axis["default"], axis["maximum"]) for axis in P.AXES
     }
     for tag, exp in expected.items():
         got = axes.get(tag)
         if got != exp:
             _fail(f"fvar axis {tag}: expected {exp}, got {got}", errors)
-    expected_instances = sum(1 for wght, *_ in P.master_grid() if wght in P.WGHT_INSTANCE_MASTERS)
+    # Every master grid point gets its own fvar named instance (see
+    # designspace_build.py's own comment on why).
+    expected_instances = len(P.MASTER_GRID)
     got_instances = len(font["fvar"].instances)
     if got_instances != expected_instances:
         _fail(
@@ -86,8 +85,8 @@ def check_topology_compatible(ufos, errors):
 
 def load_ufos():
     ufos = {}
-    for wght, wdth, serf, grad in P.master_grid():
-        name = P.master_name(wght, wdth, serf, grad)
+    for wght, wdth, serf, grad in P.MASTER_GRID:
+        name = P.style_name(wght, wdth, serf, grad)
         path = SOURCES_DIR / f"Azrienoch-{name}.ufo"
         ufos[name] = ufoLib2.Font.open(path)
     return ufos

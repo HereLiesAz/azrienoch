@@ -18,9 +18,9 @@ This intentionally only ever touches ONE glyph, in ONE master, at a time --
 it is a hand-editing/demonstration tool for working out what a shape SHOULD
 be, not a replacement for the generative quirks.py pipeline. A rebuild
 (`python3 -m tools.designspace_build`) still regenerates every master from
-Roboto Flex + the quirks pipeline from scratch, which will overwrite any
-hand edit made here unless it's also encoded as a real rule in quirks.py
-(or the target glyph is excluded from whatever quirk would otherwise
+Jost + the quirks pipeline from scratch, which will overwrite any hand
+edit made here unless it's also encoded as a real rule in quirks.py (or
+the target glyph is excluded from whatever quirk would otherwise
 overwrite it). Treat this tool's output as a reference/spec, not a
 permanent edit, unless told otherwise.
 """
