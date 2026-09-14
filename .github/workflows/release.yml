@@ -1,65 +1,27 @@
-name: Publish release
-
-# Builds the variable font from source and publishes it as a GitHub
-# Release every time the default branch changes -- so there's always a
-# downloadable, versioned Azrienoch-VF.ttf (plus a WOFF2 of the same
-# font, for @font-face use) that doesn't require cloning the repo or
-# running the Python build pipeline. `tools/validate_build` (run as
-# part of `designspace_build.py`) gates this: a build that fails
-# validation fails the workflow before anything is published.
-#
-# The release is tagged with a real semantic version, computed by
-# `tools/next_version.py` -- see that module's docstring for exactly how
-# (automatic MAJOR/MINOR/PATCH bump from conventional-commit messages
-# since the last release, with a manual override via the VERSION file
-# that always wins). The same version is embedded in the built font
-# itself (AZRIENOCH_VERSION, read by ufo_build.py), so a release's tag
-# and its binary's own version always agree.
+# centralized-by: HereLiesAz/workflows
+# central-source-path: .github/workflows/release.yml
+# central-source-sha256: 3ee242e7f4214889ba314e70ef51aec8553ec25bfe5965b9bfb7a89ea08e4a9d
+# This file intentionally contains no repository secrets.
+name: Publish release [central proxy]
 on:
   push:
     branches:
       - master
   workflow_dispatch: {}
-
 permissions:
-  contents: write
-
+  contents: read
+  id-token: write
 jobs:
-  release:
+  central-dispatch:
     runs-on: ubuntu-latest
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # next_version.py needs full tag/commit history
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-          cache: pip
-
-      - name: Install build dependencies
-        run: pip install -r requirements.txt
-
-      - name: Determine release version
-        id: release_info
-        run: |
-          version="$(python3 tools/next_version.py)"
-          echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "sha=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
-
-      - name: Build and validate the font
+      - name: Dispatch to HereLiesAz/workflows
         env:
-          AZRIENOCH_VERSION: ${{ steps.release_info.outputs.version }}
-        run: python3 -m tools.designspace_build
-
-      - name: Publish release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v${{ steps.release_info.outputs.version }}
-          name: Azrienoch v${{ steps.release_info.outputs.version }} (${{ steps.release_info.outputs.sha }})
-          generate_release_notes: true
-          files: |
-            fonts/variable/Azrienoch-VF.ttf
-            fonts/variable/Azrienoch-VF.woff2
+          WORKFLOWS_GATEWAY_URL: ${{ vars.WORKFLOWS_GATEWAY_URL }}
+          EVENT_JSON: ${{ toJSON(github.event) }}
+          INPUTS_JSON: ${{ toJSON(inputs) }}
+          VARS_JSON: ${{ toJSON(vars) }}
+          SOURCE_WORKFLOW_PATH: .github/workflows/release.yml
+          SOURCE_SHA256: 3ee242e7f4214889ba314e70ef51aec8553ec25bfe5965b9bfb7a89ea08e4a9d
+        shell: bash
+        run: "set -euo pipefail\n[[ -n \"${WORKFLOWS_GATEWAY_URL:-}\" ]] || { echo \"Repository variable WORKFLOWS_GATEWAY_URL is not configured.\" >&2; exit 1; }\noidc_response=\"$(curl --fail-with-body --silent --show-error -H \"Authorization: bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}\" \"${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=hereliesaz-workflows\")\"\noidc_token=\"$(jq -r '.value // empty' <<<\"$oidc_response\")\"\n[[ -n \"$oidc_token\" ]] || { echo \"GitHub did not issue an OIDC token.\" >&2; exit 1; }\necho \"::add-mask::$oidc_token\"\npayload=\"$(jq -n   --arg repository \"$GITHUB_REPOSITORY\" --arg repository_id \"$GITHUB_REPOSITORY_ID\"   --arg repository_owner \"$GITHUB_REPOSITORY_OWNER\" --arg repository_owner_id \"$GITHUB_REPOSITORY_OWNER_ID\"   --arg sha \"$GITHUB_SHA\" --arg ref \"$GITHUB_REF\" --arg ref_name \"$GITHUB_REF_NAME\" --arg ref_type \"$GITHUB_REF_TYPE\"   --arg head_ref \"$GITHUB_HEAD_REF\" --arg base_ref \"$GITHUB_BASE_REF\" --arg actor \"$GITHUB_ACTOR\" --arg actor_id \"$GITHUB_ACTOR_ID\"   --arg event_name \"$GITHUB_EVENT_NAME\" --arg run_id \"$GITHUB_RUN_ID\" --arg run_number \"$GITHUB_RUN_NUMBER\" --arg run_attempt \"$GITHUB_RUN_ATTEMPT\"   --arg workflow_ref \"$GITHUB_WORKFLOW_REF\" --arg workflow_name \"$GITHUB_WORKFLOW\" --arg source_workflow_path \"$SOURCE_WORKFLOW_PATH\"   --arg source_sha256 \"$SOURCE_SHA256\" --argjson event \"$EVENT_JSON\" --argjson inputs \"$INPUTS_JSON\" --argjson vars \"$VARS_JSON\"   '{repository:$repository,repository_id:$repository_id,repository_owner:$repository_owner,repository_owner_id:$repository_owner_id,sha:$sha,check_sha:($event.pull_request.head.sha // $sha),ref:$ref,ref_name:$ref_name,ref_type:$ref_type,head_ref:$head_ref,base_ref:$base_ref,actor:$actor,actor_id:$actor_id,event_name:$event_name,event:$event,inputs:$inputs,vars:$vars,run_id:$run_id,run_number:$run_number,run_attempt:$run_attempt,workflow_ref:$workflow_ref,workflow_name:$workflow_name,source_workflow_path:$source_workflow_path,source_sha256:$source_sha256}')\"\ncurl --fail-with-body --silent --show-error -X POST \"${WORKFLOWS_GATEWAY_URL%/}/dispatch\" -H \"Authorization: Bearer ${oidc_token}\" -H \"Content-Type: application/json\" --data-binary \"$payload\""
