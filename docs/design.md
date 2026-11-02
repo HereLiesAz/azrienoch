@@ -236,9 +236,14 @@ reference.
   silhouette points stay put (so advance width, sidebearings and
   kerning are unchanged), the glyph's first outer stroke sets the
   target thickness, and every inner point is recomputed so every other
-  stroke matches it exactly. Point count and order are untouched. At
-  Black, `M`'s middle vertex now reaches the baseline -- the direct
-  consequence of its diagonals matching its stems.
+  stroke matches it exactly, measured perpendicular to the stroke's
+  own parallel sides. Point count and order are untouched. `M` also
+  gets the overshoot every other pointed letter here has: Jost's `M`
+  is the one whose middle vertex stops above the baseline while
+  `V`/`W`/`v`/`w`'s vertices hang below it, so per the project owner's
+  direction its middle vertex now drops to the same master's own `V`
+  bottom-vertex depth, with each diagonal re-solved between its apex
+  and that vertex.
 
 - **`s` is sourced from Arimo, not Jost**: it's meant to read as
   Helvetica-derived, and has no ring or counter to derive from `o` the

@@ -25,6 +25,15 @@ glyph:
   on the other), so each is solved as a parallel strip of width `T`
   that has the apex on one boundary and the bottom vertex on the other.
 
+'M' additionally gets the overshoot every other pointed letter here
+has (per the project owner's direction): Jost's 'M' is the one letter
+whose pointed middle vertex stops short -- above the baseline -- while
+'V'/'W'/'v'/'w''s vertices all hang below it. Its middle vertex is
+moved down to the same master's own 'V' bottom-vertex depth, and each
+diagonal is re-solved as a strip of width `T` with its apex on one
+boundary and that vertex on the other (the same construction as
+'W''s middle strokes); the notch between the diagonals follows.
+
 Point count and order are untouched -- only coordinates move -- so
 master topology (and `serifs.py`'s reference-instance foot detection)
 is preserved.
@@ -144,9 +153,10 @@ def _matches(kind, pts) -> bool:
     return False
 
 
-def _solve(kind, P):
+def _solve(kind, P, overshoot=None):
     """P: role -> (x, y) of Jost's original points. Returns role ->
-    new (x, y) for every inner point."""
+    new (x, y) for every inner point (and, for 'M' given `overshoot`,
+    its middle vertex and notch)."""
     if kind in ("V", "v"):
         T = _perp_dist(_mid(P["iTL"], P["iv"]), P["oTL"], _sub(P["B"], P["oTL"]))
         left = _offset(P["oTL"], _sub(P["B"], P["oTL"]), T, P["iTL"])
@@ -173,14 +183,26 @@ def _solve(kind, P):
         T = _perp_dist(_mid(P["ibL"], P["iv1"]), P["obL"], _sub(P["aL"], P["obL"]))
         stem_l = _offset(P["obL"], _sub(P["aL"], P["obL"]), T, P["ibL"])
         stem_r = _offset(P["obR"], _sub(P["aR"], P["obR"]), T, P["ibR"])
-        diag_l = _offset(P["aL"], _sub(P["notch"], P["aL"]), T, P["vb"])
-        diag_r = _offset(P["aR"], _sub(P["notch"], P["aR"]), T, P["vb"])
+        if overshoot is None:
+            diag_l = _offset(P["aL"], _sub(P["notch"], P["aL"]), T, P["vb"])
+            diag_r = _offset(P["aR"], _sub(P["notch"], P["aR"]), T, P["vb"])
+            return {
+                "ibL": _meet(stem_l, _horizontal(P["obL"][1])),
+                "ibR": _meet(stem_r, _horizontal(P["obR"][1])),
+                "iv1": _meet(stem_l, diag_l),
+                "iv2": _meet(stem_r, diag_r),
+                "vb": _meet(diag_l, diag_r),
+            }
+        vb = (P["vb"][0], overshoot)
+        up_l, low_l = _strip(P["aL"], vb, T, _sub(P["notch"], P["aL"]))
+        up_r, low_r = _strip(P["aR"], vb, T, _sub(P["notch"], P["aR"]))
         return {
             "ibL": _meet(stem_l, _horizontal(P["obL"][1])),
             "ibR": _meet(stem_r, _horizontal(P["obR"][1])),
-            "iv1": _meet(stem_l, diag_l),
-            "iv2": _meet(stem_r, diag_r),
-            "vb": _meet(diag_l, diag_r),
+            "iv1": _meet(stem_l, low_l),
+            "iv2": _meet(stem_r, low_r),
+            "vb": vb,
+            "notch": _meet(up_l, up_r),
         }
     raise ValueError(kind)
 
@@ -189,10 +211,17 @@ def _mid(a, b):
     return ((a[0] + b[0]) / 2.0, (a[1] + b[1]) / 2.0)
 
 
-def apply(glyph) -> bool:
+def vertex_overshoot(v_glyph) -> float:
+    """Depth of 'V''s own pointed bottom vertex at this master -- the
+    overshoot 'M''s middle vertex is given (see module docstring)."""
+    return min(p.y for p in v_glyph.contours[0].points)
+
+
+def apply(glyph, overshoot: float | None = None) -> bool:
     """Equalizes `glyph`'s strokes in place if it's one of `TARGETS`
-    and its contour matches the expected structure. Returns whether it
-    was changed."""
+    and its contour matches the expected structure. `overshoot`
+    (`vertex_overshoot`) is used by 'M'-kind glyphs only. Returns
+    whether it was changed."""
     target = TARGETS.get(glyph.name)
     if target is None or len(glyph.contours) <= target[1]:
         return False
@@ -202,7 +231,7 @@ def apply(glyph) -> bool:
         return False
     roles = _ROLES[kind]
     original = {role: (pts[i].x, pts[i].y) for role, i in roles.items()}
-    for role, (x, y) in _solve(kind, original).items():
+    for role, (x, y) in _solve(kind, original, overshoot if kind == "M" else None).items():
         pts[roles[role]].x = x
         pts[roles[role]].y = y
     return True

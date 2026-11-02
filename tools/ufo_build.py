@@ -172,9 +172,10 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
+    vertex_overshoot = stroke_balance.vertex_overshoot(font["V"])
     for ch in CHARS:
         if ch not in _RING_DERIVED_CHARS:
-            stroke_balance.apply(font[_glyph_name(ch)])
+            stroke_balance.apply(font[_glyph_name(ch)], vertex_overshoot)
 
     e_levels = ring_derived.e_levels(wght, wdth, grad)
     font["c"] = ring_derived.build_c_from_o(font["o"], e_levels)

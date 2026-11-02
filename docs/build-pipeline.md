@@ -55,7 +55,8 @@ In roughly build order:
   axis location; 'c's terminals share them.
 - **`stroke_balance.py`** -- one perpendicular stroke thickness for
   V/W/M/v/w (and Ŵ/ŵ/Cyrillic М): outer silhouette kept, inner points
-  recomputed.
+  recomputed; 'M''s middle vertex overshoots the baseline to 'V''s own
+  vertex depth.
 - **`single_story_a.py`** -- builds 'a' from 'd's own outline (single-
   story, not the double-story convention most grotesques inherit from
   print).
