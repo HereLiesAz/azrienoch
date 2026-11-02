@@ -209,11 +209,11 @@ reference.
   and bottom edges, and the vertical midpoint of its lower-terminal
   cut. `e` is `o`'s ring with an upper bowl closed at the bar top (a
   separately-wound hole), a crossbar that runs straight out to the
-  outer edge on the right -- the outer ring stops curving exactly at
-  the bar bottom -- and an aperture from there down to a horizontal
+  outer edge on the right, and an aperture from there down to a horizontal
   lower terminal. Per the project owner's direction, `c` shares those
-  levels: its upper terminal is level with `e`'s bar bottom (where
-  `e`'s bowl stops curving), its lower terminal level with `e`'s own.
+  levels: its upper terminal is level with the top of `e`'s crossbar
+  (where `e`'s bowl stops curving), its lower terminal level with
+  `e`'s own.
   Every terminal and bar edge is exactly horizontal by construction,
   so neither letter goes through `quirks.py::apply_terminal_cuts`
   anymore. Each arc is emitted as a fixed number of tangent-matched
@@ -225,8 +225,7 @@ reference.
   spike at Thin Condensed. The rebuilt pair has no self-intersection at
   any of the 36 masters (checked by flattening every contour).
   Consequence of taking Jost's own `e` levels: at Black, Jost's bar sits
-  low and `o`'s counter is small, so the aperture shared by `c` and `e`
-  narrows to a slit.
+  low and `o`'s counter is small, so `e`'s aperture narrows to a slit.
 
 - **V/W/M/v/w have one uniform stroke thickness**
   (`tools/stroke_balance.py`). Jost draws them Futura-style with

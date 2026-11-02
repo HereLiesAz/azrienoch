@@ -17,15 +17,14 @@ weight/width behaviour rather than a guessed ratio:
 - an upper bowl: 'o's inner ring above `bar_top`, closed by a straight
   line at `bar_top` -- a separately-wound hole;
 - a crossbar from `bar_top` down to `bar_bottom`, running straight out
-  to the ring's own outer edge on the right. The outer ring stops
-  curving exactly at `bar_bottom` on the right side;
+  to the ring's own outer edge on the right;
 - an aperture on the lower right, between `bar_bottom` and a
   horizontal lower terminal at `terminal`.
 
 'c' shares those levels by construction (per the project owner's
-direction): its upper terminal sits level with 'e's `bar_bottom` (where
-'e's own bowl stops curving), its lower terminal level with 'e's own
-lower terminal. Both of 'c's terminals, and both of 'e's horizontal
+direction): its upper terminal sits level with 'e's `bar_top` (where
+'e's bowl stops curving into the crossbar), its lower terminal level
+with 'e's own lower terminal. Both of 'c's terminals, and both of 'e's horizontal
 edges at the aperture, are exactly horizontal by construction -- no
 post-hoc `quirks.py` reorientation. (The previous approach cut the
 ring at fixed ANGLES, then rotated the cuts flat via hardcoded point
@@ -317,12 +316,12 @@ def _clamp_levels(levels, outer: _Ring, inner: _Ring):
 # ---------------------------------------------------------------------------
 
 def build_c_from_o(o_glyph, levels: dict[str, float]):
-    """'c': 'o's ring opened on the right, from `levels["bar_bottom"]`
+    """'c': 'o's ring opened on the right, from `levels["bar_top"]`
     (upper terminal) down to `levels["terminal"]` (lower terminal) --
     both exactly horizontal."""
     outer_c, inner_c = _outer_inner(o_glyph)
     outer, inner = _Ring(outer_c), _Ring(inner_c)
-    _, y_top, y_bot = _clamp_levels(levels, outer, inner)
+    y_top, _, y_bot = _clamp_levels(levels, outer, inner)
 
     o_top = outer.angle_at_y(y_top, "right", lower=y_top < outer.cy)
     o_bot = outer.angle_at_y(y_bot, "right", lower=True) + 2 * math.pi
@@ -340,8 +339,7 @@ def build_c_from_o(o_glyph, levels: dict[str, float]):
 
 def build_e_from_o(o_glyph, levels: dict[str, float]):
     """'e': 'o's ring, upper bowl closed at `bar_top`, crossbar running
-    out to the outer edge on the right down to `bar_bottom` (where the
-    outer ring stops curving), aperture from there down to a horizontal
+    out to the outer edge on the right down to `bar_bottom`, aperture from there down to a horizontal
     lower terminal at `terminal`."""
     outer_c, inner_c = _outer_inner(o_glyph)
     outer, inner = _Ring(outer_c), _Ring(inner_c)
