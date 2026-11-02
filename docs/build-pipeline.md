@@ -97,12 +97,6 @@ In roughly build order:
 - **`export_ufo.py`** -- builds and saves a single UFO master on
   demand, for opening directly in an external point editor, without
   regenerating the whole grid.
-- **`point_editor_server.py`** + **`point_editor.html`** -- a local,
-  drag-the-points glyph editor that reads and writes UFO master sources
-  directly. A hand-editing/demonstration tool for working out what a
-  shape should be, not a replacement for the generative `quirks.py`
-  pipeline -- a rebuild overwrites any hand edit not also encoded as a
-  real rule in `quirks.py`.
 - **`next_version.py`** -- computes the release version; see
   [`versioning.md`](./versioning.md).
 - **`update_specimen.py`** -- re-embeds the current compiled font into

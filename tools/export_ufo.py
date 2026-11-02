@@ -10,8 +10,7 @@ it's fast enough to run on demand.
     python3 -m tools.export_ufo --wght 700 --wdth 75 --serf 100 --grad 50
     python3 -m tools.export_ufo --out /tmp/Azrienoch-Regular.ufo
 
-Defaults to Regular/Normal/Sans/Grade0 -- the same location the in-browser
-point editor showed.
+Defaults to Regular/Normal/Sans/Grade0.
 """
 
 from __future__ import annotations
