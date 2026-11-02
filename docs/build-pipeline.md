@@ -122,9 +122,12 @@ build or validation never gets released). It checks:
 
 ## Specimen
 
-`specimen/index.html` is a self-contained (font embedded) interactive
-specimen: live `wght`/`wdth`/`SERF`/`GRAD` sliders, all named-instance
-presets, an editable hero sample, and a glyph-set showcase. Open it
-directly in a browser -- no server needed. `.github/workflows/pages.yml`
+`specimen/index.html` is the "Azrienoch V2 Proof": a self-contained
+(font embedded) interactive page with named instances, a character set
+at three weights, an axis fader (`wght`/`wdth`/`SERF` sliders, presets,
+editable sample text), a kerning proof, a correction log, and a
+TTF/WOFF2 download control that always fetches the current
+`fonts/variable/` build from `master`. Open it directly in a browser --
+no server needed. `.github/workflows/pages.yml`
 publishes it to GitHub Pages on every change to `specimen/**` on
 `master`.

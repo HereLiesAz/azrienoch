@@ -36,8 +36,8 @@ This also validates the build and re-embeds the font into
 ## Specimen
 
 Open [`specimen/index.html`](specimen/index.html) directly in a
-browser for a live, interactive specimen (axis sliders, named-instance
-presets, glyph set) -- no server needed. Also published to GitHub
+browser for the live, interactive proof (axis sliders, named-instance
+presets, glyph set, kerning, TTF/WOFF2 download) -- no server needed. Also published to GitHub
 Pages on every change to `specimen/**` on `master` (see
 `.github/workflows/pages.yml`).
 
