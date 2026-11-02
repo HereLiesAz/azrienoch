@@ -93,7 +93,8 @@ def _rotate_scale_run(points, start_i: int, step: int, stop_at: tuple[int, ...],
         pt.y = ay + rx * sin_t + ry * cos_t
 
 
-def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
+def _reorient_cut(points, i1: int, i2: int, orientation: str,
+                  x_bounds: tuple[float, float] | None = None) -> None:
     """Reorients the straight cut between points[i1] and points[i2] to be
     perfectly horizontal or vertical, preserving the cut's length (the
     stroke thickness there) and its midpoint (the cut's location) --
@@ -131,6 +132,16 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
     else:
         raise ValueError(orientation)
 
+    if x_bounds is not None:
+        # Slide the whole cut (length kept) back inside `x_bounds`, so a
+        # rigid re-spread of a steeply diagonal cut can't overhang the
+        # glyph's own body.
+        lo, hi = x_bounds
+        xs = (new_outer[0], new_inner[0])
+        dx = lo - min(xs) if min(xs) < lo else (hi - max(xs) if max(xs) > hi else 0.0)
+        new_outer = (new_outer[0] + dx, new_outer[1])
+        new_inner = (new_inner[0] + dx, new_inner[1])
+
     outer.x, outer.y = new_outer
     inner.x, inner.y = new_inner
 
@@ -162,6 +173,15 @@ _HORIZONTAL_TERMINALS = {
     "S": [(0, 0, 1), (0, 26, 27)],
 }
 
+# glyph name -> (contour index, index of the on-curve point whose x is
+# the cut's left limit, index of the one whose x is its right limit):
+# horizontal cuts of that glyph are kept inside [left x, right x]. 'S':
+# 35 is the upper bowl's leftmost point, 10 the lower bowl's rightmost
+# (Jost's own contour order, identical at every master). Without it the
+# lower-left terminal overhangs the bowl (x = -12.8 at wght 900,
+# wdth 75) and the letter reads as tipping over.
+_TERMINAL_X_LIMITS = {"S": (0, 35, 10)}
+
 # glyph name -> (contour index, point index 1, point index 2), vertical cut
 _VERTICAL_TERMINALS = {
     "r": [(1, 0, 1)],
@@ -189,8 +209,11 @@ def apply_terminal_cuts(glyph) -> None:
     diagonal one. 'g' is left alone: Jost's own descender-loop terminal
     is already a horizontal cut (both endpoints already share a Y) --
     confirmed by inspection, not assumed."""
+    limits = _TERMINAL_X_LIMITS.get(glyph.name)
     for contour_idx, i1, i2 in _HORIZONTAL_TERMINALS.get(glyph.name, []):
-        _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "horizontal")
+        pts = glyph.contours[contour_idx].points
+        bounds = (pts[limits[1]].x, pts[limits[2]].x) if limits else None
+        _reorient_cut(pts, i1, i2, "horizontal", bounds)
     for contour_idx, i1, i2 in _VERTICAL_TERMINALS.get(glyph.name, []):
         _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "vertical")
 

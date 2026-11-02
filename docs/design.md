@@ -434,6 +434,8 @@ Jost's `S` cuts both terminals on the diagonal; `s` (Arimo) is cut
 horizontal. `quirks._HORIZONTAL_TERMINALS` now lists `S` (contour 0,
 points 0-1 lower-left, 26-27 upper-right) so both letters match.
 Verified: every one of the 36 masters has both cuts at identical Y.
-Known side effect: at heavy weight the lower-left cut's rigid re-spread
-reaches x = -12.8 (wght 900, wdth 75), i.e. a small negative left
-sidebearing.
+The rigid re-spread of a steeply diagonal cut overhung the bowl (x = -12.8
+at wght 900, wdth 75), so the letter read as tipping over.
+`quirks._TERMINAL_X_LIMITS` slides each cut inward, length kept, until it
+sits inside the upper bowl's leftmost / lower bowl's rightmost point.
+Verified: min x over all 36 masters is 34.7.
