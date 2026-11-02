@@ -144,16 +144,9 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
 
 # glyph name -> (contour index, point index 1, point index 2), horizontal cut
 _HORIZONTAL_TERMINALS = {
-    # 'c'/'e' are now built directly from 'o's own ring (see
-    # `ring_derived.py`), not Arimo -- their two terminal-cut point
-    # pairs (the straight lines closing the aperture, top and bottom)
-    # are `ring_derived.build_c_from_o`/`build_e_from_o`'s own return
-    # value, verified stable across the whole wght/wdth/SERF grid (that
-    # module pins the cut geometry to a single reference instance for
-    # exactly this reason) and hardcoded here the same way every other
-    # entry in this table is.
-    "c": [(0, 20, 21), (0, 45, 0)],
-    "e": [(0, 24, 25), (0, 36, 0)],
+    # 'c'/'e' are absent on purpose: `ring_derived.py` builds their
+    # terminals exactly horizontal by construction, and their rebuilt
+    # contours no longer carry the old hardcoded cut indices.
     # Arimo's own 's' terminals are close to horizontal but genuinely
     # diagonal by design (~12-14 units of rise across the cut, confirmed
     # by dumping Arimo's own raw points directly, not assumed from how
@@ -180,8 +173,9 @@ _VERTICAL_TERMINALS = {
 
 
 def apply_terminal_cuts(glyph) -> None:
-    """'c'/'e'/'s' (sourced from Arimo, see `arimo_source.py`) get a true
-    horizontal terminal cut -- Arimo's own terminals are close to
+    """'s' (sourced from Arimo, see `arimo_source.py`) gets a true
+    horizontal terminal cut ('c'/'e' are built horizontal by
+    `ring_derived.py` and aren't listed) -- Arimo's own terminals are close to
     horizontal but genuinely diagonal by design (a rise of 12-31 units
     across the cut, confirmed by dumping Arimo's own raw points
     directly, not assumed from how they looked at a glance). r/f get a

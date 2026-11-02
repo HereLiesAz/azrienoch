@@ -50,12 +50,17 @@ In roughly build order:
   extrapolated along Jost's own weight curve rather than Arimo's own.
 - **`ring_derived.py`** -- builds 'c'/'e' directly from that master's
   own 'o' (a cut-open ring plus a crossbar for 'e'), guaranteeing their
-  bowl/counter shape actually matches 'o's.
+  bowl/counter shape actually matches 'o's. Horizontal levels (bar
+  top/bottom, lower terminal) come from Jost's own 'e' at the same
+  axis location; 'c's terminals share them.
+- **`stroke_balance.py`** -- one perpendicular stroke thickness for
+  V/W/M/v/w (and Ŵ/ŵ/Cyrillic М): outer silhouette kept, inner points
+  recomputed.
 - **`single_story_a.py`** -- builds 'a' from 'd's own outline (single-
   story, not the double-story convention most grotesques inherit from
   print).
 - **`quirks.py`** -- terminal-cut reorientation (true horizontal/
-  vertical cuts on 'c'/'e'/'s'/'r'/'f'), canonical round-counter
+  vertical cuts on 's'/'r'/'f'), canonical round-counter
   reshaping (every round counter becomes an affine-scaled copy of
   'o's own), and a couple of micro-notch fixes to defects present in
   Jost's own raw outline.

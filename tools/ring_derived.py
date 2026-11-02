@@ -1,45 +1,50 @@
 """Builds 'c' and 'e' directly from 'o's own outer+inner ring outline,
-instead of a separate donor font (Arimo) -- so their bowl/counter
-proportions are *literally* 'o's, at every weight, width and serif
-setting, rather than an approximation of them.
+so their bowl/counter proportions are literally 'o's, at every weight,
+width and serif setting.
 
-A prior fix tried to reconcile 'c'/'e' (still Arimo-sourced) with 'o'
-by matching only their advance width to Jost's own ch:o ratio -- a
-metrics-only patch, not a shape fix -- and went through two rescale
-techniques (flat hscale, then a centroid-radial push), both reverted
-after each introduced a worse defect (a fattened terminal at Thin, then
-a pinched hourglass counter at Black -- see arimo_source.py's own
-history and README). This module fixes the actual root cause instead:
-'c'/'e' came from a different font with different proportions, so no
-amount of width-matching could make their *counter shape* agree with
-'o's. Deriving them from 'o's own outline -- the same move already
-made for 'a' (`single_story_a.py`, built from 'd's own outline) --
-makes the counters agree by construction, no matching required.
+Construction (per master)
+-------------------------
+Three horizontal levels, all read off Jost's own 'e' at the same
+(wght, wdth, grad) by `e_levels` -- so they track the donor's own
+weight/width behaviour rather than a guessed ratio:
 
-Jost's own 'o' is always two contours, each a closed 16-point loop: an
-on-curve point at each of 0/90/180/270 degrees from the ring's own
-center, joined to the next by three off-curve control points forming
-three chained true-quadratic Bezier arcs per quadrant (same topology
-guarantee `quirks.py`'s own docstring relies on -- confirmed stable
-across the whole wght/wdth/SERF grid, not assumed).
+- `bar_top` / `bar_bottom`: Jost's own 'e' crossbar edges.
+- `terminal`: the vertical midpoint of Jost's own (diagonal) 'e'
+  lower-terminal cut.
 
-'c' and 'e' are built by walking that loop and "cutting" it open at
-exact points along its own curve -- an aperture for both, plus a
-crossbar for 'e' -- using ordinary quadratic Bezier subdivision. Given
-a target angle (from the ring's own center), `_augment_ring` finds
-which of the twelve chained sub-Beziers it falls on (binary search on
-angle, safe because each is convex/monotonic) and subdivides exactly
-there via De Casteljau's algorithm, which re-expresses a curve as two
-shorter ones without changing its shape at all. Every point either
-glyph keeps from 'o's own outline is therefore pixel-identical to it;
-only the new cut points themselves, and the straight lines connecting
-them, are new geometry. 'a' from 'd' set the precedent that a glyph can
-be built by transplanting another's *finished* outline rather than
-approximating it; this is the same idea applied to a curve that needs
-reshaping partway through, not just one segment moved.
+'e' is 'o's ring with:
 
-'s' stays Arimo-sourced (`arimo_source.py`): an S-curve has no ring or
-counter to derive from 'o' at all.
+- an upper bowl: 'o's inner ring above `bar_top`, closed by a straight
+  line at `bar_top` -- a separately-wound hole;
+- a crossbar from `bar_top` down to `bar_bottom`, running straight out
+  to the ring's own outer edge on the right. The outer ring stops
+  curving exactly at `bar_bottom` on the right side;
+- an aperture on the lower right, between `bar_bottom` and a
+  horizontal lower terminal at `terminal`.
+
+'c' shares those levels by construction (per the project owner's
+direction): its upper terminal sits level with 'e's `bar_bottom` (where
+'e's own bowl stops curving), its lower terminal level with 'e's own
+lower terminal. Both of 'c's terminals, and both of 'e's horizontal
+edges at the aperture, are exactly horizontal by construction -- no
+post-hoc `quirks.py` reorientation. (The previous approach cut the
+ring at fixed ANGLES, then rotated the cuts flat via hardcoded point
+indices; 'e' rendered with no visible crossbar and a broken aperture
+at every weight.)
+
+Topology
+--------
+Every arc is emitted as a FIXED number of quadratic segments
+(`_ARC_SEGMENTS`), each one a tangent-matched quadratic between two
+points sampled on 'o's actual ring at evenly spaced angles from the
+ring's own center. Point count is therefore identical at every master
+regardless of where a cut lands on 'o's own Bezier chain -- the
+invariant fontmake needs to compile the variable font at all. With 'o's
+ring this close to an ellipse, a quadratic per <= ~30 degrees tracks it
+to well under a unit.
+
+'s' stays Arimo-sourced (`arimo_source.py`): an S-curve has no ring to
+derive from 'o' at all.
 """
 
 from __future__ import annotations
@@ -47,258 +52,176 @@ from __future__ import annotations
 import math
 
 import ufoLib2
+from fontTools.pens.recordingPen import RecordingPen
 
 from . import jost_source
 
+# Quadratic segments per arc, by role. Fixed -> identical topology at
+# every master. Long outer/inner sweeps (~300 degrees) get the most.
+_ARC_SEGMENTS = {
+    "outer_long": 12,
+    "inner_long": 10,
+    "hole": 8,
+}
 
-def _lerp(p0, p1, t):
-    return (p0[0] + (p1[0] - p0[0]) * t, p0[1] + (p1[1] - p0[1]) * t)
-
-
-def _quadratic_point(p0, c, p1, t):
-    return _lerp(_lerp(p0, c, t), _lerp(c, p1, t), t)
-
-
-def _split_quadratic(p0, c, p1, t):
-    """De Casteljau subdivision of quadratic Bezier (p0, c, p1) at `t`
-    into two quadratics tracing the exact same curve: (p0, l, m) then
-    (m, r, p1). No approximation."""
-    l = _lerp(p0, c, t)
-    r = _lerp(c, p1, t)
-    m = _lerp(l, r, t)
-    return (p0, l, m), (m, r, p1)
+_SAMPLES_PER_SEGMENT = 48  # dense sampling of 'o's own Bezier chain
 
 
-def _angle(pt, center):
-    return math.degrees(math.atan2(pt[1] - center[1], pt[0] - center[0]))
+# ---------------------------------------------------------------------------
+# Ring sampling
+# ---------------------------------------------------------------------------
 
-
-def _norm_angle(a):
-    """Normalizes to (-180, 180]."""
-    while a <= -180:
-        a += 360
-    while a > 180:
-        a -= 360
-    return a
-
-
-class _RunPoint:
-    """A point plus the TrueType segment-type semantics ufoLib2 expects
-    (`type=None` for an off-curve control point, else the kind of
-    segment arriving at this point)."""
-
-    __slots__ = ("x", "y", "type")
-
-    def __init__(self, x, y, type_):
-        self.x = x
-        self.y = y
-        self.type = type_
-
-
-def _ring_runs(points):
-    """Splits a 16-point ring contour (4 on-curve cardinal points, each
-    followed by 3 off-curve points) into its 4 quadrant runs, each
-    [on_idx, off1_idx, off2_idx, off3_idx, on_idx] (index into
-    `points`, next run's on0 == this run's on1). Assumes the known,
-    verified 16-point structure."""
-    on_idx = [i for i, p in enumerate(points) if p.type is not None]
-    assert len(on_idx) == 4, f"expected 4 on-curve points, found {len(on_idx)}"
-    n = len(points)
-    runs = []
-    for k in range(4):
-        start, end = on_idx[k], on_idx[(k + 1) % 4]
-        idxs = [start]
-        i = start
-        while i != end:
-            i = (i + 1) % n
-            idxs.append(i)
-        runs.append(idxs)
-    return runs
-
-
-def _run_endpoints(points, run):
-    on0, off1, off2, off3, on1 = (points[i] for i in run)
-    ctrls = [(off1.x, off1.y), (off2.x, off2.y), (off3.x, off3.y)]
-    anchors = [
-        (on0.x, on0.y),
-        _lerp(ctrls[0], ctrls[1], 0.5),
-        _lerp(ctrls[1], ctrls[2], 0.5),
-        (on1.x, on1.y),
-    ]
-    return anchors, ctrls
-
-
-def _find_cut_in_run(points, run, center, target_angle):
-    """Binary-searches this run's 3 chained sub-Beziers for
-    `target_angle` (degrees from `center`); returns (sub, t) if found,
-    else None. Safe because each sub-Bezier's angle from `center` is
-    monotonic (the ring is convex)."""
-    anchors, ctrls = _run_endpoints(points, run)
-    anchor_angles = [_angle(p, center) for p in anchors]
-    for sub in range(3):
-        lo, hi = anchor_angles[sub], anchor_angles[sub + 1]
-        span = _norm_angle(hi - lo)
-        rel = _norm_angle(target_angle - lo)
-        if span == 0:
-            continue
-        in_range = (0 <= rel <= span) if span > 0 else (span <= rel <= 0)
-        if not in_range:
-            continue
-        t_lo, t_hi = 0.0, 1.0
-        for _ in range(60):
-            t_mid = (t_lo + t_hi) / 2.0
-            p_mid = _quadratic_point(anchors[sub], ctrls[sub], anchors[sub + 1], t_mid)
-            a_mid = anchor_angles[sub] + _norm_angle(_angle(p_mid, center) - anchor_angles[sub])
-            if _norm_angle(a_mid - target_angle) * (1 if span > 0 else -1) < 0:
-                t_lo = t_mid
+def _quad_segments(contour):
+    """'o's TrueType-quadratic contour as a list of (p0, c, p1)
+    quadratics, expanding implied on-curve points between consecutive
+    off-curves."""
+    pts = [(p.x, p.y, p.type) for p in contour.points]
+    n = len(pts)
+    start = next(i for i, p in enumerate(pts) if p[2] is not None)
+    pts = pts[start:] + pts[:start]
+    segs = []
+    cur = (pts[0][0], pts[0][1])
+    offs = []
+    for x, y, t in pts[1:] + [pts[0]]:
+        if t is None:
+            if offs:
+                mid = ((offs[-1][0] + x) / 2.0, (offs[-1][1] + y) / 2.0)
+                segs.append((cur, offs[-1], mid))
+                cur = mid
+                offs = [(x, y)]
             else:
-                t_hi = t_mid
-        return sub, (t_lo + t_hi) / 2.0
-    return None
+                offs.append((x, y))
+        else:
+            if offs:
+                segs.append((cur, offs[-1], (x, y)))
+                offs = []
+            else:
+                segs.append((cur, ((cur[0] + x) / 2.0, (cur[1] + y) / 2.0), (x, y)))
+            cur = (x, y)
+    return segs
 
 
-def _sub_bezier_segment(p0, c, p1, ta, tb):
-    """The exact quadratic (new_p0, new_c, new_p1) tracing (p0, c, p1)
-    from t=ta to t=tb, via two De Casteljau splits."""
-    if ta <= 0.0 and tb >= 1.0:
-        return (p0, c, p1)
-    _, right = _split_quadratic(p0, c, p1, max(ta, 0.0))
-    if tb >= 1.0:
-        return right
-    tb2 = (tb - ta) / (1.0 - ta) if ta < 1.0 else 1.0
-    left2, _ = _split_quadratic(right[0], right[1], right[2], tb2)
-    return left2
+class _Ring:
+    """A convex closed ring ('o's outer or inner contour), queryable by
+    angle from its own bounding-box center."""
+
+    def __init__(self, contour):
+        samples = []
+        for p0, c, p1 in _quad_segments(contour):
+            for k in range(_SAMPLES_PER_SEGMENT):
+                t = k / _SAMPLES_PER_SEGMENT
+                a = (p0[0] + (c[0] - p0[0]) * t, p0[1] + (c[1] - p0[1]) * t)
+                b = (c[0] + (p1[0] - c[0]) * t, c[1] + (p1[1] - c[1]) * t)
+                samples.append((a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t))
+        xs = [p[0] for p in samples]
+        ys = [p[1] for p in samples]
+        self.cx = (min(xs) + max(xs)) / 2.0
+        self.cy = (min(ys) + max(ys)) / 2.0
+        self.top = max(ys)
+        self.bottom = min(ys)
+        tagged = sorted((math.atan2(y - self.cy, x - self.cx), (x, y)) for x, y in samples)
+        self._angles = [a for a, _ in tagged]
+        self._points = [p for _, p in tagged]
+
+    def at(self, theta: float):
+        """Point on the ring at angle `theta` (radians, any range),
+        linearly interpolated between the two nearest dense samples."""
+        theta = math.atan2(math.sin(theta), math.cos(theta))
+        angs, pts = self._angles, self._points
+        n = len(angs)
+        lo, hi = 0, n
+        while lo < hi:
+            mid = (lo + hi) // 2
+            if angs[mid] < theta:
+                lo = mid + 1
+            else:
+                hi = mid
+        i1 = lo % n
+        i0 = (lo - 1) % n
+        a0, a1 = angs[i0], angs[i1]
+        span = (a1 - a0) % (2 * math.pi) or 1e-12
+        f = ((theta - a0) % (2 * math.pi)) / span
+        p0, p1 = pts[i0], pts[i1]
+        return (p0[0] + (p1[0] - p0[0]) * f, p0[1] + (p1[1] - p0[1]) * f)
+
+    def tangent(self, theta: float, h: float = 1e-3):
+        a = self.at(theta - h)
+        b = self.at(theta + h)
+        return (b[0] - a[0], b[1] - a[1])
+
+    def angle_at_y(self, y: float, side: str, lower: bool):
+        """Angle of the ring point at height `y` on the given `side`
+        ("right" or "left"), in the given half ("lower" or upper).
+        Bisection: y is monotonic in angle on each quarter of a convex
+        ring."""
+        if side == "right":
+            lo, hi = (-math.pi / 2, 0.0) if lower else (0.0, math.pi / 2)
+        else:
+            lo, hi = (math.pi, 1.5 * math.pi) if lower else (math.pi / 2, math.pi)
+        y_lo = self.at(lo)[1]
+        increasing = self.at(hi)[1] > y_lo
+        for _ in range(80):
+            mid = (lo + hi) / 2.0
+            ym = self.at(mid)[1]
+            if (ym < y) == increasing:
+                lo = mid
+            else:
+                hi = mid
+        return (lo + hi) / 2.0
 
 
-def _run_arc_points(points, run, start, end):
-    """Interior points (off-curve controls + implied on-curve joins,
-    `_RunPoint`s) strictly between `start` and `end` -- each an
-    (sub, t) position within this run's own traversal order, per
-    `_find_cut_in_run` -- not including whatever sits exactly at
-    `start`/`end` themselves. `start` must precede `end` in the run's
-    own point order (sub, then t), not necessarily in increasing
-    angle -- outer and inner rings traverse their shared angles in
-    opposite senses."""
-    anchors, ctrls = _run_endpoints(points, run)
-    sub_s, t_s = start
-    sub_e, t_e = end
-    pieces = []
-    if sub_s == sub_e:
-        pieces.append(_sub_bezier_segment(anchors[sub_s], ctrls[sub_s], anchors[sub_s + 1], t_s, t_e))
-    else:
-        pieces.append(_sub_bezier_segment(anchors[sub_s], ctrls[sub_s], anchors[sub_s + 1], t_s, 1.0))
-        for s in range(sub_s + 1, sub_e):
-            pieces.append((anchors[s], ctrls[s], anchors[s + 1]))
-        pieces.append(_sub_bezier_segment(anchors[sub_e], ctrls[sub_e], anchors[sub_e + 1], 0.0, t_e))
+def _line_intersect(p, d, q, e):
+    """Intersection of lines p + s*d and q + u*e, or None if parallel."""
+    den = d[0] * e[1] - d[1] * e[0]
+    if abs(den) < 1e-9:
+        return None
+    s = ((q[0] - p[0]) * e[1] - (q[1] - p[1]) * e[0]) / den
+    return (p[0] + s * d[0], p[1] + s * d[1])
+
+
+def _arc(ring: _Ring, theta0: float, theta1: float, segments: int):
+    """`segments` tangent-matched quadratics tracing `ring` from angle
+    `theta0` to `theta1` (either direction, the way given). Returns
+    [(ctrl, end), ...] -- the start point itself is the caller's."""
     out = []
-    for i, (p0, c, p1) in enumerate(pieces):
-        out.append(_RunPoint(c[0], c[1], None))
-        if i < len(pieces) - 1:
-            out.append(_RunPoint(p1[0], p1[1], "qcurve"))
+    prev_t = theta0
+    prev_p = ring.at(theta0)
+    for k in range(1, segments + 1):
+        t = theta0 + (theta1 - theta0) * k / segments
+        p = ring.at(t)
+        c = _line_intersect(prev_p, ring.tangent(prev_t), p, ring.tangent(t))
+        mid = ((prev_p[0] + p[0]) / 2.0, (prev_p[1] + p[1]) / 2.0)
+        if c is None or math.hypot(c[0] - mid[0], c[1] - mid[1]) > math.hypot(p[0] - prev_p[0], p[1] - prev_p[1]):
+            c = mid  # degenerate tangent pair; never hit on a real ring
+        out.append((c, p))
+        prev_t, prev_p = t, p
     return out
 
 
-def locate_cuts(points, center, angles):
-    """Returns {angle: (quadrant, sub)}: which of the ring's 4 quadrants
-    (index into `_ring_runs`) and which of its 3 chained sub-Beziers
-    each angle falls on. Meant to be called ONCE, at a single reference
-    master, and the result reused via `_augment_ring`'s `locations`
-    param at every other master -- searching fresh at each master risks
-    a cut landing in a different quadrant/sub-Bezier as the curve's own
-    control points shift with weight, changing the glyph's own point
-    count between masters, which fontmake requires to be identical to
-    compile a variable font at all (confirmed the hard way: 'c' came
-    out with 50 points at wght=100 but 46 at wght=400 before this was
-    forced to a single reference location)."""
-    runs = _ring_runs(points)
-    result = {}
-    for angle in angles:
-        for qi, run in enumerate(runs):
-            found = _find_cut_in_run(points, run, center, angle)
-            if found is not None:
-                result[angle] = (qi, found[0])
-                break
+# ---------------------------------------------------------------------------
+# Contour emission
+# ---------------------------------------------------------------------------
+
+def _emit(pen, start, pieces):
+    """pieces: list of ("line", pt) / ("arc", [(ctrl, end), ...])."""
+    pen.moveTo(start)
+    for kind, data in pieces:
+        if kind == "line":
+            pen.lineTo(data)
         else:
-            raise ValueError(f"angle {angle} not found on ring")
-    return result
+            for c, p in data:
+                pen.qCurveTo(c, p)
+    pen.closePath()
 
 
-def _bisect_t(anchors, ctrls, sub, center, target_angle):
-    a0 = _angle(anchors[sub], center)
-    a1 = _angle(anchors[sub + 1], center)
-    span = _norm_angle(a1 - a0)
-    t_lo, t_hi = 0.0, 1.0
-    for _ in range(60):
-        t_mid = (t_lo + t_hi) / 2.0
-        p_mid = _quadratic_point(anchors[sub], ctrls[sub], anchors[sub + 1], t_mid)
-        a_mid = a0 + _norm_angle(_angle(p_mid, center) - a0)
-        if _norm_angle(a_mid - target_angle) * (1 if span >= 0 else -1) < 0:
-            t_lo = t_mid
-        else:
-            t_hi = t_mid
-    return (t_lo + t_hi) / 2.0
-
-
-def _augment_ring(points, center, angles, locations):
-    """Returns (new_points, index_for_angle): a copy of the 16-point
-    ring `points` with one new on-curve point inserted, via exact
-    Bezier subdivision, at each angle in `angles` -- at the (quadrant,
-    sub) position `locations[angle]` gives (see `locate_cuts`), not
-    searched fresh. Multiple cuts landing in the same quadrant run are
-    handled in their own correct order. `index_for_angle` maps each
-    requested angle to its point's index in `new_points`."""
-    runs = _ring_runs(points)
-    located = [(runs[locations[angle][0]], locations[angle][1], angle) for angle in angles]
-
-    new_points = []
-    index_for_angle = {}
-    for run in runs:
-        on0 = points[run[0]]
-        new_points.append(_RunPoint(on0.x, on0.y, on0.type))
-        anchors, ctrls = _run_endpoints(points, run)
-        cuts_here = sorted(
-            ((sub, _bisect_t(anchors, ctrls, sub, center, angle), angle) for (r, sub, angle) in located if r is run),
-            key=lambda c: (c[0], c[1]),
-        )
-        prev = (0, 0.0)
-        for (sub, t, angle) in cuts_here:
-            new_points.extend(_run_arc_points(points, run, prev, (sub, t)))
-            cut_xy = _quadratic_point(anchors[sub], ctrls[sub], anchors[sub + 1], t)
-            new_points.append(_RunPoint(cut_xy[0], cut_xy[1], "qcurve"))
-            index_for_angle[angle] = len(new_points) - 1
-            prev = (sub, t)
-        new_points.extend(_run_arc_points(points, run, prev, (2, 1.0)))
-    return new_points, index_for_angle
-
-
-def _forward(points, i, j):
-    """Points from index `i` to `j` inclusive, walking forward
-    (increasing, wrapping at len(points))."""
-    n = len(points)
-    out = []
-    k = i
-    while True:
-        out.append(points[k])
-        if k == j:
-            return out
-        k = (k + 1) % n
-
-
-def _kept_arc(points, i, j):
-    """The LONGER of the two forward arcs between indices `i` and `j`
-    -- i.e. the arc that excludes whatever small aperture/gap the two
-    cuts bound."""
-    n = len(points)
-    fwd_i_to_j = (j - i) % n
-    if fwd_i_to_j >= n - fwd_i_to_j:
-        return _forward(points, i, j)
-    return _forward(points, j, i)
-
-
-def _center_of(points):
-    xs = [p.x for p in points]
-    ys = [p.y for p in points]
-    return ((min(xs) + max(xs)) / 2.0, (min(ys) + max(ys)) / 2.0)
+def _signed_area_poly(pts):
+    total = 0.0
+    n = len(pts)
+    for i in range(n):
+        x1, y1 = pts[i]
+        x2, y2 = pts[(i + 1) % n]
+        total += x1 * y2 - x2 * y1
+    return total / 2.0
 
 
 def _outer_inner(o_glyph):
@@ -310,196 +233,147 @@ def _outer_inner(o_glyph):
     return contours[0], contours[1]
 
 
-def _make_glyph(name, width, points):
+def _o_outer_is_ccw(o_glyph) -> bool:
+    outer, _ = _outer_inner(o_glyph)
+    return _signed_area_poly([(p.x, p.y) for p in outer.points]) > 0
+
+
+def _new_glyph(name: str, width: float) -> ufoLib2.objects.Glyph:
     glyph = ufoLib2.objects.Glyph(name=name)
     glyph.unicodes = [ord(name)]
     glyph.width = width
-    contour = ufoLib2.objects.Contour()
-    for p in points:
-        contour.points.append(ufoLib2.objects.Point(p.x, p.y, type=p.type))
-    glyph.contours.append(contour)
     return glyph
 
 
-_reference_rings_cache: tuple | None = None
+def _reverse_recording(value):
+    """Reverses every contour in a RecordingPen value (winding flip)."""
+    from fontTools.pens.reverseContourPen import ReverseContourPen
+    out = RecordingPen()
+    rev = ReverseContourPen(out)
+    for cmd, args in value:
+        getattr(rev, cmd)(*args)
+    return out.value
 
 
-def _reference_rings():
-    """'o's own outer/inner ring points at wght=400/wdth=100 -- the same
-    single reference instance `quirks.py`'s own point-index tables are
-    verified against -- used ONLY to pin down which (quadrant, sub) each
-    aperture/crossbar cut angle falls on (see `locate_cuts`), so that
-    assignment doesn't depend on which master happens to get built
-    first."""
-    global _reference_rings_cache
-    if _reference_rings_cache is None:
-        jost_name = jost_source.glyph_names_for_chars("o")["o"]
-        pen_value, _ = jost_source.extract(jost_name, 400, 100)
-        glyph = ufoLib2.objects.Glyph(name="o")
-        jost_source.replay(glyph.getPen(), pen_value)
-        outer, inner = _outer_inner(glyph)
-        _reference_rings_cache = (outer.points, inner.points)
-    return _reference_rings_cache
+def _finish(name, width, ccw_contours, outer_ccw: bool):
+    """`ccw_contours`: RecordingPen values, filled contours CCW, holes
+    CW. Flipped wholesale if 'o's own outer contour runs the other way,
+    so 'c'/'e' share 'o's winding convention."""
+    glyph = _new_glyph(name, width)
+    pen = glyph.getPen()
+    for value in ccw_contours:
+        if not outer_ccw:
+            value = _reverse_recording(value)
+        for cmd, args in value:
+            getattr(pen, cmd)(*args)
+    return glyph
 
 
-_cut_location_cache: dict = {}
+# ---------------------------------------------------------------------------
+# Levels
+# ---------------------------------------------------------------------------
+
+# Point indices on Jost's own 'e' (single 42-point contour), confirmed
+# identical at wght 100/400/900 x wdth 75/100: 3/4 = lower-terminal
+# cut (outer, inner); 23/24 = crossbar top edge; 25/26 = crossbar
+# bottom edge.
+_JOST_E_TERMINAL = (3, 4)
+_JOST_E_BAR_TOP = (23, 24)
+_JOST_E_BAR_BOTTOM = (25, 26)
 
 
-def _cached_locations(key, angles, which):
-    """`locate_cuts`, computed once per distinct `key` against the fixed
-    reference 'o' (`_reference_rings`) and reused for every later call
-    regardless of which master's ring is actually being cut -- see
-    `locate_cuts`'s own docstring for why the (quadrant, sub) assignment
-    must stay fixed across masters. `which` is "outer" or "inner"."""
-    if key not in _cut_location_cache:
-        outer_pts, inner_pts = _reference_rings()
-        points = outer_pts if which == "outer" else inner_pts
-        center = _center_of(points)
-        _cut_location_cache[key] = locate_cuts(points, center, angles)
-    return _cut_location_cache[key]
-
-
-def build_c_from_o(o_glyph, aperture_half_angle: float = 31.0):
-    """A new glyph named 'c': 'o's own ring, cut open at
-    `aperture_half_angle` degrees on either side of due east (the
-    ring's own rightmost point) -- the side Latin 'c' opens toward.
-    Both cut points sit exactly on 'o's own curve; the two straight
-    terminals closing the aperture are left for the caller to reorient
-    to horizontal (`quirks.py::_reorient_cut`, reused as-is -- a
-    straight 2-point cut is exactly what that function expects).
-    Returns (glyph, [(i1, i2), (i1, i2)]) -- the point-index pairs of
-    the aperture's two terminal cuts (bottom, then top/wraparound).
-    """
-    outer, inner = _outer_inner(o_glyph)
-    outer_c, inner_c = _center_of(outer.points), _center_of(inner.points)
-
-    hi, lo = aperture_half_angle, -aperture_half_angle
-    outer_loc = _cached_locations(("c", "outer", aperture_half_angle), [hi, lo], "outer")
-    inner_loc = _cached_locations(("c", "inner", aperture_half_angle), [hi, lo], "inner")
-    outer_pts, outer_idx = _augment_ring(outer.points, outer_c, [hi, lo], outer_loc)
-    inner_pts, inner_idx = _augment_ring(inner.points, inner_c, [hi, lo], inner_loc)
-
-    outer_kept = _kept_arc(outer_pts, outer_idx[hi], outer_idx[lo])
-    inner_kept = _kept_arc(inner_pts, inner_idx[lo], inner_idx[hi])
-
-    points = (
-        [_RunPoint(outer_kept[0].x, outer_kept[0].y, "line")]
-        + outer_kept[1:]
-        + [_RunPoint(inner_kept[0].x, inner_kept[0].y, "line")]
-        + inner_kept[1:]
-    )
-    glyph = _make_glyph("c", o_glyph.width, points)
-    n = len(points)
-    cuts = [(len(outer_kept) - 1, len(outer_kept)), (n - 1, 0)]
-    return glyph, cuts
-
-
-def _signed_area(points):
-    n = len(points)
-    total = 0.0
-    for i in range(n):
-        x1, y1 = points[i].x, points[i].y
-        x2, y2 = points[(i + 1) % n].x, points[(i + 1) % n].y
-        total += x1 * y2 - x2 * y1
-    return total / 2.0
-
-
-def build_e_from_o(o_glyph, aperture_half_angle: float = 15.0, aperture_center_angle: float = -46.0):
-    """A new glyph named 'e': 'o's own ring, with a horizontal crossbar
-    at the ring's own vertical center (its inner contour's existing
-    due-east/due-west on-curve points, connected directly -- no new
-    geometry needed there) closing off an upper bowl as a proper,
-    separately-wound hole -- same as 'o's own two-contour structure,
-    just with the hole's own lower edge now a straight line instead of
-    a curve -- plus a small aperture on the lower-right
-    (`aperture_center_angle` below due east, `aperture_half_angle`
-    wide) where Latin 'e' opens, merging the lower counter into the
-    outer silhouette's own single contour (there is no separate lower
-    "hole": it's open to the outside through the aperture).
-
-    Two contours, not one -- an earlier version tried a single contour
-    that threaded the aperture, the crossbar, AND the upper bowl into
-    one path, reasoning by analogy with 'c' (whose counter genuinely is
-    single-contour, since its aperture opens the *entire* ring). That
-    doesn't hold for 'e': the upper bowl never touches the aperture or
-    the outer edge, so it's a properly enclosed region -- a single
-    contour can't represent a hole that isn't reachable along its own
-    boundary. Confirmed the hard way: that version rendered with the
-    upper bowl solid and the lower region open, exactly backwards, at
-    every weight and width tried.
-
-    Returns (glyph, [(i1, i2), (i1, i2)]) -- the point-index pairs of
-    the aperture's two terminal cuts (bottom, then top/wraparound),
-    both on the glyph's own contour 0 (the outer contour).
-    """
-    outer, inner = _outer_inner(o_glyph)
-    outer_c, inner_c = _center_of(outer.points), _center_of(inner.points)
-
-    hi = aperture_center_angle + aperture_half_angle
-    lo = aperture_center_angle - aperture_half_angle
-    cache_key = (aperture_half_angle, aperture_center_angle)
-    outer_loc = _cached_locations(("e", "outer", cache_key), [hi, lo], "outer")
-    inner_loc = _cached_locations(("e", "inner", cache_key), [hi, lo], "inner")
-    outer_pts, outer_idx = _augment_ring(outer.points, outer_c, [hi, lo], outer_loc)
-    inner_pts, inner_idx = _augment_ring(inner.points, inner_c, [hi, lo], inner_loc)
-
-    outer_kept = _kept_arc(outer_pts, outer_idx[hi], outer_idx[lo])
-
-    # Due-east/due-west on `inner_pts` -- NOT requested as `_augment_ring`
-    # cuts (that degenerates: those angles coincide exactly with existing
-    # on-curve points, producing a zero-length "cut" and a duplicate
-    # point on top of the real one -- confirmed directly). They're
-    # unmodified copies of 'o's own on-curve points, so an exact
-    # coordinate match finds them.
-    original_center_pts = [(p.x, p.y) for p in inner.points if p.type is not None]
-    east_xy = min(original_center_pts, key=lambda p: abs(_norm_angle(_angle(p, inner_c) - 0.0)))
-    west_xy = min(original_center_pts, key=lambda p: abs(_norm_angle(_angle(p, inner_c) - 180.0)))
-    east_new_idx = next(i for i, p in enumerate(inner_pts) if (p.x, p.y) == east_xy)
-    west_new_idx = next(i for i, p in enumerate(inner_pts) if (p.x, p.y) == west_xy)
-
-    # Outer contour: outer silhouette (long way, hi to lo) -> cut inward
-    # -> lower-counter arc (lo, through south, to west) -- kept, not
-    # skipped in favor of solid ink, which would wrongly fill the entire
-    # lower counter at light weights -- -> crossbar -> a short arc back
-    # to the aperture's other edge -> cut back to the outer silhouette.
-    lower_inner = _forward(inner_pts, inner_idx[lo], west_new_idx)
-    upper_inner_edge = _forward(inner_pts, east_new_idx, inner_idx[hi])
-
-    outer_contour_points = (
-        [_RunPoint(outer_kept[0].x, outer_kept[0].y, "line")]
-        + outer_kept[1:]
-        + [_RunPoint(lower_inner[0].x, lower_inner[0].y, "line")]
-        + lower_inner[1:]
-        + [_RunPoint(upper_inner_edge[0].x, upper_inner_edge[0].y, "line")]
-        + upper_inner_edge[1:]
-    )
-
-    # Upper bowl: a proper hole, same as 'o's own inner contour but with
-    # a straight crossbar instead of the lower quarter-arcs. Must wind
-    # opposite the outer contour -- checked and flipped if needed, same
-    # as `quirks.py::reshape_counter_to_o`'s own reasoning (a contour's
-    # own absolute winding isn't stable across masters, only its
-    # relationship to what encloses it is).
-    hole_arc = _forward(inner_pts, west_new_idx, east_new_idx)
-    hole_points = [_RunPoint(hole_arc[0].x, hole_arc[0].y, "line")] + hole_arc[1:]
-    hole_points[-1] = _RunPoint(hole_points[-1].x, hole_points[-1].y, hole_points[-1].type or "line")
-
-    outer_sign = _signed_area(outer_contour_points) >= 0
-    hole_sign = _signed_area(hole_points) >= 0
-    if hole_sign == outer_sign:
-        hole_points = [hole_points[0]] + list(reversed(hole_points[1:]))
-
+def e_levels(wght: float, wdth: float, grad: float = 0) -> dict[str, float]:
+    """{bar_top, bar_bottom, terminal} y-levels, read off Jost's own 'e'
+    at this exact axis location (see module docstring)."""
+    name = jost_source.glyph_names_for_chars("e")["e"]
+    pen_value, _ = jost_source.extract(name, wght, wdth, grad)
     glyph = ufoLib2.objects.Glyph(name="e")
-    glyph.unicodes = [ord("e")]
-    glyph.width = o_glyph.width
-    outer_c_obj = ufoLib2.objects.Contour()
-    for p in outer_contour_points:
-        outer_c_obj.points.append(ufoLib2.objects.Point(p.x, p.y, type=p.type))
-    glyph.contours.append(outer_c_obj)
-    hole_c_obj = ufoLib2.objects.Contour()
-    for p in hole_points:
-        hole_c_obj.points.append(ufoLib2.objects.Point(p.x, p.y, type=p.type))
-    glyph.contours.append(hole_c_obj)
-    n = len(outer_contour_points)
-    cuts = [(len(outer_kept) - 1, len(outer_kept)), (n - 1, 0)]
-    return glyph, cuts
+    jost_source.replay(glyph.getPen(), pen_value)
+    pts = glyph.contours[0].points
+    on = {i: p for i, p in enumerate(pts)}
+    def mean_y(pair):
+        return (on[pair[0]].y + on[pair[1]].y) / 2.0
+    return {
+        "bar_top": mean_y(_JOST_E_BAR_TOP),
+        "bar_bottom": mean_y(_JOST_E_BAR_BOTTOM),
+        "terminal": mean_y(_JOST_E_TERMINAL),
+    }
+
+
+def _clamp_levels(levels, outer: _Ring, inner: _Ring):
+    """Keeps every level strictly inside 'o's own counter (a cut must
+    hit both rings, and the upper bowl must stay open), with a margin
+    of 10% of the counter's height."""
+    margin = 0.10 * (inner.top - inner.bottom)
+    lo, hi = inner.bottom + margin, inner.top - margin
+    term = min(max(levels["terminal"], lo), hi)
+    bar_b = min(max(levels["bar_bottom"], term + margin), hi)
+    bar_t = min(max(levels["bar_top"], bar_b + 1.0), hi)
+    return bar_t, bar_b, term
+
+
+# ---------------------------------------------------------------------------
+# Builders
+# ---------------------------------------------------------------------------
+
+def build_c_from_o(o_glyph, levels: dict[str, float]):
+    """'c': 'o's ring opened on the right, from `levels["bar_bottom"]`
+    (upper terminal) down to `levels["terminal"]` (lower terminal) --
+    both exactly horizontal."""
+    outer_c, inner_c = _outer_inner(o_glyph)
+    outer, inner = _Ring(outer_c), _Ring(inner_c)
+    _, y_top, y_bot = _clamp_levels(levels, outer, inner)
+
+    o_top = outer.angle_at_y(y_top, "right", lower=y_top < outer.cy)
+    o_bot = outer.angle_at_y(y_bot, "right", lower=True) + 2 * math.pi
+    i_top = inner.angle_at_y(y_top, "right", lower=y_top < inner.cy)
+    i_bot = inner.angle_at_y(y_bot, "right", lower=True) + 2 * math.pi
+
+    rec = RecordingPen()
+    _emit(rec, outer.at(o_top), [
+        ("arc", _arc(outer, o_top, o_bot, _ARC_SEGMENTS["outer_long"])),
+        ("line", inner.at(i_bot)),
+        ("arc", _arc(inner, i_bot, i_top, _ARC_SEGMENTS["inner_long"])),
+    ])
+    return _finish("c", o_glyph.width, [rec.value], _o_outer_is_ccw(o_glyph))
+
+
+def build_e_from_o(o_glyph, levels: dict[str, float]):
+    """'e': 'o's ring, upper bowl closed at `bar_top`, crossbar running
+    out to the outer edge on the right down to `bar_bottom` (where the
+    outer ring stops curving), aperture from there down to a horizontal
+    lower terminal at `terminal`."""
+    outer_c, inner_c = _outer_inner(o_glyph)
+    outer, inner = _Ring(outer_c), _Ring(inner_c)
+    y_bar_t, y_bar_b, y_term = _clamp_levels(levels, outer, inner)
+
+    # Outer contour (CCW): outer ring from the bar bottom on the right,
+    # up and around to the lower terminal; in to the inner ring; back
+    # along the inner ring (CW) to the bar bottom on the LEFT; straight
+    # across the bar's bottom edge to the start.
+    o_bar = outer.angle_at_y(y_bar_b, "right", lower=y_bar_b < outer.cy)
+    o_term = outer.angle_at_y(y_term, "right", lower=True) + 2 * math.pi
+    i_term = inner.angle_at_y(y_term, "right", lower=True) + 2 * math.pi
+    i_bar_left = inner.angle_at_y(y_bar_b, "left", lower=y_bar_b < inner.cy)
+    if i_bar_left < 0:
+        i_bar_left += 2 * math.pi
+
+    outer_rec = RecordingPen()
+    _emit(outer_rec, outer.at(o_bar), [
+        ("arc", _arc(outer, o_bar, o_term, _ARC_SEGMENTS["outer_long"])),
+        ("line", inner.at(i_term)),
+        ("arc", _arc(inner, i_term, i_bar_left, _ARC_SEGMENTS["inner_long"])),
+    ])
+
+    # Upper bowl hole (CW): inner ring above the bar top, left to right
+    # over the top, closed by the bar's top edge.
+    h_left = inner.angle_at_y(y_bar_t, "left", lower=y_bar_t < inner.cy)
+    if h_left < 0:
+        h_left += 2 * math.pi
+    h_right = inner.angle_at_y(y_bar_t, "right", lower=y_bar_t < inner.cy)
+    hole_rec = RecordingPen()
+    _emit(hole_rec, inner.at(h_left), [
+        ("arc", _arc(inner, h_left, h_right, _ARC_SEGMENTS["hole"])),
+    ])
+
+    return _finish("e", o_glyph.width, [outer_rec.value, hole_rec.value], _o_outer_is_ccw(o_glyph))

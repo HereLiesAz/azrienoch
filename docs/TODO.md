@@ -57,8 +57,18 @@ not repeated here.
 - [ ] `s`'s advance width doesn't track `o`'s own `wght`-relative
       proportions (no ring to derive from -- an S-curve has no ring to
       cut open the way `c`/`e` do).
-- [ ] `e`'s aperture terminal self-intersects at the single most
-      extreme corner of the design space (`wght`=100, `wdth`=75).
+- [x] ~~`e`'s aperture terminal self-intersects at Thin Condensed~~ --
+      done: `c`/`e` rebuilt with exactly horizontal terminals at
+      levels read off Jost's own `e` (`c`'s upper terminal level with
+      `e`'s bar bottom, lower with `e`'s terminal); no
+      self-intersection at any master.
+- [x] ~~V/W/M/v/w inconsistent stroke widths~~ -- done
+      (`tools/stroke_balance.py`): one perpendicular thickness per
+      glyph, outer silhouette unchanged.
+- [x] ~~Thin Condensed serif feet oversized/off-center~~ -- done:
+      stem measurement no longer filtered by the detection noise floor.
+- [ ] At Black, the `c`/`e` aperture (Jost's own `e` bar-bottom to
+      terminal levels against `o`'s small counter) narrows to a slit.
 - [ ] `s` at Thin has its own near-zero ring-wall pinch (~0.002 units,
       pre-existing, currently invisible).
 - [ ] Round-counter treatment extended to `a` (its inner contour also

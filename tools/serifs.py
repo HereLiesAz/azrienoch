@@ -87,6 +87,7 @@ TOLERANCE = 6.0  # units: how close a flat run's y must be to a guide line
 MIN_RUN = 10.0  # units: ignore tiny flat runs (noise, not a real stem)
 MAX_RUN = 200.0  # units: ignore wide runs (crossbars/bowls, not a stem) -- Jost's own stems run roughly 75-165 units wide
 MIN_FOOT_H = 1.0  # units: SERF=0 foot height -- a hairline, not literally 0
+MEASURE_MIN_RUN = 1.0  # units: noise floor when MEASURING an already-detected stem at a master (see `_flat_runs`)
 MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to count as a real stem side
 
 SINGLE_STORY = set("acemnorsuvwxz")
@@ -110,12 +111,21 @@ def _signed_area(points) -> float:
     return total / 2.0
 
 
-def _flat_runs(glyph):
+def _flat_runs(glyph, min_run: float = MIN_RUN):
     """Yields (contour, x0, x1, y, is_top_guide, left_ext, right_ext) for
     every flat stem-terminal candidate. left_ext/right_ext say whether
     that end connects to a long straight stem (safe to widen a foot
     into) versus a short run into a curve (must not widen -- would
-    notch a counter)."""
+    notch a counter).
+
+    `min_run` defaults to `MIN_RUN`, the noise floor for DETECTING a
+    stem on the wght=400 reference instance. Measuring an
+    already-detected stem at another master (`_actual_stem_width`)
+    passes a much smaller floor instead: a Thin Condensed stem is
+    genuinely narrower than `MIN_RUN` (8 units at wght=100/wdth=75),
+    and filtering it out there silently dropped every Thin Condensed
+    foot onto `apply_feet`'s fallback width -- several times the real
+    stem, and off-center."""
     for contour in glyph.contours:
         pts = list(contour.points)
         n = len(pts)
@@ -128,7 +138,7 @@ def _flat_runs(glyph):
             if abs(a.y - b.y) > 1.0:
                 continue
             run = abs(a.x - b.x)
-            if run < MIN_RUN or run > MAX_RUN:
+            if run < min_run or run > MAX_RUN:
                 continue
             y = (a.y + b.y) / 2
             prev_pt = pts[(i - 1) % n]
@@ -253,7 +263,7 @@ def _actual_stem_width(glyph, guide_y: float, x_hint: float) -> tuple[float, flo
     """
     best = None
     best_dist = None
-    for _contour, x0, x1, y, _is_top, _left_ext, _right_ext in _flat_runs(glyph):
+    for _contour, x0, x1, y, _is_top, _left_ext, _right_ext in _flat_runs(glyph, min_run=MEASURE_MIN_RUN):
         if abs(y - guide_y) > TOLERANCE:
             continue
         mid = (x0 + x1) / 2.0

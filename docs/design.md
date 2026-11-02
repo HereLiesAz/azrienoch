@@ -200,41 +200,46 @@ reference.
   for `r` just needed extending to their own glyph names.
 
 - **`c`/`e` are built directly from this master's own `o`**
-  (`tools/ring_derived.py`), not from a separate donor font. `o`'s own
-  outer+inner ring is cut open (an aperture for both, plus a straight
-  crossbar for `e`) via exact quadratic-Bezier subdivision at a fixed
-  angle from the ring's own center -- every point either glyph keeps is
-  therefore pixel-identical to `o`'s own, and their bowl/counter
-  proportions agree with `o`'s BY CONSTRUCTION, at every weight, width
-  and serif setting, with no matching required. This replaces an
-  earlier approach (`c`/`e` sourced from Arimo, like `s` still is) that
-  spent two rescale attempts trying to match `c`/`e`'s ADVANCE WIDTH to
-  Jost's own `ch`-to-`o` ratio and reverted both (a flat scale fattened
-  the terminal at Thin; a centroid-radial push fixed that but pinched
-  the counter into an hourglass waist at Black -- see git history for
-  the full account) without ever fixing the actual root cause: Arimo is
-  a different font with different proportions than Jost, so no amount
-  of width-matching could make its `c`/`e`'s counter SHAPE agree with
-  `o`'s. Deriving them from `o` directly -- the same move already made
-  for `a` (built from `d`'s own outline, see below) -- fixes that at
-  the source. `e`'s upper bowl is a proper, separately-wound hole (same
-  two-contour structure as `o` itself), closed below by the crossbar
-  rather than a curve; its lower counter merges into the outer
-  silhouette's own single contour, open to the outside through the
-  aperture, the same way `c`'s counter is single-contour. Both go
-  through `quirks.py::apply_terminal_cuts` too, same as Arimo-sourced
-  `s`: Bezier subdivision at an exact target angle doesn't land the two
-  straight cuts closing the aperture perfectly flush, so they're
-  reoriented to true horizontal the same way Arimo's own terminals are.
-  One known residual: at `wght`=100 combined with `wdth`=75 (Thin
-  Condensed, the single most extreme corner of the whole design
-  space), `e`'s stroke wall gets thin enough at the aperture that its
-  terminal folds into a tiny self-intersecting spike -- confirmed
-  directly by rendering that specific corner. Not yet fixed: the
-  aperture's angle is fixed relative to the ring's own center, but
-  `condense.py`'s width compression is non-uniform (X only), so the
-  wall thickness at that fixed angle can shrink much faster than the
-  letter's overall proportions would suggest at extreme corners.
+  (`tools/ring_derived.py`), not from a separate donor font, so their
+  bowl/counter proportions agree with `o`'s BY CONSTRUCTION at every
+  weight, width and serif setting. (An earlier approach sourced them
+  from Arimo, like `s` still is, and spent two rescale attempts trying
+  to width-match them -- see git history.) Three horizontal levels are
+  read off Jost's own `e` at the same axis location: its crossbar's top
+  and bottom edges, and the vertical midpoint of its lower-terminal
+  cut. `e` is `o`'s ring with an upper bowl closed at the bar top (a
+  separately-wound hole), a crossbar that runs straight out to the
+  outer edge on the right -- the outer ring stops curving exactly at
+  the bar bottom -- and an aperture from there down to a horizontal
+  lower terminal. Per the project owner's direction, `c` shares those
+  levels: its upper terminal is level with `e`'s bar bottom (where
+  `e`'s bowl stops curving), its lower terminal level with `e`'s own.
+  Every terminal and bar edge is exactly horizontal by construction,
+  so neither letter goes through `quirks.py::apply_terminal_cuts`
+  anymore. Each arc is emitted as a fixed number of tangent-matched
+  quadratics sampled on `o`'s actual ring, so point count is identical
+  at every master wherever the cuts land. This replaced a version that
+  cut the ring at fixed angles and then rotated the cuts flat via
+  hardcoded point indices: `e` rendered with no visible crossbar and a
+  broken aperture at every weight, and folded into a self-intersecting
+  spike at Thin Condensed. The rebuilt pair has no self-intersection at
+  any of the 36 masters (checked by flattening every contour).
+  Consequence of taking Jost's own `e` levels: at Black, Jost's bar sits
+  low and `o`'s counter is small, so the aperture shared by `c` and `e`
+  narrows to a slit.
+
+- **V/W/M/v/w have one uniform stroke thickness**
+  (`tools/stroke_balance.py`). Jost draws them Futura-style with
+  unequal strokes -- `W`/`w`'s inner diagonals thinner than the outer
+  ones, `M`'s diagonals not matching its stems -- and `condense.py`'s
+  X-only compression changes each diagonal's perpendicular thickness by
+  a different amount depending on slope. Per master, the outer
+  silhouette points stay put (so advance width, sidebearings and
+  kerning are unchanged), the glyph's first outer stroke sets the
+  target thickness, and every inner point is recomputed so every other
+  stroke matches it exactly. Point count and order are untouched. At
+  Black, `M`'s middle vertex now reaches the baseline -- the direct
+  consequence of its diagonals matching its stems.
 
 - **`s` is sourced from Arimo, not Jost**: it's meant to read as
   Helvetica-derived, and has no ring or counter to derive from `o` the
@@ -317,9 +322,6 @@ In order:
   problem (both now derive their whole shape, width included, from
   `o` directly); `s` still can't, since an S-curve has no ring to cut
   open the way `c`/`e` do.
-- **`e`'s aperture terminal self-intersects at the single most extreme
-  corner of the design space** (`wght`=100 combined with `wdth`=75 --
-  see "Status" above for why).
 - **~23 Cyrillic lowercase letters have no clean single-Latin-letter
   structural analog** (`б в г д ж з и й к л н п т ф ц ч ш щ ъ ы ь ю я`
   -- see "Status" above) and are deliberately left on the generic
@@ -385,6 +387,12 @@ outward flare itself is a modest fraction of the stem's own width, the
 same scalar applied to every letter -- upper- and lowercase alike --
 so the whole alphabet's feet move together and stay consistent with
 each other.
+
+Measuring a stem at a given master uses a 1-unit noise floor, not the
+10-unit floor used to DETECT stems on the reference instance: a Thin
+Condensed stem is only ~8 units wide, and the detection floor used to
+filter it out, silently dropping every Thin Condensed foot onto a
+fallback width several times the real stem and off-center.
 
 One real bug caught by rendering before this landed: a first version
 grew a spurious extra foot on `n` where its left stem's short (~70-unit)
