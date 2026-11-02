@@ -155,6 +155,11 @@ _HORIZONTAL_TERMINALS = {
     # `arimo_source.extract`'s point-for-point interpolation between
     # Regular and Bold keeps identical at every wght sample.
     "s": [(0, 6, 7), (0, 29, 30)],
+    # Jost's 'S': one 51-point contour, identical at every master
+    # (checked at wght 100/900, wdth 75/100). Points 0-1 are the lower-
+    # left terminal's cut, 26-27 the upper-right one's. Jost cuts both
+    # on the diagonal; cut horizontal to match 's' (Arimo, above).
+    "S": [(0, 0, 1), (0, 26, 27)],
 }
 
 # glyph name -> (contour index, point index 1, point index 2), vertical cut
@@ -173,7 +178,8 @@ _VERTICAL_TERMINALS = {
 
 
 def apply_terminal_cuts(glyph) -> None:
-    """'s' (sourced from Arimo, see `arimo_source.py`) gets a true
+    """'s' (sourced from Arimo, see `arimo_source.py`) and 'S' (Jost's
+    own diagonal terminals, cut to match 's') get a true
     horizontal terminal cut ('c'/'e' are built horizontal by
     `ring_derived.py` and aren't listed) -- Arimo's own terminals are close to
     horizontal but genuinely diagonal by design (a rise of 12-31 units

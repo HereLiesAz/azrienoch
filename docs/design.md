@@ -427,3 +427,13 @@ donor-kerning logic the rest of the module rests on. `a` (built from
 kerning, not Jost's native `a`'s -- Jost's own `d` happens to carry no
 class-kerning pairs at all, so `a` ends up unkerned too, the more
 consistent outcome given it now shares `d`'s exact shape.
+
+## S terminals
+
+Jost's `S` cuts both terminals on the diagonal; `s` (Arimo) is cut
+horizontal. `quirks._HORIZONTAL_TERMINALS` now lists `S` (contour 0,
+points 0-1 lower-left, 26-27 upper-right) so both letters match.
+Verified: every one of the 36 masters has both cuts at identical Y.
+Known side effect: at heavy weight the lower-left cut's rigid re-spread
+reaches x = -12.8 (wght 900, wdth 75), i.e. a small negative left
+sidebearing.
