@@ -32,10 +32,11 @@ right angle) -- and there is exactly ONE serif per glyph:
   the same serif size, measured off that master's own `I` stem.
 - Every other lowercase letter (and digits): the rightmost stem's
   bottom-right corner, flaring right only (a d f h i l m n r t u ...).
-- `TOP_SIDE` p, q: no foot; one serif at the x-height top of the stem,
-  flaring outward (p upper-left, q upper-right).
+- `TOP_SIDE` p, q, y: no foot; one serif at the x-height top of the stem,
+  flaring outward (p and y upper-left, q upper-right). `RIGHT_UPPER` (T)
+  flares lower-right instead of lower-left.
 - Nothing at ascender/cap tops and nothing on descenders; `NO_SERIF`
-  (N Q g j y) get none; A, K's/R's legs, X, x, v, w, z have no
+  (N Q g j) get none; A, K's/R's legs, X, x, v, w, z have no
   right-angled terminal so none grow.
 - `BOTH_SIDES` (M) is the one exception: a serif at each foot, flaring
   outward, even though its legs are slanted.
@@ -83,9 +84,10 @@ MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to coun
 
 STEM_TOP = 460.0  # units: where Jost's FLAT stem tops sit (x-height 470 is the round overshoot)
 LEFT_LOWER = set("bk")  # lowercase letters whose one serif flares left (all caps do too)
-TOP_SIDE = {"p": -1, "q": 1}  # x-height stem-top serif and the side it flares to
+TOP_SIDE = {"p": -1, "q": 1, "y": -1}  # x-height stem-top serif and the side it flares to
 BOTH_SIDES = set("M")  # the one exception: serifs at both feet, even though the legs are slanted
-NO_SERIF = set("NQgjy")  # no serif at all -- see module docstring
+RIGHT_UPPER = set("T")  # uppercase exception: lower-RIGHT serif
+NO_SERIF = set("NQgj")  # no serif at all -- see module docstring
 EXEMPT = {"1"}  # keeps the original both-ways baseline foot
 SINGLE_STORY = set("acemnorsuvwxz")  # only used by the '1'-exempt legacy flare logic
 DETECT_MAX_RUN = 900.0  # units: corner detection also accepts long runs (B/D/E/L bottoms)
@@ -263,7 +265,7 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
     base = params.base_letter(ch)
     if base in EXEMPT:
         return _legacy_specs(reference_glyph, guides, ch)
-    sides = (-1, 1) if base in BOTH_SIDES else (TOP_SIDE.get(base, -1 if (base.isupper() or base in LEFT_LOWER) else 1),)
+    sides = (-1, 1) if base in BOTH_SIDES else (TOP_SIDE.get(base, 1 if base in RIGHT_UPPER else -1 if (base.isupper() or base in LEFT_LOWER) else 1),)
     width = reference_glyph.width or 1
     found = []
     for side in sides:

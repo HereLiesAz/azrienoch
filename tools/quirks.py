@@ -537,11 +537,19 @@ def match_Q_tail_to_R(Q_glyph, R_glyph) -> None:
     order). The tail's bottom points and height stay put; each top
     point's x moves so its edge runs at R's own run-per-rise ratio
     (measured on this master's own R, so it holds at every weight and
-    width)."""
+    width). The tail's bottom edge is also set to R's leg's own bottom-
+    edge length (centred on the tail's own midpoint), so the stroke is
+    the same width as R's, not just the same angle."""
     r = R_glyph.contours[0].points
     ratio_left = (r[1].x - r[0].x) / (r[0].y - r[1].y)
     ratio_right = (r[2].x - r[3].x) / (r[3].y - r[2].y)
     q = Q_glyph.contours[2].points
+    # Same stroke width as R's leg: R's bottom edge length, kept centred on
+    # the tail's own bottom-edge midpoint. Same slope + same bottom width
+    # = same perpendicular thickness.
+    width = r[2].x - r[1].x
+    mid = (q[1].x + q[2].x) / 2.0
+    q[1].x, q[2].x = mid - width / 2.0, mid + width / 2.0
     q[0].x = q[1].x - ratio_left * (q[0].y - q[1].y)
     q[3].x = q[2].x - ratio_right * (q[3].y - q[2].y)
 

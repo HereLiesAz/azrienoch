@@ -92,8 +92,8 @@ In roughly build order:
   all at one size taken from that master's `I` stem. Other lowercase
   and digits: the rightmost stem's bottom-right corner, flaring right
   (a d f h i l m n r t u ...). p and q get one serif at the x-height
-  top of the stem, flaring outward (p upper-left, q upper-right). None
-  on N Q g j y (M is the one exception: a serif at each foot), on ascender/cap tops, or on diagonal terminals
+  top of the stem, flaring outward (p and y upper-left, q upper-right); T alone flares lower-right. None
+  on N Q g j (M is the one exception: a serif at each foot), on ascender/cap tops, or on diagonal terminals
   (A, X, x, v, w, z, K/R legs). `1` keeps its original both-ways
   baseline foot. `7` gets a `SERF`-driven dash through its diagonal
   (`serifs.apply_seven_dash`). Each foot is anchored at the stem corner
