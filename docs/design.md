@@ -422,7 +422,8 @@ either glyph is a capital or digit, else x-height). That optical gap is
 moved toward H-H (capital pairs), n-n (lowercase), or their mean
 (mixed) by `STRENGTH` 0.75, clamped to -250..80, raised so the closest
 approach never drops under `MIN_CLEAR` 80 (x `wdth` fraction), and
-dropped under 5 units. An area measure is used rather than the closest
+dropped under 5 units. A->Y is an owner override (`PAIR_TIGHTEN`): strength x1.67,
+clearance 20, giving -150 at Regular. An area measure is used rather than the closest
 point because a pair that opens into a wedge (A-Y, T-o) reads looser than
 its minimum gap, the effect the proof's O-Y entry records.
 

@@ -35,6 +35,9 @@ A-Y -70 while O-Y is -100). `GAP_CAP` scales with the master's `wdth`
 fraction; the result is otherwise computed per master, so kerning now
 varies with `wght`, `wdth` and `SERF`.
 
+`PAIR_TIGHTEN` holds per-pair owner overrides (A->Y: x1.67 strength,
+clearance 20).
+
 Scope: the 62 base letters/digits. Accented/Cyrillic glyphs that
 `params.base_letter` maps onto a base letter inherit that pair's value
 (applied in `ufo_build`); every other pair keeps the Jost donor value.
@@ -53,6 +56,7 @@ STRENGTH = 0.75
 MIN_KERN = -250
 MAX_KERN = 80
 MIN_ABS = 5
+PAIR_TIGHTEN = {("A", "Y"): (150.0 / 90.0, 20.0)}  # (strength multiplier, MIN_CLEAR) per pair: owner asked A->Y much tighter
 MIN_CLEAR = 80.0  # units (x wdth fraction): closest approach of any pair never drops below this
 
 
@@ -147,11 +151,12 @@ def derive(font, wdth: int) -> dict[tuple[str, str], int]:
             ru = r.isupper() or r.isdigit()
             n = len(ys) if (lu or ru) else xh_n
             tgt = cap_ref if (lu and ru) else low_ref if not (lu or ru) else (cap_ref + low_ref) / 2.0
-            k = int(round(STRENGTH * (tgt - optical(l, r, n))))
+            mult, clear = PAIR_TIGHTEN.get((l, r), (1.0, MIN_CLEAR))
+            k = int(round(STRENGTH * mult * (tgt - optical(l, r, n))))
             k = max(MIN_KERN, min(MAX_KERN, k))
             near = closest(l, r)
             if near is not None:
-                k = max(k, int(round(MIN_CLEAR * wdth / 100.0 - near)))
+                k = max(k, int(round(clear * wdth / 100.0 - near)))
             out[(_name(l), _name(r))] = k if abs(k) >= MIN_ABS else 0
     return out
 

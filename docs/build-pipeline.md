@@ -69,8 +69,8 @@ In roughly build order:
   descender curl (and 'g's advance width); 'q' takes 'j's curl mirrored
   (advance unchanged, the hook overhangs the sidebearing); 'y' is a narrowed 'v' (V_NARROW 0.9, arm
   width kept) with 'g's descender curl hung from the V's right terminal
-  at x-height, and 'Y' is the same narrowed V (tip at the original
-  junction height) with a rectangular stem hanging from the V's right
+  at x-height, and 'Y' is a full-width V (Y_V_NARROW 1.0) with its tip
+  at Y_TIP_DEPTH 0.70 of Jost's junction height with a rectangular stem hanging from the V's right
   outer edge Y_ATTACH (0.8) of the way up (`hang_y_from_v`,
   `hang_Y_from_V`; advances unchanged); 'Q's tail is re-angled to
   'R's leg slope. Base letters only -- accented variants of J/j/q/y

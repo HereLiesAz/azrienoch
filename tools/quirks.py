@@ -561,7 +561,9 @@ def match_Q_tail_to_R(Q_glyph, R_glyph) -> None:
 # outer edge.
 # ---------------------------------------------------------------------------
 
-V_NARROW = 0.9   # V half-width scale about its centre line; arm horizontal width kept
+V_NARROW = 0.9   # y's V half-width scale about its centre line; arm horizontal width kept
+Y_V_NARROW = 1.0  # Y's V: full original width
+Y_TIP_DEPTH = 0.70  # Y's V tip height as a fraction of Jost's own junction height (taller V)
 Y_ATTACH = 0.8   # Y stem attaches this fraction of the way up the V's right side
 
 
@@ -570,13 +572,13 @@ def _signed_area_xy(pts) -> float:
     return sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n)) / 2.0
 
 
-def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: float, tip_y: float):
+def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: float, tip_y: float, narrow: float = V_NARROW):
     """Pointed V polygon (outer-left, inner-left, crotch, inner-right,
     outer-right, tip) narrowed about x = cx by V_NARROW with the arms'
     horizontal width kept. Returns (points, slope) where slope is the
     right edge's dx/dy."""
-    lo = cx - V_NARROW * (cx - outer_l)
-    ro = cx + V_NARROW * (outer_r - cx)
+    lo = cx - narrow * (cx - outer_l)
+    ro = cx + narrow * (outer_r - cx)
     slope = (cx - lo) / (top - tip_y)
     crotch_y = top - (cx - (lo + arm_w)) / slope
     return [(lo, top), (lo + arm_w, top), (cx, crotch_y), (ro - arm_w, top), (ro, top), (cx, tip_y)], slope
@@ -607,8 +609,8 @@ def hang_Y_from_V(Y_glyph) -> None:
     stem_w = P[6][0] - P[5][0]
     top = P[0][1]
     cx = (P[4][0] + P[7][0]) / 2.0
-    tip_y = (P[4][1] + P[7][1]) / 2.0
-    v, slope = _narrow_v(P[3][0], P[8][0], P[2][0] - P[3][0], top, cx, tip_y)
+    tip_y = (P[4][1] + P[7][1]) / 2.0 * Y_TIP_DEPTH
+    v, slope = _narrow_v(P[3][0], P[8][0], P[2][0] - P[3][0], top, cx, tip_y, Y_V_NARROW)
     ym = tip_y + Y_ATTACH * (top - tip_y)
     xm = cx + (ym - tip_y) * slope
     # A Y stem is a rectangle from the baseline to the attach height, with
