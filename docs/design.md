@@ -408,25 +408,30 @@ already keeps a foot from notching into an arch letter's own counter.
 
 ## Kerning
 
-7,774 letter-pair corrections (`tools/kerning.py`), extracted from
-vendored Jost's own GPOS pair-positioning table rather than hand-tuned:
-several thousand pairs tuned by eye is its own multi-week type-design
-task, and Jost already did that work. Covers the full character set
-this project uses (Latin, Latin-1, Latin Extended-A, Cyrillic -- Jost's
-own kerning table already has pairs for all of them), not just the
-original 62 ASCII letters/digits (533 pairs there alone). Jost's own
-kerning is entirely static across its `wght` axis (confirmed by
-diffing the full extracted table at `wght`=100/400/900: zero pairs
-differ), so one extraction is reused at every master, scaled only by
-that master's own `wdth` fraction (kerning has no direct `SERF`
-dependence either). `c`/`e`/`s` (no longer all Jost's own outlines --
-`c`/`e` are built from `o`, `s` from Arimo) keep Jost's own kerning
-values for pairs involving them regardless, a stand-in on the same
-donor-kerning logic the rest of the module rests on. `a` (built from
-`d`'s own contours, not Jost's separately-drawn `a`) gets `d`'s
-kerning, not Jost's native `a`'s -- Jost's own `d` happens to carry no
-class-kerning pairs at all, so `a` ends up unkerned too, the more
-consistent outcome given it now shares `d`'s exact shape.
+Derived per master from Azrienoch's own outlines (`tools/kern_derive.py`),
+for the 62 base letters/digits; accented and Cyrillic glyphs that
+`params.base_letter` maps onto a base letter inherit that pair's value
+(`kern_derive.inherit`), and every other pair keeps Jost's donor value
+(`tools/kerning.py`, 7,774 pairs extracted from Jost's own GPOS table,
+scaled by `wdth`; static across `wght`).
+
+Derived method: each pair is scanned every 10 units of height; the
+horizontal gap at each height (open space counts as a cap, `GAP_CAP`
+280 x `wdth` fraction) is averaged over the pair's band (cap height if
+either glyph is a capital or digit, else x-height). That optical gap is
+moved toward H-H (capital pairs), n-n (lowercase), or their mean
+(mixed) by `STRENGTH` 0.75, clamped to -250..80, raised so the closest
+approach never drops under `MIN_CLEAR` 80 (x `wdth` fraction), and
+dropped under 5 units. An area measure is used rather than the closest
+point because a pair that opens into a wedge (A-Y, T-o) reads looser than
+its minimum gap, the effect the proof's O-Y entry records.
+
+Calibration: `GAP_CAP` and `STRENGTH` were fitted to the pair values
+approved in the proof's Kerning section (A-W, W-A -100; A-Y -70; T-O
+-50; O-Y -100) at wght 400 / wdth 100. Worst residual ~40 units: the
+model cannot give A-Y -70 while O-Y is -100, so at Regular it yields
+A-W/W-A/A-Y -90, T-O -71, O-Y -77. Values now vary with `wght`, `wdth`
+and `SERF`.
 
 ## S terminals
 

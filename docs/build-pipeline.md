@@ -105,12 +105,17 @@ In roughly build order:
   lands on the wrong stem at Thin/Black or condensed masters.
 - **`kerning.py`** -- letter-pair kerning extracted from vendored
   Jost's own GPOS pair-positioning table, covering the full character
-  set.
+  set (donor values; used only outside the base letter set).
+- **`kern_derive.py`** -- per-master kerning derived from the finished
+  outlines of the 62 base letters/digits (optical gap over height,
+  closest-approach floor); accented/Cyrillic glyphs inherit their base
+  letter's pairs. Parameters and calibration: `docs/design.md` Kerning.
 - **`ufo_build.py`** -- assembles the 36 master UFOs: extracts every
   glyph (routing 's' to Arimo, 'c'/'e' to `ring_derived.py`, 'a' to
   `single_story_a.py`, everything else to Jost), applies `quirks.py`'s
   terminal cuts and round-counter reshaping, splices accent marks, then
-  applies `serifs.py`'s feet and `kerning.py`'s pairs.
+  applies `serifs.py`'s feet and the kerning (`kern_derive.py`, with
+  `kerning.py` filling the rest).
 - **`designspace_build.py`** -- writes the `.designspace` (axes,
   sources, named instances, `STAT` axis-value labels), runs `fontmake`
   to compile the variable TTF, wraps it in a WOFF2 container, then runs

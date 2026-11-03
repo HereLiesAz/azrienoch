@@ -89,6 +89,8 @@ not repeated here.
 
 - [x] ~~Extract from Jost's own GPOS table~~ -- done: 7,774 pairs,
       covering the full character set.
-- [ ] Derive pair classes from the full glyph set and tune by eye
-      against rendered specimens, rather than relying entirely on
-      donor values.
+- [x] ~~Derive kerning from our own outlines~~ -- done for the 62 base
+      letters/digits (+ accented/Cyrillic inheritors): `tools/kern_derive.py`.
+- [ ] Tune `GAP_CAP`/`STRENGTH`/`MIN_CLEAR` by eye against rendered
+      specimens; extend derivation beyond the base set (punctuation,
+      non-inheriting glyphs still use donor values).

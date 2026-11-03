@@ -49,7 +49,7 @@ from pathlib import Path
 import ufoLib2
 from fontTools.pens.recordingPen import RecordingPen
 
-from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
+from . import accent_marks, arimo_source, jost_source, kern_derive, kerning, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
@@ -313,7 +313,11 @@ def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
         if ch == "7":
             serifs.apply_seven_dash(font[_glyph_name(ch)], serf, serifs.crossbar_size(font["f"]))
 
-    for (left, right), value in kerning.pairs_for(wdth).items():
+    # Kerning: derived from this master's own finished outlines (see
+    # kern_derive.py); Jost's donor table only fills pairs outside the base
+    # letter set.
+    final = kern_derive.inherit(kern_derive.derive(font, wdth), kerning.pairs_for(wdth))
+    for (left, right), value in final.items():
         font.kerning[(left, right)] = value
 
     path = SOURCES_DIR / f"Azrienoch-{params.style_name(wght, wdth, serf, grad)}.ufo"
