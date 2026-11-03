@@ -35,7 +35,7 @@ right angle) -- and there is exactly ONE serif per glyph:
 - `TOP_SIDE` p, q: no foot; one serif at the x-height top of the stem,
   flaring outward (p upper-left, q upper-right).
 - Nothing at ascender/cap tops and nothing on descenders; `NO_SERIF`
-  (M N Q g j y) get none; A, K's/R's legs, X, x, v, w, z have no
+  (N Q g j y) get none; A, K's/R's legs, X, x, v, w, z have no
   right-angled terminal so none grow.
 - '1' is exempt (`detect_feet`/`apply_feet` keep its original
   behavior: a lone stem flares both ways at the baseline).
@@ -76,12 +76,13 @@ MEASURE_TOLERANCE = 16.0  # units: looser, per-master measurement (thin masters 
 MIN_RUN = 10.0  # units: ignore tiny flat runs (noise, not a real stem)
 MAX_RUN = 200.0  # units: ignore wide runs (crossbars/bowls, not a stem) -- Jost's own stems run roughly 75-165 units wide
 MIN_FOOT_H = 1.0  # units: SERF=0 foot height -- a hairline, not literally 0
+MEASURE_MIN_RUN = 1.0  # units: noise floor when MEASURING an already-detected stem at a master (see `_flat_runs`)
 MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to count as a real stem side
 
 STEM_TOP = 460.0  # units: where Jost's FLAT stem tops sit (x-height 470 is the round overshoot)
 LEFT_LOWER = set("bk")  # lowercase letters whose one serif flares left (all caps do too)
 TOP_SIDE = {"p": -1, "q": 1}  # x-height stem-top serif and the side it flares to
-NO_SERIF = set("MNQgjy")  # no serif at all -- see module docstring
+NO_SERIF = set("NQgjy")  # no serif at all -- see module docstring
 EXEMPT = {"1"}  # keeps the original both-ways baseline foot
 SINGLE_STORY = set("acemnorsuvwxz")  # only used by the '1'-exempt legacy flare logic
 DETECT_MAX_RUN = 900.0  # units: corner detection also accepts long runs (B/D/E/L bottoms)
@@ -110,7 +111,16 @@ def _flat_runs(glyph, right_angled_only: bool = False, min_run: float = MIN_RUN,
     `right_angled_only`). left_ext/right_ext say whether
     that end connects to a long straight stem (safe to widen a foot
     into) versus a short run into a curve (must not widen -- would
-    notch a counter)."""
+    notch a counter).
+
+    `min_run` defaults to `MIN_RUN`, the noise floor for DETECTING a
+    stem on the wght=400 reference instance. Measuring an
+    already-detected stem at another master (`_actual_stem_width`)
+    passes a much smaller floor instead: a Thin Condensed stem is
+    genuinely narrower than `MIN_RUN` (8 units at wght=100/wdth=75),
+    and filtering it out there silently dropped every Thin Condensed
+    foot onto `apply_feet`'s fallback width -- several times the real
+    stem, and off-center."""
     for contour in glyph.contours:
         pts = list(contour.points)
         n = len(pts)

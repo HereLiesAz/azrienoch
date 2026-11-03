@@ -49,7 +49,7 @@ from pathlib import Path
 import ufoLib2
 from fontTools.pens.recordingPen import RecordingPen
 
-from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a
+from . import accent_marks, arimo_source, jost_source, kerning, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
@@ -153,10 +153,10 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     of it) -- and applies the terminal-cut and round-counter
     modifications -- everything except serif feet. Arimo's own 's'
     terminal is close to horizontal but genuinely diagonal by design,
-    and 'c'/'e's own terminals (the straight cuts closing their
-    aperture) aren't quite horizontal either (Bezier subdivision at an
-    exact angle doesn't land the cut flush), so all three go through
-    `apply_terminal_cuts` too.
+    so it goes through `apply_terminal_cuts`; 'c'/'e's terminals are
+    built exactly horizontal by `ring_derived.py` and need no
+    reorientation. V/W/M/v/w get uniform stroke thickness
+    (`stroke_balance.py`) before anything else touches them.
     """
     font = ufoLib2.Font()
     jost_names = jost_source.glyph_names_for_chars(CHARS)
@@ -172,8 +172,14 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         jost_source.replay(glyph.getPen(), pen_value)
         glyph.width = width
 
-    font["c"], _ = ring_derived.build_c_from_o(font["o"])
-    font["e"], _ = ring_derived.build_e_from_o(font["o"])
+    vertex_overshoot = stroke_balance.vertex_overshoot(font["V"])
+    for ch in CHARS:
+        if ch not in _RING_DERIVED_CHARS:
+            stroke_balance.apply(font[_glyph_name(ch)], vertex_overshoot)
+
+    e_levels = ring_derived.e_levels(wght, wdth, grad)
+    font["c"] = ring_derived.build_c_from_o(font["o"], e_levels)
+    font["e"] = ring_derived.build_e_from_o(font["o"], e_levels)
 
     quirks.fix_y_crotch(font["y"])
     quirks.fix_six_nine_notch(font["six"])

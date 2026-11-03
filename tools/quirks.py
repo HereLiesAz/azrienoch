@@ -93,7 +93,8 @@ def _rotate_scale_run(points, start_i: int, step: int, stop_at: tuple[int, ...],
         pt.y = ay + rx * sin_t + ry * cos_t
 
 
-def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
+def _reorient_cut(points, i1: int, i2: int, orientation: str,
+                  x_bounds: tuple[float, float] | None = None) -> None:
     """Reorients the straight cut between points[i1] and points[i2] to be
     perfectly horizontal or vertical, preserving the cut's length (the
     stroke thickness there) and its midpoint (the cut's location) --
@@ -131,6 +132,16 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
     else:
         raise ValueError(orientation)
 
+    if x_bounds is not None:
+        # Slide the whole cut (length kept) back inside `x_bounds`, so a
+        # rigid re-spread of a steeply diagonal cut can't overhang the
+        # glyph's own body.
+        lo, hi = x_bounds
+        xs = (new_outer[0], new_inner[0])
+        dx = lo - min(xs) if min(xs) < lo else (hi - max(xs) if max(xs) > hi else 0.0)
+        new_outer = (new_outer[0] + dx, new_outer[1])
+        new_inner = (new_inner[0] + dx, new_inner[1])
+
     outer.x, outer.y = new_outer
     inner.x, inner.y = new_inner
 
@@ -144,16 +155,9 @@ def _reorient_cut(points, i1: int, i2: int, orientation: str) -> None:
 
 # glyph name -> (contour index, point index 1, point index 2), horizontal cut
 _HORIZONTAL_TERMINALS = {
-    # 'c'/'e' are now built directly from 'o's own ring (see
-    # `ring_derived.py`), not Arimo -- their two terminal-cut point
-    # pairs (the straight lines closing the aperture, top and bottom)
-    # are `ring_derived.build_c_from_o`/`build_e_from_o`'s own return
-    # value, verified stable across the whole wght/wdth/SERF grid (that
-    # module pins the cut geometry to a single reference instance for
-    # exactly this reason) and hardcoded here the same way every other
-    # entry in this table is.
-    "c": [(0, 20, 21), (0, 45, 0)],
-    "e": [(0, 24, 25), (0, 36, 0)],
+    # 'c'/'e' are absent on purpose: `ring_derived.py` builds their
+    # terminals exactly horizontal by construction, and their rebuilt
+    # contours no longer carry the old hardcoded cut indices.
     # Arimo's own 's' terminals are close to horizontal but genuinely
     # diagonal by design (~12-14 units of rise across the cut, confirmed
     # by dumping Arimo's own raw points directly, not assumed from how
@@ -162,7 +166,21 @@ _HORIZONTAL_TERMINALS = {
     # `arimo_source.extract`'s point-for-point interpolation between
     # Regular and Bold keeps identical at every wght sample.
     "s": [(0, 6, 7), (0, 29, 30)],
+    # Jost's 'S': one 51-point contour, identical at every master
+    # (checked at wght 100/900, wdth 75/100). Points 0-1 are the lower-
+    # left terminal's cut, 26-27 the upper-right one's. Jost cuts both
+    # on the diagonal; cut horizontal to match 's' (Arimo, above).
+    "S": [(0, 0, 1), (0, 26, 27)],
 }
+
+# glyph name -> (contour index, index of the on-curve point whose x is
+# the cut's left limit, index of the one whose x is its right limit):
+# horizontal cuts of that glyph are kept inside [left x, right x]. 'S':
+# 35 is the upper bowl's leftmost point, 10 the lower bowl's rightmost
+# (Jost's own contour order, identical at every master). Without it the
+# lower-left terminal overhangs the bowl (x = -12.8 at wght 900,
+# wdth 75) and the letter reads as tipping over.
+_TERMINAL_X_LIMITS = {"S": (0, 35, 10)}
 
 # glyph name -> (contour index, point index 1, point index 2), vertical cut
 _VERTICAL_TERMINALS = {
@@ -180,8 +198,10 @@ _VERTICAL_TERMINALS = {
 
 
 def apply_terminal_cuts(glyph) -> None:
-    """'c'/'e'/'s' (sourced from Arimo, see `arimo_source.py`) get a true
-    horizontal terminal cut -- Arimo's own terminals are close to
+    """'s' (sourced from Arimo, see `arimo_source.py`) and 'S' (Jost's
+    own diagonal terminals, cut to match 's') get a true
+    horizontal terminal cut ('c'/'e' are built horizontal by
+    `ring_derived.py` and aren't listed) -- Arimo's own terminals are close to
     horizontal but genuinely diagonal by design (a rise of 12-31 units
     across the cut, confirmed by dumping Arimo's own raw points
     directly, not assumed from how they looked at a glance). r/f get a
@@ -189,8 +209,11 @@ def apply_terminal_cuts(glyph) -> None:
     diagonal one. 'g' is left alone: Jost's own descender-loop terminal
     is already a horizontal cut (both endpoints already share a Y) --
     confirmed by inspection, not assumed."""
+    limits = _TERMINAL_X_LIMITS.get(glyph.name)
     for contour_idx, i1, i2 in _HORIZONTAL_TERMINALS.get(glyph.name, []):
-        _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "horizontal")
+        pts = glyph.contours[contour_idx].points
+        bounds = (pts[limits[1]].x, pts[limits[2]].x) if limits else None
+        _reorient_cut(pts, i1, i2, "horizontal", bounds)
     for contour_idx, i1, i2 in _VERTICAL_TERMINALS.get(glyph.name, []):
         _reorient_cut(glyph.contours[contour_idx].points, i1, i2, "vertical")
 
