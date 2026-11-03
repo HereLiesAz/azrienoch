@@ -77,10 +77,17 @@ In roughly build order:
   proportioned slab at `SERF=100` -- which is what makes the axis
   interpolate at all rather than failing to compile. Each foot only
   grows on the side(s) that border a real stem rather than the
-  letter's own counter, and per-letter-class rules (single-story
-  letters get exactly two feet, an ascender letter's foot lands only at
-  the baseline, etc.) follow the shape of handwriting rather than
-  "widen wherever there's room."
+  letter's own counter. Policy: serifs grow only from right-angled
+  terminals and follow cursive exit points -- exactly one per glyph, at
+  the baseline of the rightmost right-angled stem, flaring right only
+  (h/m/n/r/a/u/F/f/H/t/i/k...). No top-left entry serifs
+  (`TOP_ENTRY` is empty); none on ascender/cap tops, descender letters
+  (g j p q y) or R, Q, N, and none on diagonal-legged letters (A, M).
+  `1` keeps its original both-ways baseline foot. `7` gets a `SERF`
+  driven crossbar dash through its diagonal
+  (`serifs.apply_seven_dash`). Per-master stem measurement uses wider
+  run limits and tolerance than detection (`MEASURE_TOLERANCE`) so the
+  foot never lands on the wrong stem at Thin/Black or condensed masters.
 - **`kerning.py`** -- letter-pair kerning extracted from vendored
   Jost's own GPOS pair-positioning table, covering the full character
   set.

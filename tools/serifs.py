@@ -22,37 +22,24 @@ ballpark to look like a genuine terminal -- `MIN_STEM_LEN` cleanly
 rejects anything that short as "not a real stem", no per-contour-
 extreme special-casing needed.
 
-Per the project owner's direction, WHICH guide line(s) a given letter's
-feet grow from, and which DIRECTION each foot is allowed to flare,
-follows the shape of handwriting rather than "widen wherever there's
-room":
+Per the project owner's direction, serifs follow the entry and exit
+points of CURSIVE handwriting, and only ever grow from right-angled
+terminals (a flat run whose two adjacent sides are both vertical lines
+-- a diagonal leg, a curve, or an arch spring is not a right angle):
 
-- A single-story letter (`SINGLE_STORY`) gets exactly TWO feet, never
-  one per stem: the x-height-top of its LEFTMOST stem, flaring only
-  left/backward, and the baseline of its RIGHTMOST stem, flaring only
-  right/forward -- not a foot on every flat terminal the letter happens
-  to have.
-- A letter with an ascender (`ASCENDER`) gets a foot only at the
-  baseline -- never at the ascender/cap top.
-- `g`/`p`/`q` get a foot only at the x-height top instead of the
-  baseline/descender (`DESCENDER_TOP`) -- the opposite end from every
-  other descender-bearing letter, per the project owner's direction.
-- `j`'s own descender hook is curved, not a flat stem (like `g`'s own
-  hook -- see below), so it's grouped with `DESCENDER_BOTTOM` mostly for
-  documentation; `detect_feet` finds nothing there in practice.
-- `y` gets a foot at BOTH the x-height top and its own descender depth.
-- Uppercase and digits get a foot only at the baseline, never the top.
-
-For every letter EXCEPT single-story ones, every qualifying stem gets
-its own foot, but each one flares only AWAY from the letter's other
-stems, never toward them: the leftmost stem at a given guide flares only
-left, the rightmost only right, a stem that's the only one at that guide
-flares both ways (nothing to protect on either side), and any stem
-strictly between two others gets no flare at all. This is what fixes an
-early version of this file's own `H`/`R`: both of `H`'s stems used to
-flare both ways whenever both sides were geometrically safe to widen,
-which included flaring the LEFT stem rightward -- into its own counter,
-not away from it.
+- EXIT serif: the baseline of the glyph's RIGHTMOST right-angled stem,
+  flaring only right. Exactly one per glyph -- h/m/n get only their
+  right stem's, never one on every stem.
+- ONE serif per glyph: no letter takes a top-left entry serif
+  (`TOP_ENTRY` is empty; the machinery remains for the owner to re-enable
+  per letter). a, r and u therefore carry only their baseline exit serif.
+- Nothing at ascender/cap tops, and nothing on any descender letter
+  (`NO_SERIF`: g j p q y), nor on R, Q, N (their strokes end in
+  diagonals, not right angles).
+- '1' is exempt from all of the above (`detect_feet`/`guides_for` keep
+  its original behavior: a lone stem flares both ways at the baseline).
+- '7' gets a crossbar "dash" through the middle of its diagonal
+  instead (see `apply_seven_dash`), growing with SERF like a foot.
 
 Diagonal-only strokes (v/w/x, A/V/W/X/K's legs) and curved terminals
 (g's own descender hook) have no flat stem run to grow a foot from at
@@ -84,16 +71,17 @@ import ufoLib2
 from . import params
 
 TOLERANCE = 6.0  # units: how close a flat run's y must be to a guide line
+MEASURE_TOLERANCE = 16.0  # units: looser, per-master measurement (thin masters put a stem top ~10 above the guide)
 MIN_RUN = 10.0  # units: ignore tiny flat runs (noise, not a real stem)
 MAX_RUN = 200.0  # units: ignore wide runs (crossbars/bowls, not a stem) -- Jost's own stems run roughly 75-165 units wide
 MIN_FOOT_H = 1.0  # units: SERF=0 foot height -- a hairline, not literally 0
 MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to count as a real stem side
 
-SINGLE_STORY = set("acemnorsuvwxz")
-ASCENDER = set("bdfhikl") | {"t"}
-DESCENDER_TOP = set("gpq")  # foot at x-height, not the descender -- see module docstring
-DESCENDER_BOTTOM = {"j"}
-Y_BOTH = {"y"}
+STEM_TOP = 460.0  # units: where Jost's FLAT stem tops sit (x-height 470 is the round overshoot)
+TOP_ENTRY = set()  # no letter takes a top-left entry serif: one serif per letter (bottom-right exit only)
+NO_SERIF = set("RQNgjpqy")  # no serif at all -- see module docstring
+EXEMPT = {"1"}  # keeps the original both-ways baseline foot
+SINGLE_STORY = set("acemnorsuvwxz")  # only used by the '1'-exempt legacy flare logic
 
 
 def _seg_len(p, q) -> float:
@@ -110,9 +98,10 @@ def _signed_area(points) -> float:
     return total / 2.0
 
 
-def _flat_runs(glyph):
+def _flat_runs(glyph, right_angled_only: bool = False, min_run: float = MIN_RUN, max_run: float = MAX_RUN):
     """Yields (contour, x0, x1, y, is_top_guide, left_ext, right_ext) for
-    every flat stem-terminal candidate. left_ext/right_ext say whether
+    every flat stem-terminal candidate (only right-angled ones when
+    `right_angled_only`). left_ext/right_ext say whether
     that end connects to a long straight stem (safe to widen a foot
     into) versus a short run into a curve (must not widen -- would
     notch a counter)."""
@@ -128,11 +117,18 @@ def _flat_runs(glyph):
             if abs(a.y - b.y) > 1.0:
                 continue
             run = abs(a.x - b.x)
-            if run < MIN_RUN or run > MAX_RUN:
+            if run < min_run or run > max_run:
                 continue
             y = (a.y + b.y) / 2
             prev_pt = pts[(i - 1) % n]
             next_pt = pts[(i + 2) % n]
+            if right_angled_only:
+                # Both adjacent sides must be straight vertical lines: a
+                # true right angle at each end of the flat run.
+                if a.type != "line" or next_pt.type != "line":
+                    continue
+                if abs(prev_pt.x - a.x) > 1.5 or abs(next_pt.x - b.x) > 1.5:
+                    continue
             a_ext = a.type == "line" and _seg_len(prev_pt, a) >= MIN_STEM_LEN
             b_ext = _seg_len(b, next_pt) >= MIN_STEM_LEN
             if a.x <= b.x:
@@ -186,6 +182,30 @@ def _apply_outward_flares(specs: list[dict], single_story: bool) -> list[dict]:
     return [specs[i] for i in sorted(keep)]
 
 
+def _select_entry_exit(specs: list[dict], ch: str) -> list[dict]:
+    """Keeps at most one exit serif (rightmost baseline stem, right flare
+    only) and, for `TOP_ENTRY` letters, one entry serif (leftmost x-height
+    stem top, left flare only). A candidate whose allowed side isn't a
+    genuinely long straight stem side (`left_ext`/`right_ext`) is dropped
+    rather than flared into a curve."""
+    base = params.base_letter(ch)
+    keep: list[dict] = []
+    baseline = [s for s in specs if s["guide"] == "baseline"]
+    if baseline:
+        spec = max(baseline, key=lambda s: s["x_frac"])
+        spec["left_ext"] = False
+        if spec["right_ext"]:
+            keep.append(spec)
+    if base in TOP_ENTRY:
+        tops = [s for s in specs if s["guide"] in ("xheight", "stemtop")]
+        if tops:
+            spec = min(tops, key=lambda s: s["x_frac"])
+            spec["right_ext"] = False
+            if spec["left_ext"]:
+                keep.append(spec)
+    return keep
+
+
 def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list[dict]:
     """Foot specs (fractional x/width, guide name, direction, extendable
     sides, and the stem contour's own winding sign) from one reference
@@ -194,7 +214,8 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
     width = reference_glyph.width or 1
     specs = []
     seen = set()
-    for contour, x0, x1, y, is_top, left_ext, right_ext in _flat_runs(reference_glyph):
+    exempt = params.base_letter(ch) in EXEMPT
+    for contour, x0, x1, y, is_top, left_ext, right_ext in _flat_runs(reference_glyph, right_angled_only=not exempt):
         if not guides:
             continue
         guide_name = min(guides, key=lambda k: abs(guides[k] - y))
@@ -217,7 +238,9 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
         ))
     # Same base-letter resolution as `guides_for` -- an accented single-
     # story letter still gets exactly two feet, not one per stem.
-    return _apply_outward_flares(specs, params.base_letter(ch) in SINGLE_STORY)
+    if exempt:
+        return _apply_outward_flares(specs, False)
+    return _select_entry_exit(specs, ch)
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):
@@ -253,8 +276,13 @@ def _actual_stem_width(glyph, guide_y: float, x_hint: float) -> tuple[float, flo
     """
     best = None
     best_dist = None
-    for _contour, x0, x1, y, _is_top, _left_ext, _right_ext in _flat_runs(glyph):
-        if abs(y - guide_y) > TOLERANCE:
+    # Wider/narrower limits than detection's: at Black a stem is ~205 units
+    # (over MAX_RUN) and at Thin-Condensed ~9 (under MIN_RUN). With the
+    # detection limits the measurement skipped the right stem at those
+    # masters and snapped to the wrong stem -- the interpolated foot then
+    # swept across the whole counter between masters (the 'n' bug).
+    for _contour, x0, x1, y, _is_top, _left_ext, _right_ext in _flat_runs(glyph, min_run=3.0, max_run=320.0):
+        if abs(y - guide_y) > MEASURE_TOLERANCE:
             continue
         mid = (x0 + x1) / 2.0
         dist = abs(mid - x_hint)
@@ -368,21 +396,42 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
     all_guides = {
         "baseline": 0.0,
         "xheight": params.X_HEIGHT,
-        "ascender": params.ASCENDER,
-        "cap": params.CAP_HEIGHT,
-        "descender": glyph_min_y,
+        "stemtop": STEM_TOP,
     }
     ch = params.base_letter(ch)
-    if ch in SINGLE_STORY:
-        allowed = {"baseline", "xheight"}
-    elif ch in ASCENDER:
-        allowed = {"baseline"}
-    elif ch in DESCENDER_TOP:
-        allowed = {"xheight"}
-    elif ch in Y_BOTH:
-        allowed = {"xheight", "descender"}
-    elif ch in DESCENDER_BOTTOM:
-        allowed = {"descender"}
-    else:
-        allowed = {"baseline"}  # uppercase and digits
+    if ch in NO_SERIF:
+        return {}
+    allowed = {"baseline"}
+    if ch in TOP_ENTRY:
+        allowed |= {"xheight", "stemtop"}
     return {name: y for name, y in all_guides.items() if name in allowed}
+
+
+def apply_seven_dash(glyph, serif_amount: float) -> None:
+    """A horizontal dash through the middle of '7's diagonal (like a
+    backwards f's crossbar). Always appends one rectangle -- at SERF=0 a
+    1-unit hairline inset inside the diagonal's own band (invisible), at
+    SERF=100 as thick as 7's own top bar and reaching that same
+    thickness past both sides of the diagonal -- so every master keeps
+    identical topology. Uses seven's own 6-point contour: points 0/1 the
+    top bar's underside, 2/3 the diagonal's bottom-left/bottom-right, 4
+    the top-right tip (checked at wght 100/400/900)."""
+    pts = glyph.contours[0].points
+    top_bar_bottom = pts[0].y
+    thickness = pts[5].y - top_bar_bottom
+    yc = top_bar_bottom / 2.0
+    # Diagonal band edges at height yc: left edge runs pts[2] -> pts[1],
+    # right edge runs pts[3] -> pts[4].
+    left = pts[2].x + (pts[1].x - pts[2].x) * (yc - pts[2].y) / (pts[1].y - pts[2].y)
+    right = pts[3].x + (pts[4].x - pts[3].x) * (yc - pts[3].y) / (pts[4].y - pts[3].y)
+    t = serif_amount / 100.0
+    ext = thickness * t
+    inset = 1.0 * (1 - t)
+    h = MIN_FOOT_H * (1 - t) + thickness * t
+    x0, x1 = left - ext + inset, right + ext - inset
+    y0, y1 = yc - h / 2.0, yc + h / 2.0
+    pen = glyph.getPointPen()
+    pen.beginPath()
+    for x, y_ in _rect_points(x0, y0, x1, y1, _signed_area(pts) >= 0):
+        pen.addPoint((round(x, 2), round(y_, 2)), segmentType="line")
+    pen.endPath()

@@ -300,6 +300,8 @@ def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
     for ch in CHARS:
         specs, guides = reference[ch]
         serifs.apply_feet(font[_glyph_name(ch)], specs, guides, serf)
+        if ch == "7":
+            serifs.apply_seven_dash(font[_glyph_name(ch)], serf)
 
     for (left, right), value in kerning.pairs_for(wdth).items():
         font.kerning[(left, right)] = value
