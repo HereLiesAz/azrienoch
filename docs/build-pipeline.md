@@ -75,6 +75,9 @@ In roughly build order:
   this project's own (ring-derived/Arimo-sourced) 'c'/'e'/'s', since
   those base letters no longer carry Jost's own native shape for Jost's
   own accented glyphs to build on.
+- **`package_ufo.py`** -- zips `sources/` into `fonts/ufo/` (all 36 masters
+  plus the designspace, and the Regular master alone) at the end of every
+  build; the proof page's UFO downloads fetch these from master.
 - **`serifs.py`** -- the `SERF` axis: detects candidate stem feet once
   from a reference instance, then adds the *same* foot contours (by
   fractional position, but sized off each master's own actual stem

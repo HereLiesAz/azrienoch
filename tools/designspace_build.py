@@ -148,6 +148,10 @@ def main() -> None:
 
     update_specimen.update_specimen()
 
+    from . import package_ufo
+
+    package_ufo.package()
+
 
 if __name__ == "__main__":
     main()
