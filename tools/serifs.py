@@ -22,22 +22,23 @@ ballpark to look like a genuine terminal -- `MIN_STEM_LEN` cleanly
 rejects anything that short as "not a real stem", no per-contour-
 extreme special-casing needed.
 
-Per the project owner's direction, serifs follow the entry and exit
-points of CURSIVE handwriting, and only ever grow from right-angled
-terminals (a flat run whose two adjacent sides are both vertical lines
--- a diagonal leg, a curve, or an arch spring is not a right angle):
+Per the project owner's direction, serifs grow only from RIGHT-ANGLED
+terminals -- a flat run whose flaring end meets a long, straight,
+vertical stem edge (a diagonal leg, a curve or an arch spring is not a
+right angle) -- and there is exactly ONE serif per glyph:
 
-- EXIT serif: the baseline of the glyph's RIGHTMOST right-angled stem,
-  flaring only right. Exactly one per glyph -- h/m/n get only their
-  right stem's, never one on every stem.
-- ONE serif per glyph: no letter takes a top-left entry serif
-  (`TOP_ENTRY` is empty; the machinery remains for the owner to re-enable
-  per letter). a, r and u therefore carry only their baseline exit serif.
-- Nothing at ascender/cap tops, and nothing on any descender letter
-  (`NO_SERIF`: g j p q y), nor on R, Q, N (their strokes end in
-  diagonals, not right angles).
-- '1' is exempt from all of the above (`detect_feet`/`guides_for` keep
-  its original behavior: a lone stem flares both ways at the baseline).
+- UPPERCASE (and `LEFT_LOWER` = b, k): the leftmost stem's lower-left
+  corner, flaring left only (B D E F H I K L P R T Y ...). All caps use
+  the same serif size, measured off that master's own `I` stem.
+- Every other lowercase letter (and digits): the rightmost stem's
+  bottom-right corner, flaring right only (a d f h i l m n r t u ...).
+- `TOP_SIDE` p, q: no foot; one serif at the x-height top of the stem,
+  flaring outward (p upper-left, q upper-right).
+- Nothing at ascender/cap tops and nothing on descenders; `NO_SERIF`
+  (M N Q g j y) get none; A, K's/R's legs, X, x, v, w, z have no
+  right-angled terminal so none grow.
+- '1' is exempt (`detect_feet`/`apply_feet` keep its original
+  behavior: a lone stem flares both ways at the baseline).
 - '7' gets a crossbar "dash" through the middle of its diagonal
   instead (see `apply_seven_dash`), growing with SERF like a foot.
 
@@ -78,10 +79,15 @@ MIN_FOOT_H = 1.0  # units: SERF=0 foot height -- a hairline, not literally 0
 MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to count as a real stem side
 
 STEM_TOP = 460.0  # units: where Jost's FLAT stem tops sit (x-height 470 is the round overshoot)
-TOP_ENTRY = set()  # no letter takes a top-left entry serif: one serif per letter (bottom-right exit only)
-NO_SERIF = set("RQNgjpqy")  # no serif at all -- see module docstring
+LEFT_LOWER = set("bk")  # lowercase letters whose one serif flares left (all caps do too)
+TOP_SIDE = {"p": -1, "q": 1}  # x-height stem-top serif and the side it flares to
+NO_SERIF = set("MNQgjy")  # no serif at all -- see module docstring
 EXEMPT = {"1"}  # keeps the original both-ways baseline foot
 SINGLE_STORY = set("acemnorsuvwxz")  # only used by the '1'-exempt legacy flare logic
+DETECT_MAX_RUN = 900.0  # units: corner detection also accepts long runs (B/D/E/L bottoms)
+SERIF_W_FRAC = 0.30  # serif extension beyond the stem, as a fraction of the stem width
+SERIF_H_FRAC = 0.35  # serif height, as a fraction of the stem width
+DEFAULT_STEM = 80.0  # units: fallback stem width if `stem_width` finds nothing
 
 
 def _seg_len(p, q) -> float:
@@ -182,46 +188,40 @@ def _apply_outward_flares(specs: list[dict], single_story: bool) -> list[dict]:
     return [specs[i] for i in sorted(keep)]
 
 
-def _select_entry_exit(specs: list[dict], ch: str) -> list[dict]:
-    """Keeps at most one exit serif (rightmost baseline stem, right flare
-    only) and, for `TOP_ENTRY` letters, one entry serif (leftmost x-height
-    stem top, left flare only). A candidate whose allowed side isn't a
-    genuinely long straight stem side (`left_ext`/`right_ext`) is dropped
-    rather than flared into a curve."""
-    base = params.base_letter(ch)
-    keep: list[dict] = []
-    baseline = [s for s in specs if s["guide"] == "baseline"]
-    if baseline:
-        spec = max(baseline, key=lambda s: s["x_frac"])
-        spec["left_ext"] = False
-        if spec["right_ext"]:
-            keep.append(spec)
-    if base in TOP_ENTRY:
-        tops = [s for s in specs if s["guide"] in ("xheight", "stemtop")]
-        if tops:
-            spec = min(tops, key=lambda s: s["x_frac"])
-            spec["right_ext"] = False
-            if spec["left_ext"]:
-                keep.append(spec)
-    return keep
+def _vertical_edge(p, q) -> bool:
+    return abs(p.x - q.x) <= 1.5 and _seg_len(p, q) >= MIN_STEM_LEN
 
 
-def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list[dict]:
-    """Foot specs (fractional x/width, guide name, direction, extendable
-    sides, and the stem contour's own winding sign) from one reference
-    instance -- reused as-is (only re-scaled) at every master, so every
-    master's glyph gets identical topology."""
+def _runs(glyph, min_run: float, max_run: float):
+    """Yields (contour, x0, x1, y, is_top, left_vertical, right_vertical)
+    for every flat horizontal run; `*_vertical` says that end meets a
+    long straight vertical edge (a true right angle)."""
+    for contour in glyph.contours:
+        pts = list(contour.points)
+        n = len(pts)
+        for i in range(n):
+            a, b = pts[i], pts[(i + 1) % n]
+            if a.type is None or b.type is None or b.type != "line":
+                continue
+            if abs(a.y - b.y) > 1.0:
+                continue
+            if not (min_run <= abs(a.x - b.x) <= max_run):
+                continue
+            prev_pt, next_pt = pts[(i - 1) % n], pts[(i + 2) % n]
+            a_v = a.type == "line" and _vertical_edge(prev_pt, a)
+            b_v = next_pt.type == "line" and _vertical_edge(b, next_pt)
+            left_v, right_v = (a_v, b_v) if a.x <= b.x else (b_v, a_v)
+            yield contour, min(a.x, b.x), max(a.x, b.x), (a.y + b.y) / 2, not (a.x < b.x), left_v, right_v
+
+
+def _legacy_specs(reference_glyph, guides: dict[str, float], ch: str) -> list[dict]:
+    """The pre-rewrite spec list (both-ways baseline foot), kept only for
+    the exempt '1'. `side` 0 selects `apply_feet`'s legacy path."""
     width = reference_glyph.width or 1
-    specs = []
-    seen = set()
-    exempt = params.base_letter(ch) in EXEMPT
-    for contour, x0, x1, y, is_top, left_ext, right_ext in _flat_runs(reference_glyph, right_angled_only=not exempt):
-        if not guides:
-            continue
+    specs, seen = [], set()
+    for contour, x0, x1, y, is_top, left_ext, right_ext in _flat_runs(reference_glyph):
         guide_name = min(guides, key=lambda k: abs(guides[k] - y))
-        if abs(guides[guide_name] - y) > TOLERANCE:
-            continue
-        if not (left_ext or right_ext):
+        if abs(guides[guide_name] - y) > TOLERANCE or not (left_ext or right_ext):
             continue
         key = (round(x0), round(x1), guide_name)
         if key in seen:
@@ -235,12 +235,45 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
             left_ext=left_ext,
             right_ext=right_ext,
             positive_winding=_signed_area(contour.points) >= 0,
+            side=0,
         ))
-    # Same base-letter resolution as `guides_for` -- an accented single-
-    # story letter still gets exactly two feet, not one per stem.
-    if exempt:
-        return _apply_outward_flares(specs, False)
-    return _select_entry_exit(specs, ch)
+    return _apply_outward_flares(specs, False)
+
+
+def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list[dict]:
+    """At most ONE foot spec per glyph (fractional corner x, guide name,
+    direction, flare side and the stem contour's own winding sign) from
+    one reference instance -- reused as-is (only re-scaled) at every
+    master, so every master's glyph gets identical topology."""
+    if not guides:
+        return []
+    base = params.base_letter(ch)
+    if base in EXEMPT:
+        return _legacy_specs(reference_glyph, guides, ch)
+    side = TOP_SIDE.get(base, -1 if (base.isupper() or base in LEFT_LOWER) else 1)
+    width = reference_glyph.width or 1
+    best = None
+    for contour, x0, x1, y, is_top, left_v, right_v in _runs(reference_glyph, MIN_RUN, DETECT_MAX_RUN):
+        guide_name = min(guides, key=lambda k: abs(guides[k] - y))
+        if abs(guides[guide_name] - y) > TOLERANCE:
+            continue
+        if not (left_v if side < 0 else right_v):
+            continue
+        cx = x0 if side < 0 else x1
+        if best is None or (cx < best["cx"] if side < 0 else cx > best["cx"]):
+            best = dict(
+                cx=cx,
+                x_frac=cx / width,
+                run_frac=(x1 - x0) / width,
+                guide=guide_name,
+                direction=-1 if is_top else 1,
+                side=side,
+                positive_winding=_signed_area(contour.points) >= 0,
+            )
+    if best is None:
+        return []
+    best.pop("cx")
+    return [best]
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):
@@ -292,32 +325,44 @@ def _actual_stem_width(glyph, guide_y: float, x_hint: float) -> tuple[float, flo
     return best
 
 
-def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_amount: float) -> None:
+def stem_width(glyph) -> float:
+    """Baseline stem width of a plain stem glyph (`I` or `l`) at this
+    master: the width of its leftmost flat baseline run."""
+    runs = [(x0, x1 - x0) for _c, x0, x1, y, _t, _l, _r in _runs(glyph, 3.0, 400.0) if abs(y) <= MEASURE_TOLERANCE]
+    return min(runs)[1] if runs else DEFAULT_STEM
+
+
+def _corner_x(glyph, guide_y: float, side: int, x_hint: float):
+    """(corner x, run length) of the flat run at `guide_y` whose `side`
+    end (left for -1, right for +1) is nearest `x_hint`, measured off
+    THIS master's own outline -- never another stem's."""
+    best = None
+    for _c, x0, x1, y, _t, _l, _r in _runs(glyph, 3.0, 2000.0):
+        if abs(y - guide_y) > MEASURE_TOLERANCE:
+            continue
+        cx = x0 if side < 0 else x1
+        d = abs(cx - x_hint)
+        if best is None or d < best[0]:
+            best = (d, cx, x1 - x0)
+    return None if best is None else (best[1], best[2])
+
+
+def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_amount: float,
+               stem_w: float | None = None) -> None:
     """Appends one rectangle contour per foot spec, always (even at
-    serif_amount=0 -- a collapsed hairline, not a skipped contour, so
-    every master keeps identical topology).
+    serif_amount=0 -- a collapsed hairline inside the stem, not a
+    skipped contour, so every master keeps identical topology).
 
-    The foot's own width and height are both sized off THIS master's
-    actual stem thickness (`_actual_stem_width`), not the reference
-    instance's fraction-of-advance-width approximation -- see that
-    function's own docstring for why those diverge badly at weights
-    away from the reference. Foot height is additionally hard-capped at
-    the stem's own actual width: a serif foot's stroke-perpendicular
-    extension should never rival or exceed the stroke it's growing
-    from, and the old, uncapped formula (a fixed fraction of the
-    wrongly-overshot reference-based width) could and did exceed a
-    thin stem's real width entirely, per the project owner's own direct
-    observation, not just poke out to the sides.
+    One-sided specs (`side` +-1) anchor at the stem's own corner as
+    measured at THIS master: the rectangle spans from `overlap` inside
+    the stem to `extra` beyond the corner, and its size is a fixed
+    fraction of `stem_w` (the master's own `I`/`l` stem width), so every
+    glyph of a case gets the identical serif. `side` 0 (the exempt '1')
+    keeps the legacy run-wide, both-ways foot.
 
-    Every spec's actual stem width is measured BEFORE any foot is
-    appended, all at once -- appending a foot rectangle mutates
-    `glyph`'s own contours, and its own flat top/bottom edge sits
-    exactly ON the guide line by construction, so measuring stem by
-    stem interleaved with appending risks a later spec's measurement
-    picking up an EARLIER spec's own just-appended foot as if it were
-    a second stem at that guide (confirmed directly: two same-guide
-    stems on one letter reproduced exactly this after the first foot
-    landed, dodged the same way here).
+    Every spec is measured BEFORE any rectangle is appended: appending
+    mutates `glyph`, and a new rectangle's edge sits exactly on the guide,
+    so interleaving could measure an earlier spec's own foot.
     """
     width = glyph.width or 1
     measurements = []
@@ -326,49 +371,46 @@ def apply_feet(glyph, foot_specs: list[dict], guides: dict[str, float], serif_am
             measurements.append(None)
             continue
         y = guides[spec["guide"]]
-        cx_hint = spec["x_frac"] * width
-        measured = _actual_stem_width(glyph, y, cx_hint)
-        if measured is not None:
-            cx, run_w = measured
-            run_w = max(run_w, 4.0)
+        hint = spec["x_frac"] * width
+        if spec["side"] == 0:
+            measured = _actual_stem_width(glyph, y, hint)
+            if measured is None:
+                measured = (hint, max(spec["run_frac"] * width, 4.0))
+            else:
+                measured = (measured[0], max(measured[1], 4.0))
         else:
-            cx = cx_hint
-            run_w = max(spec["run_frac"] * width, 4.0)
-        measurements.append((cx, run_w))
+            measured = _corner_x(glyph, y, spec["side"], hint)
+            if measured is None:
+                measured = (hint, max(spec["run_frac"] * width, 4.0))
+        measurements.append(measured)
 
+    t = serif_amount / 100.0
     for spec, measurement in zip(foot_specs, measurements):
-        if spec["guide"] not in guides:
+        if measurement is None:
             continue
         y = guides[spec["guide"]]
-        cx, run_w = measurement
-        extra = serif_amount * (run_w * 0.3) / 100.0
-        x0, x1 = cx - run_w / 2, cx + run_w / 2
-        left_ext, right_ext = spec["left_ext"], spec["right_ext"]
-        if left_ext and right_ext:
-            x0, x1 = x0 - extra / 2, x1 + extra / 2
-        elif left_ext:
-            x0 -= extra
-        elif right_ext:
-            x1 += extra
-        # A flat "+ MIN_FOOT_H" on top of the proportional term (the old
-        # formula) is negligible for a thick stem but NOT for a thin one
-        # -- confirmed directly by computing the actual ratio at both
-        # extremes: Black's foot came out to 35.5% of its own stem width,
-        # Thin's to 42.1%, purely because the same flat +1 unit is ~1% of
-        # Black's ~78-unit height but ~17% of Thin's ~6-unit height. That
-        # is a real, measurable reason Thin's foot reads disproportionately
-        # taller relative to its own (thin) stroke than Black's does
-        # relative to its own -- exactly the opposite of decreasing height
-        # at the thinnest weight specifically, which is what was asked
-        # for. Fixed by interpolating from the hairline (serif_amount=0)
-        # straight to the fully-proportional target (serif_amount=100)
-        # instead of always adding the hairline as a bonus on top: at full
-        # SERF, height is now EXACTLY run_w's own 0.35 fraction at every
-        # weight, thin included, matching Black's own already-correct
-        # ratio instead of exceeding it there.
-        t = serif_amount / 100.0
-        foot_h = MIN_FOOT_H * (1 - t) + (run_w * 0.35) * t
-        foot_h = min(foot_h, run_w)  # never taller than the stem it grows from
+        if spec["side"] == 0:
+            cx, run_w = measurement
+            extra = serif_amount * (run_w * 0.3) / 100.0
+            x0, x1 = cx - run_w / 2, cx + run_w / 2
+            left_ext, right_ext = spec["left_ext"], spec["right_ext"]
+            if left_ext and right_ext:
+                x0, x1 = x0 - extra / 2, x1 + extra / 2
+            elif left_ext:
+                x0 -= extra
+            elif right_ext:
+                x1 += extra
+            foot_h = min(MIN_FOOT_H * (1 - t) + (run_w * 0.35) * t, run_w)
+        else:
+            corner, run_len = measurement
+            w = max(stem_w or run_len, 4.0)
+            overlap = min(run_len, w)
+            extra = t * SERIF_W_FRAC * w
+            if spec["side"] < 0:
+                x0, x1 = corner - extra, corner + overlap
+            else:
+                x0, x1 = corner - overlap, corner + extra
+            foot_h = min(MIN_FOOT_H * (1 - t) + SERIF_H_FRAC * w * t, w)
         y0, y1 = (y, y + foot_h) if spec["direction"] > 0 else (y - foot_h, y)
 
         pen = glyph.getPointPen()
@@ -401,9 +443,7 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
     ch = params.base_letter(ch)
     if ch in NO_SERIF:
         return {}
-    allowed = {"baseline"}
-    if ch in TOP_ENTRY:
-        allowed |= {"xheight", "stemtop"}
+    allowed = {"xheight", "stemtop"} if ch in TOP_SIDE else {"baseline"}
     return {name: y for name, y in all_guides.items() if name in allowed}
 
 

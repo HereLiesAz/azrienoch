@@ -297,9 +297,11 @@ def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
     font.info.openTypeNameLicenseURL = LICENSE_URL
 
     reference = _serif_reference()
+    stem_upper, stem_lower = serifs.stem_width(font["I"]), serifs.stem_width(font["l"])
     for ch in CHARS:
         specs, guides = reference[ch]
-        serifs.apply_feet(font[_glyph_name(ch)], specs, guides, serf)
+        stem_w = stem_upper if params.base_letter(ch).isupper() else stem_lower
+        serifs.apply_feet(font[_glyph_name(ch)], specs, guides, serf, stem_w)
         if ch == "7":
             serifs.apply_seven_dash(font[_glyph_name(ch)], serf)
 

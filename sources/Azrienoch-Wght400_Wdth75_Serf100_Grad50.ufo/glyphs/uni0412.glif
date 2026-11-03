@@ -50,5 +50,11 @@
       <point x="222" y="420" type="qcurve" smooth="yes"/>
       <point x="136" y="420" type="line"/>
     </contour>
+    <contour>
+      <point x="-2.6" y="0.0" type="line"/>
+      <point x="169" y="0.0" type="line"/>
+      <point x="169" y="46.2" type="line"/>
+      <point x="-2.6" y="46.2" type="line"/>
+    </contour>
   </outline>
 </glyph>

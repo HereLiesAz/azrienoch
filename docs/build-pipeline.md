@@ -78,16 +78,18 @@ In roughly build order:
   interpolate at all rather than failing to compile. Each foot only
   grows on the side(s) that border a real stem rather than the
   letter's own counter. Policy: serifs grow only from right-angled
-  terminals and follow cursive exit points -- exactly one per glyph, at
-  the baseline of the rightmost right-angled stem, flaring right only
-  (h/m/n/r/a/u/F/f/H/t/i/k...). No top-left entry serifs
-  (`TOP_ENTRY` is empty); none on ascender/cap tops, descender letters
-  (g j p q y) or R, Q, N, and none on diagonal-legged letters (A, M).
-  `1` keeps its original both-ways baseline foot. `7` gets a `SERF`
-  driven crossbar dash through its diagonal
-  (`serifs.apply_seven_dash`). Per-master stem measurement uses wider
-  run limits and tolerance than detection (`MEASURE_TOLERANCE`) so the
-  foot never lands on the wrong stem at Thin/Black or condensed masters.
+  terminals, exactly one per glyph. Uppercase (and b, k): the leftmost
+  stem's lower-left corner, flaring left (B D E F H I K L P R T Y ...),
+  all at one size taken from that master's `I` stem. Other lowercase
+  and digits: the rightmost stem's bottom-right corner, flaring right
+  (a d f h i l m n r t u ...). p and q get one serif at the x-height
+  top of the stem, flaring outward (p upper-left, q upper-right). None
+  on M N Q g j y, on ascender/cap tops, or on diagonal terminals
+  (A, X, x, v, w, z, K/R legs). `1` keeps its original both-ways
+  baseline foot. `7` gets a `SERF`-driven dash through its diagonal
+  (`serifs.apply_seven_dash`). Each foot is anchored at the stem corner
+  measured on that master's own outline (`_corner_x`), so it never
+  lands on the wrong stem at Thin/Black or condensed masters.
 - **`kerning.py`** -- letter-pair kerning extracted from vendored
   Jost's own GPOS pair-positioning table, covering the full character
   set.
