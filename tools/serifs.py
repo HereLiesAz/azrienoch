@@ -37,6 +37,8 @@ right angle) -- and there is exactly ONE serif per glyph:
 - Nothing at ascender/cap tops and nothing on descenders; `NO_SERIF`
   (N Q g j y) get none; A, K's/R's legs, X, x, v, w, z have no
   right-angled terminal so none grow.
+- `BOTH_SIDES` (M) is the one exception: a serif at each foot, flaring
+  outward, even though its legs are slanted.
 - '1' is exempt (`detect_feet`/`apply_feet` keep its original
   behavior: a lone stem flares both ways at the baseline).
 - '7' gets a crossbar "dash" through the middle of its diagonal
@@ -82,6 +84,7 @@ MIN_STEM_LEN = 150.0  # units: how long an adjacent straight run must be to coun
 STEM_TOP = 460.0  # units: where Jost's FLAT stem tops sit (x-height 470 is the round overshoot)
 LEFT_LOWER = set("bk")  # lowercase letters whose one serif flares left (all caps do too)
 TOP_SIDE = {"p": -1, "q": 1}  # x-height stem-top serif and the side it flares to
+BOTH_SIDES = set("M")  # the one exception: serifs at both feet, even though the legs are slanted
 NO_SERIF = set("NQgjy")  # no serif at all -- see module docstring
 EXEMPT = {"1"}  # keeps the original both-ways baseline foot
 SINGLE_STORY = set("acemnorsuvwxz")  # only used by the '1'-exempt legacy flare logic
@@ -260,30 +263,32 @@ def detect_feet(reference_glyph, guides: dict[str, float], ch: str = "") -> list
     base = params.base_letter(ch)
     if base in EXEMPT:
         return _legacy_specs(reference_glyph, guides, ch)
-    side = TOP_SIDE.get(base, -1 if (base.isupper() or base in LEFT_LOWER) else 1)
+    sides = (-1, 1) if base in BOTH_SIDES else (TOP_SIDE.get(base, -1 if (base.isupper() or base in LEFT_LOWER) else 1),)
     width = reference_glyph.width or 1
-    best = None
-    for contour, x0, x1, y, is_top, left_v, right_v in _runs(reference_glyph, MIN_RUN, DETECT_MAX_RUN):
-        guide_name = min(guides, key=lambda k: abs(guides[k] - y))
-        if abs(guides[guide_name] - y) > TOLERANCE:
-            continue
-        if not (left_v if side < 0 else right_v):
-            continue
-        cx = x0 if side < 0 else x1
-        if best is None or (cx < best["cx"] if side < 0 else cx > best["cx"]):
-            best = dict(
-                cx=cx,
-                x_frac=cx / width,
-                run_frac=(x1 - x0) / width,
-                guide=guide_name,
-                direction=-1 if is_top else 1,
-                side=side,
-                positive_winding=_signed_area(contour.points) >= 0,
-            )
-    if best is None:
-        return []
-    best.pop("cx")
-    return [best]
+    found = []
+    for side in sides:
+        best = None
+        for contour, x0, x1, y, is_top, left_v, right_v in _runs(reference_glyph, MIN_RUN, DETECT_MAX_RUN):
+            guide_name = min(guides, key=lambda k: abs(guides[k] - y))
+            if abs(guides[guide_name] - y) > TOLERANCE:
+                continue
+            if base not in BOTH_SIDES and not (left_v if side < 0 else right_v):
+                continue
+            cx = x0 if side < 0 else x1
+            if best is None or (cx < best["cx"] if side < 0 else cx > best["cx"]):
+                best = dict(
+                    cx=cx,
+                    x_frac=cx / width,
+                    run_frac=(x1 - x0) / width,
+                    guide=guide_name,
+                    direction=-1 if is_top else 1,
+                    side=side,
+                    positive_winding=_signed_area(contour.points) >= 0,
+                )
+        if best is not None:
+            best.pop("cx")
+            found.append(best)
+    return found
 
 
 def _rect_points(x0, y0, x1, y1, positive_winding: bool):

@@ -15,5 +15,17 @@
       <point x="40" y="0" type="line"/>
       <point x="123.64965986394557" y="0.0" type="line"/>
     </contour>
+    <contour>
+      <point x="14.5" y="0.0" type="line"/>
+      <point x="123.65" y="0.0" type="line"/>
+      <point x="123.65" y="29.75" type="line"/>
+      <point x="14.5" y="29.75" type="line"/>
+    </contour>
+    <contour>
+      <point x="686.35" y="0.0" type="line"/>
+      <point x="795.5" y="0.0" type="line"/>
+      <point x="795.5" y="29.75" type="line"/>
+      <point x="686.35" y="29.75" type="line"/>
+    </contour>
   </outline>
 </glyph>
