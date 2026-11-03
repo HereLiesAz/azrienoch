@@ -626,7 +626,7 @@ def hang_Y_from_V(Y_glyph) -> None:
 def hang_y_from_v(y_glyph, v_glyph) -> None:
     """y = v narrowed (same V as Y) plus the descender curl built by
     build_y_from_u_and_g, re-hung so its stem's right edge sits on the
-    V's right terminal at x-height. Run after build_y_from_u_and_g: y
+    V's right terminal at x-height, V width = curl width (left corners aligned). Run after build_y_from_u_and_g: y
     contour 0 points 10-29 are then the stem-and-curl outline, with
     points 28/29 the stem-top right/left corners."""
     Q = [(p.x, p.y) for p in v_glyph.contours[0].points]
@@ -636,7 +636,12 @@ def hang_y_from_v(y_glyph, v_glyph) -> None:
     cx, tip_y = Q[1]
     ccw = _signed_area_xy(Q) > 0
     pts = y_glyph.contours[0].points
-    v, _ = _narrow_v(Q[0][0], Q[2][0], Q[5][0] - Q[0][0], top, cx, tip_y, V_NARROW, pts[28].x - pts[29].x)
+    # The V's outer width equals the curl's width (stem right edge to the
+    # curl's leftmost point), so y's top-left corner sits exactly above its
+    # bottom-left corner at every master.
+    curl_w = pts[28].x - min(p.x for p in pts[10:30])
+    narrow = curl_w / (Q[2][0] - Q[0][0])
+    v, _ = _narrow_v(Q[0][0], Q[2][0], Q[5][0] - Q[0][0], top, cx, tip_y, narrow, pts[28].x - pts[29].x)
     dx = v[4][0] - pts[28].x
     tail = _copy_points([pts[10]] + pts[11:30])
     for p in tail:
