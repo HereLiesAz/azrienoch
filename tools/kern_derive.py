@@ -35,8 +35,11 @@ A-Y -70 while O-Y is -100). `GAP_CAP` scales with the master's `wdth`
 fraction; the result is otherwise computed per master, so kerning now
 varies with `wght`, `wdth` and `SERF`.
 
-`PAIR_TIGHTEN` holds per-pair owner overrides (A->Y: x1.67 strength,
-clearance 20).
+`PAIR_TIGHTEN` holds per-pair owner overrides (A->Y, Y->A, Y->s: x1.67
+strength, clearance 20; Y->A can't simply mirror A->Y's -150: Y's stem meets A's apex). Pairs touching a `DIAGONAL` glyph never get a
+positive kern (the open wedge reads as space the model would otherwise
+close by loosening). J's empty left side above its hook is treated as
+filled out to the hook's leftmost point.
 
 Scope: the 62 base letters/digits. Accented/Cyrillic glyphs that
 `params.base_letter` maps onto a base letter inherit that pair's value
@@ -56,7 +59,8 @@ STRENGTH = 0.75
 MIN_KERN = -250
 MAX_KERN = 80
 MIN_ABS = 5
-PAIR_TIGHTEN = {("A", "Y"): (150.0 / 90.0, 20.0)}  # (strength multiplier, MIN_CLEAR) per pair: owner asked A->Y much tighter
+PAIR_TIGHTEN = {("A", "Y"): (150.0 / 90.0, 20.0), ("Y", "A"): (150.0 / 90.0, 20.0), ("Y", "s"): (150.0 / 90.0, 20.0)}  # (strength multiplier, MIN_CLEAR) per pair: owner asked A->Y much tighter
+DIAGONAL = set("AKMVWXYZkvwxyz")  # glyphs with a diagonal side: derived kerns for pairs touching them never open up (cap at 0)
 MIN_CLEAR = 80.0  # units (x wdth fraction): closest approach of any pair never drops below this
 
 
@@ -132,6 +136,14 @@ def derive(font, wdth: int) -> dict[tuple[str, str], int]:
     xh_n = int(np.searchsorted(ys, params.X_HEIGHT))
     chars = base_chars()
     prof = {c: profile(font[_name(c)], ys) for c in chars}
+    # J's hook hangs below the baseline and its stem sits far right in the
+    # advance, so above the baseline its left edge is empty space. Treat
+    # that as stem-adjacent: its left edge is the hook's own leftmost point
+    # (scanned over the full height incl. the descender) at every row it has ink.
+    deep = np.arange(-300, top, STEP) + STEP / 2.0
+    j_left = np.nanmin(profile(font[_name("J")], deep)[0])
+    jl, jr = prof["J"]
+    prof["J"] = (np.where(np.isnan(jl), np.nan, j_left), jr)
     adv = {c: font[_name(c)].width for c in chars}
 
     def optical(l, r, n):
@@ -157,6 +169,8 @@ def derive(font, wdth: int) -> dict[tuple[str, str], int]:
             near = closest(l, r)
             if near is not None:
                 k = max(k, int(round(clear * wdth / 100.0 - near)))
+            if k > 0 and (l in DIAGONAL or r in DIAGONAL):
+                k = 0
             out[(_name(l), _name(r))] = k if abs(k) >= MIN_ABS else 0
     return out
 

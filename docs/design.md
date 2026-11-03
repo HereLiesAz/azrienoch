@@ -423,7 +423,7 @@ moved toward H-H (capital pairs), n-n (lowercase), or their mean
 (mixed) by `STRENGTH` 0.75, clamped to -250..80, raised so the closest
 approach never drops under `MIN_CLEAR` 80 (x `wdth` fraction), and
 dropped under 5 units. A->Y is an owner override (`PAIR_TIGHTEN`): strength x1.67,
-clearance 20, giving -150 at Regular. An area measure is used rather than the closest
+clearance 20, giving -150 at Regular (Y->A, Y->s share it: -47 at Regular -- Y's stem meets A's apex at -150). Pairs touching a diagonal glyph (A K M V W X Y Z k v w x y z) never get a positive kern; J's empty left side above its hook is treated as filled out to the hook's leftmost point. An area measure is used rather than the closest
 point because a pair that opens into a wedge (A-Y, T-o) reads looser than
 its minimum gap, the effect the proof's O-Y entry records.
 

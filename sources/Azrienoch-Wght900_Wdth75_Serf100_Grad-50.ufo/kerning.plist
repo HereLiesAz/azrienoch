@@ -4,30 +4,8 @@
   <dict>
     <key>A</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
-      <key>B</key>
-      <integer>62</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -40,12 +18,6 @@
       <integer>-59</integer>
       <key>Cdotaccent</key>
       <integer>-59</integer>
-      <key>D</key>
-      <integer>57</integer>
-      <key>E</key>
-      <integer>54</integer>
-      <key>F</key>
-      <integer>48</integer>
       <key>G</key>
       <integer>-58</integer>
       <key>Gbreve</key>
@@ -54,18 +26,6 @@
       <integer>-58</integer>
       <key>Gdotaccent</key>
       <integer>-58</integer>
-      <key>H</key>
-      <integer>47</integer>
-      <key>I</key>
-      <integer>55</integer>
-      <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>55</integer>
-      <key>L</key>
-      <integer>46</integer>
-      <key>M</key>
-      <integer>71</integer>
       <key>N</key>
       <integer>-7</integer>
       <key>O</key>
@@ -88,12 +48,8 @@
       <integer>-22</integer>
       <key>Otilde</key>
       <integer>-57</integer>
-      <key>P</key>
-      <integer>50</integer>
       <key>Q</key>
       <integer>-58</integer>
-      <key>R</key>
-      <integer>55</integer>
       <key>S</key>
       <integer>-64</integer>
       <key>T</key>
@@ -106,22 +62,16 @@
       <integer>-81</integer>
       <key>Wcircumflex</key>
       <integer>-81</integer>
-      <key>X</key>
-      <integer>30</integer>
       <key>Y</key>
       <integer>-135</integer>
       <key>Ydieresis</key>
       <integer>-135</integer>
-      <key>Z</key>
-      <integer>27</integer>
       <key>a</key>
       <integer>-39</integer>
       <key>asterisk</key>
       <integer>-68</integer>
       <key>at</key>
       <integer>-22</integer>
-      <key>b</key>
-      <integer>50</integer>
       <key>c</key>
       <integer>-39</integer>
       <key>comma</key>
@@ -140,22 +90,12 @@
       <integer>-20</integer>
       <key>g</key>
       <integer>-38</integer>
-      <key>k</key>
-      <integer>48</integer>
-      <key>l</key>
-      <integer>10</integer>
-      <key>m</key>
-      <integer>12</integer>
-      <key>n</key>
-      <integer>11</integer>
       <key>nine</key>
       <integer>-39</integer>
       <key>o</key>
       <integer>-39</integer>
       <key>one</key>
       <integer>-78</integer>
-      <key>p</key>
-      <integer>5</integer>
       <key>period</key>
       <integer>22</integer>
       <key>q</key>
@@ -176,8 +116,6 @@
       <integer>-21</integer>
       <key>three</key>
       <integer>-48</integer>
-      <key>two</key>
-      <integer>21</integer>
       <key>u</key>
       <integer>-29</integer>
       <key>uni0122</key>
@@ -200,49 +138,23 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
       <key>zero</key>
       <integer>-55</integer>
     </dict>
     <key>Aacute</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -333,47 +245,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Abreve</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -464,47 +350,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Acircumflex</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -595,47 +455,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Adieresis</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -726,47 +560,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Agrave</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -857,47 +665,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Amacron</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -988,47 +770,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Aogonek</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -1119,47 +875,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Aring</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -1250,47 +980,21 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>Atilde</key>
     <dict>
-      <key>A</key>
-      <integer>31</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>31</integer>
-      <key>Abreve</key>
-      <integer>31</integer>
-      <key>Acircumflex</key>
-      <integer>31</integer>
-      <key>Adieresis</key>
-      <integer>31</integer>
-      <key>Agrave</key>
-      <integer>31</integer>
-      <key>Amacron</key>
-      <integer>31</integer>
-      <key>Aogonek</key>
-      <integer>31</integer>
-      <key>Aring</key>
-      <integer>31</integer>
-      <key>Atilde</key>
-      <integer>31</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -1381,22 +1085,16 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-95</integer>
-      <key>uni0445</key>
-      <integer>30</integer>
       <key>v</key>
       <integer>-91</integer>
       <key>w</key>
       <integer>-87</integer>
-      <key>x</key>
-      <integer>30</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
       <integer>-95</integer>
       <key>ydieresis</key>
       <integer>-95</integer>
-      <key>z</key>
-      <integer>24</integer>
     </dict>
     <key>B</key>
     <dict>
@@ -1436,14 +1134,10 @@
       <integer>-16</integer>
       <key>I</key>
       <integer>-8</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>K</key>
       <integer>-8</integer>
       <key>L</key>
       <integer>-17</integer>
-      <key>M</key>
-      <integer>8</integer>
       <key>N</key>
       <integer>-20</integer>
       <key>O</key>
@@ -1576,13 +1270,9 @@
       <key>I</key>
       <integer>43</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>43</integer>
+      <integer>5</integer>
       <key>L</key>
       <integer>34</integer>
-      <key>M</key>
-      <integer>59</integer>
       <key>N</key>
       <integer>-14</integer>
       <key>P</key>
@@ -1623,8 +1313,6 @@
       <integer>9</integer>
       <key>h</key>
       <integer>-9</integer>
-      <key>k</key>
-      <integer>37</integer>
       <key>o</key>
       <integer>9</integer>
       <key>one</key>
@@ -1659,12 +1347,6 @@
       <integer>-11</integer>
       <key>uni0434</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>20</integer>
-      <key>w</key>
-      <integer>20</integer>
-      <key>x</key>
-      <integer>15</integer>
     </dict>
     <key>D</key>
     <dict>
@@ -1703,7 +1385,7 @@
       <key>I</key>
       <integer>-6</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>11</integer>
       <key>K</key>
       <integer>-6</integer>
       <key>L</key>
@@ -1806,12 +1488,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>16</integer>
-      <key>w</key>
-      <integer>16</integer>
-      <key>x</key>
-      <integer>11</integer>
       <key>zero</key>
       <integer>9</integer>
     </dict>
@@ -1877,10 +1553,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>16</integer>
-      <key>w</key>
-      <integer>16</integer>
     </dict>
     <key>Dcroat</key>
     <dict>
@@ -1959,8 +1631,6 @@
     </dict>
     <key>E</key>
     <dict>
-      <key>A</key>
-      <integer>11</integer>
       <key>B</key>
       <integer>41</integer>
       <key>C</key>
@@ -1977,14 +1647,8 @@
       <integer>26</integer>
       <key>I</key>
       <integer>34</integer>
-      <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>34</integer>
       <key>L</key>
       <integer>25</integer>
-      <key>M</key>
-      <integer>50</integer>
       <key>N</key>
       <integer>-24</integer>
       <key>O</key>
@@ -2001,16 +1665,6 @@
       <integer>11</integer>
       <key>U</key>
       <integer>-19</integer>
-      <key>V</key>
-      <integer>11</integer>
-      <key>W</key>
-      <integer>9</integer>
-      <key>X</key>
-      <integer>9</integer>
-      <key>Y</key>
-      <integer>10</integer>
-      <key>Z</key>
-      <integer>6</integer>
       <key>a</key>
       <integer>-11</integer>
       <key>b</key>
@@ -2035,8 +1689,6 @@
       <integer>-10</integer>
       <key>j</key>
       <integer>-10</integer>
-      <key>k</key>
-      <integer>28</integer>
       <key>l</key>
       <integer>-10</integer>
       <key>m</key>
@@ -2065,8 +1717,6 @@
       <integer>-11</integer>
       <key>w</key>
       <integer>-10</integer>
-      <key>x</key>
-      <integer>10</integer>
       <key>y</key>
       <integer>-30</integer>
       <key>zero</key>
@@ -2112,8 +1762,6 @@
       <integer>-28</integer>
       <key>I</key>
       <integer>-20</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>K</key>
       <integer>-20</integer>
       <key>L</key>
@@ -2136,14 +1784,6 @@
       <integer>11</integer>
       <key>U</key>
       <integer>-19</integer>
-      <key>V</key>
-      <integer>11</integer>
-      <key>W</key>
-      <integer>10</integer>
-      <key>Y</key>
-      <integer>11</integer>
-      <key>Ydieresis</key>
-      <integer>11</integer>
       <key>Z</key>
       <integer>-17</integer>
       <key>a</key>
@@ -2386,7 +2026,7 @@
       <key>I</key>
       <integer>-5</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>12</integer>
       <key>K</key>
       <integer>-5</integer>
       <key>L</key>
@@ -2724,13 +2364,9 @@
       <key>I</key>
       <integer>16</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>16</integer>
+      <integer>15</integer>
       <key>L</key>
       <integer>7</integer>
-      <key>M</key>
-      <integer>32</integer>
       <key>O</key>
       <integer>-18</integer>
       <key>P</key>
@@ -2779,8 +2415,6 @@
       <integer>-21</integer>
       <key>j</key>
       <integer>-22</integer>
-      <key>k</key>
-      <integer>10</integer>
       <key>m</key>
       <integer>-26</integer>
       <key>n</key>
@@ -2843,13 +2477,9 @@
       <key>I</key>
       <integer>23</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>23</integer>
+      <integer>20</integer>
       <key>L</key>
       <integer>14</integer>
-      <key>M</key>
-      <integer>39</integer>
       <key>O</key>
       <integer>-13</integer>
       <key>P</key>
@@ -2888,8 +2518,6 @@
       <integer>-17</integer>
       <key>j</key>
       <integer>-18</integer>
-      <key>k</key>
-      <integer>17</integer>
       <key>m</key>
       <integer>-20</integer>
       <key>n</key>
@@ -2927,8 +2555,6 @@
     </dict>
     <key>J</key>
     <dict>
-      <key>A</key>
-      <integer>22</integer>
       <key>B</key>
       <integer>52</integer>
       <key>C</key>
@@ -2946,13 +2572,9 @@
       <key>I</key>
       <integer>45</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>45</integer>
+      <integer>37</integer>
       <key>L</key>
       <integer>36</integer>
-      <key>M</key>
-      <integer>61</integer>
       <key>N</key>
       <integer>19</integer>
       <key>O</key>
@@ -2969,16 +2591,6 @@
       <integer>22</integer>
       <key>U</key>
       <integer>18</integer>
-      <key>V</key>
-      <integer>22</integer>
-      <key>W</key>
-      <integer>20</integer>
-      <key>X</key>
-      <integer>20</integer>
-      <key>Y</key>
-      <integer>21</integer>
-      <key>Z</key>
-      <integer>17</integer>
       <key>a</key>
       <integer>8</integer>
       <key>b</key>
@@ -2999,8 +2611,6 @@
       <integer>12</integer>
       <key>h</key>
       <integer>12</integer>
-      <key>k</key>
-      <integer>39</integer>
       <key>l</key>
       <integer>18</integer>
       <key>o</key>
@@ -3021,23 +2631,11 @@
       <integer>21</integer>
       <key>two</key>
       <integer>11</integer>
-      <key>v</key>
-      <integer>22</integer>
-      <key>w</key>
-      <integer>22</integer>
-      <key>x</key>
-      <integer>21</integer>
-      <key>z</key>
-      <integer>15</integer>
       <key>zero</key>
       <integer>8</integer>
     </dict>
     <key>K</key>
     <dict>
-      <key>A</key>
-      <integer>9</integer>
-      <key>B</key>
-      <integer>39</integer>
       <key>C</key>
       <integer>-77</integer>
       <key>Cacute</key>
@@ -3050,12 +2648,6 @@
       <integer>-77</integer>
       <key>Cdotaccent</key>
       <integer>-77</integer>
-      <key>D</key>
-      <integer>34</integer>
-      <key>E</key>
-      <integer>31</integer>
-      <key>F</key>
-      <integer>25</integer>
       <key>G</key>
       <integer>-76</integer>
       <key>Gbreve</key>
@@ -3064,18 +2656,8 @@
       <integer>-76</integer>
       <key>Gdotaccent</key>
       <integer>-76</integer>
-      <key>H</key>
-      <integer>24</integer>
-      <key>I</key>
-      <integer>32</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>32</integer>
-      <key>L</key>
-      <integer>23</integer>
-      <key>M</key>
-      <integer>48</integer>
+      <integer>-6</integer>
       <key>N</key>
       <integer>-30</integer>
       <key>O</key>
@@ -3098,24 +2680,16 @@
       <integer>-38</integer>
       <key>Otilde</key>
       <integer>-75</integer>
-      <key>P</key>
-      <integer>27</integer>
       <key>Q</key>
       <integer>-76</integer>
-      <key>R</key>
-      <integer>32</integer>
       <key>S</key>
       <integer>-69</integer>
       <key>U</key>
       <integer>-28</integer>
-      <key>X</key>
-      <integer>7</integer>
       <key>a</key>
       <integer>-76</integer>
       <key>at</key>
       <integer>-38</integer>
-      <key>b</key>
-      <integer>28</integer>
       <key>c</key>
       <integer>-79</integer>
       <key>cacute</key>
@@ -3174,8 +2748,6 @@
       <integer>-22</integer>
       <key>j</key>
       <integer>-23</integer>
-      <key>k</key>
-      <integer>26</integer>
       <key>l</key>
       <integer>-13</integer>
       <key>m</key>
@@ -3244,16 +2816,12 @@
       <integer>-95</integer>
       <key>uni0444</key>
       <integer>-22</integer>
-      <key>uni0445</key>
-      <integer>8</integer>
       <key>uni0451</key>
       <integer>-22</integer>
       <key>v</key>
       <integer>-95</integer>
       <key>w</key>
       <integer>-95</integer>
-      <key>x</key>
-      <integer>8</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
@@ -3265,28 +2833,8 @@
     </dict>
     <key>L</key>
     <dict>
-      <key>A</key>
-      <integer>30</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>30</integer>
-      <key>Abreve</key>
-      <integer>30</integer>
-      <key>Acircumflex</key>
-      <integer>30</integer>
-      <key>Adieresis</key>
-      <integer>30</integer>
-      <key>Agrave</key>
-      <integer>30</integer>
-      <key>Amacron</key>
-      <integer>30</integer>
-      <key>Aogonek</key>
-      <integer>30</integer>
-      <key>Aring</key>
-      <integer>30</integer>
-      <key>Atilde</key>
-      <integer>30</integer>
       <key>B</key>
       <integer>60</integer>
       <key>C</key>
@@ -3320,13 +2868,9 @@
       <key>I</key>
       <integer>53</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>53</integer>
+      <integer>16</integer>
       <key>L</key>
       <integer>44</integer>
-      <key>M</key>
-      <integer>69</integer>
       <key>N</key>
       <integer>-8</integer>
       <key>O</key>
@@ -3367,14 +2911,10 @@
       <integer>-81</integer>
       <key>Wcircumflex</key>
       <integer>-81</integer>
-      <key>X</key>
-      <integer>28</integer>
       <key>Y</key>
       <integer>-81</integer>
       <key>Ydieresis</key>
       <integer>-81</integer>
-      <key>Z</key>
-      <integer>25</integer>
       <key>a</key>
       <integer>8</integer>
       <key>asterisk</key>
@@ -3401,8 +2941,6 @@
       <integer>23</integer>
       <key>g</key>
       <integer>10</integer>
-      <key>k</key>
-      <integer>47</integer>
       <key>l</key>
       <integer>9</integer>
       <key>m</key>
@@ -3457,49 +2995,23 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-91</integer>
-      <key>uni0445</key>
-      <integer>29</integer>
       <key>v</key>
       <integer>-90</integer>
       <key>w</key>
       <integer>-81</integer>
-      <key>x</key>
-      <integer>29</integer>
       <key>y</key>
       <integer>-91</integer>
       <key>yacute</key>
       <integer>-91</integer>
       <key>ydieresis</key>
       <integer>-91</integer>
-      <key>z</key>
-      <integer>23</integer>
       <key>zero</key>
       <integer>-16</integer>
     </dict>
     <key>Lacute</key>
     <dict>
-      <key>A</key>
-      <integer>30</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>30</integer>
-      <key>Abreve</key>
-      <integer>30</integer>
-      <key>Acircumflex</key>
-      <integer>30</integer>
-      <key>Adieresis</key>
-      <integer>30</integer>
-      <key>Agrave</key>
-      <integer>30</integer>
-      <key>Amacron</key>
-      <integer>30</integer>
-      <key>Aogonek</key>
-      <integer>30</integer>
-      <key>Aring</key>
-      <integer>30</integer>
-      <key>Atilde</key>
-      <integer>30</integer>
       <key>C</key>
       <integer>-27</integer>
       <key>Cacute</key>
@@ -3590,22 +3102,16 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-91</integer>
-      <key>uni0445</key>
-      <integer>29</integer>
       <key>v</key>
       <integer>-90</integer>
       <key>w</key>
       <integer>-81</integer>
-      <key>x</key>
-      <integer>29</integer>
       <key>y</key>
       <integer>-91</integer>
       <key>yacute</key>
       <integer>-91</integer>
       <key>ydieresis</key>
       <integer>-91</integer>
-      <key>z</key>
-      <integer>23</integer>
     </dict>
     <key>Lslash</key>
     <dict>
@@ -3740,42 +3246,14 @@
     </dict>
     <key>M</key>
     <dict>
-      <key>A</key>
-      <integer>68</integer>
-      <key>B</key>
-      <integer>98</integer>
       <key>C</key>
       <integer>-30</integer>
-      <key>D</key>
-      <integer>93</integer>
-      <key>E</key>
-      <integer>90</integer>
-      <key>F</key>
-      <integer>84</integer>
       <key>G</key>
       <integer>-28</integer>
-      <key>H</key>
-      <integer>83</integer>
-      <key>I</key>
-      <integer>91</integer>
-      <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>91</integer>
-      <key>L</key>
-      <integer>82</integer>
-      <key>M</key>
-      <integer>107</integer>
-      <key>N</key>
-      <integer>30</integer>
       <key>O</key>
       <integer>-27</integer>
-      <key>P</key>
-      <integer>86</integer>
       <key>Q</key>
       <integer>-28</integer>
-      <key>R</key>
-      <integer>91</integer>
       <key>S</key>
       <integer>-23</integer>
       <key>T</key>
@@ -3786,77 +3264,25 @@
       <integer>-68</integer>
       <key>W</key>
       <integer>-63</integer>
-      <key>X</key>
-      <integer>66</integer>
       <key>Y</key>
       <integer>-72</integer>
-      <key>Z</key>
-      <integer>63</integer>
-      <key>a</key>
-      <integer>10</integer>
-      <key>b</key>
-      <integer>87</integer>
-      <key>d</key>
-      <integer>10</integer>
-      <key>eight</key>
-      <integer>7</integer>
-      <key>f</key>
-      <integer>27</integer>
-      <key>five</key>
-      <integer>37</integer>
       <key>four</key>
       <integer>-9</integer>
-      <key>h</key>
-      <integer>39</integer>
-      <key>i</key>
-      <integer>38</integer>
-      <key>j</key>
-      <integer>37</integer>
-      <key>k</key>
-      <integer>85</integer>
-      <key>l</key>
-      <integer>47</integer>
-      <key>m</key>
-      <integer>49</integer>
-      <key>n</key>
-      <integer>48</integer>
       <key>one</key>
       <integer>-60</integer>
-      <key>p</key>
-      <integer>42</integer>
-      <key>q</key>
-      <integer>14</integer>
-      <key>r</key>
-      <integer>39</integer>
-      <key>s</key>
-      <integer>30</integer>
-      <key>seven</key>
-      <integer>20</integer>
       <key>six</key>
       <integer>-12</integer>
-      <key>t</key>
-      <integer>16</integer>
-      <key>two</key>
-      <integer>57</integer>
-      <key>u</key>
-      <integer>25</integer>
       <key>v</key>
       <integer>-42</integer>
       <key>w</key>
       <integer>-42</integer>
-      <key>x</key>
-      <integer>67</integer>
       <key>y</key>
       <integer>-62</integer>
-      <key>z</key>
-      <integer>61</integer>
       <key>zero</key>
       <integer>-24</integer>
     </dict>
     <key>N</key>
     <dict>
-      <key>A</key>
-      <integer>12</integer>
       <key>B</key>
       <integer>43</integer>
       <key>D</key>
@@ -3870,13 +3296,9 @@
       <key>I</key>
       <integer>36</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>36</integer>
+      <integer>30</integer>
       <key>L</key>
       <integer>27</integer>
-      <key>M</key>
-      <integer>52</integer>
       <key>N</key>
       <integer>12</integer>
       <key>P</key>
@@ -3889,16 +3311,6 @@
       <integer>12</integer>
       <key>U</key>
       <integer>10</integer>
-      <key>V</key>
-      <integer>12</integer>
-      <key>W</key>
-      <integer>11</integer>
-      <key>X</key>
-      <integer>11</integer>
-      <key>Y</key>
-      <integer>12</integer>
-      <key>Z</key>
-      <integer>8</integer>
       <key>b</key>
       <integer>32</integer>
       <key>f</key>
@@ -3913,8 +3325,6 @@
       <integer>-8</integer>
       <key>j</key>
       <integer>-9</integer>
-      <key>k</key>
-      <integer>30</integer>
       <key>l</key>
       <integer>11</integer>
       <key>m</key>
@@ -3937,16 +3347,8 @@
       <integer>-9</integer>
       <key>u</key>
       <integer>-8</integer>
-      <key>v</key>
-      <integer>12</integer>
-      <key>w</key>
-      <integer>12</integer>
-      <key>x</key>
-      <integer>11</integer>
       <key>y</key>
       <integer>-8</integer>
-      <key>z</key>
-      <integer>5</integer>
     </dict>
     <key>O</key>
     <dict>
@@ -3983,7 +3385,7 @@
       <key>H</key>
       <integer>-5</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>18</integer>
       <key>L</key>
       <integer>-6</integer>
       <key>M</key>
@@ -4068,14 +3470,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
-      <key>x</key>
-      <integer>18</integer>
-      <key>z</key>
-      <integer>9</integer>
       <key>zero</key>
       <integer>16</integer>
     </dict>
@@ -4139,10 +3533,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Obreve</key>
     <dict>
@@ -4204,10 +3594,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Ocircumflex</key>
     <dict>
@@ -4269,10 +3655,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Odieresis</key>
     <dict>
@@ -4334,10 +3716,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Ograve</key>
     <dict>
@@ -4399,10 +3777,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Omacron</key>
     <dict>
@@ -4464,10 +3838,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>Oslash</key>
     <dict>
@@ -4604,10 +3974,6 @@
       <integer>-22</integer>
       <key>uni0434</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>23</integer>
-      <key>w</key>
-      <integer>23</integer>
     </dict>
     <key>P</key>
     <dict>
@@ -4649,8 +4015,6 @@
       <integer>-24</integer>
       <key>I</key>
       <integer>-16</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>K</key>
       <integer>-16</integer>
       <key>L</key>
@@ -4877,12 +4241,6 @@
       <integer>-22</integer>
       <key>uni0451</key>
       <integer>-22</integer>
-      <key>v</key>
-      <integer>15</integer>
-      <key>w</key>
-      <integer>15</integer>
-      <key>x</key>
-      <integer>10</integer>
       <key>y</key>
       <integer>-5</integer>
       <key>z</key>
@@ -4892,8 +4250,6 @@
     </dict>
     <key>Q</key>
     <dict>
-      <key>A</key>
-      <integer>40</integer>
       <key>B</key>
       <integer>70</integer>
       <key>C</key>
@@ -4911,13 +4267,9 @@
       <key>I</key>
       <integer>63</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>63</integer>
+      <integer>26</integer>
       <key>L</key>
       <integer>54</integer>
-      <key>M</key>
-      <integer>79</integer>
       <key>O</key>
       <integer>-23</integer>
       <key>P</key>
@@ -4936,12 +4288,8 @@
       <integer>-70</integer>
       <key>W</key>
       <integer>-65</integer>
-      <key>X</key>
-      <integer>38</integer>
       <key>Y</key>
       <integer>-77</integer>
-      <key>Z</key>
-      <integer>35</integer>
       <key>a</key>
       <integer>-30</integer>
       <key>b</key>
@@ -4966,8 +4314,6 @@
       <integer>10</integer>
       <key>j</key>
       <integer>9</integer>
-      <key>k</key>
-      <integer>57</integer>
       <key>l</key>
       <integer>19</integer>
       <key>m</key>
@@ -5004,19 +4350,13 @@
       <integer>-20</integer>
       <key>w</key>
       <integer>-20</integer>
-      <key>x</key>
-      <integer>39</integer>
       <key>y</key>
       <integer>-40</integer>
-      <key>z</key>
-      <integer>33</integer>
       <key>zero</key>
       <integer>-25</integer>
     </dict>
     <key>R</key>
     <dict>
-      <key>A</key>
-      <integer>25</integer>
       <key>B</key>
       <integer>55</integer>
       <key>C</key>
@@ -5034,13 +4374,9 @@
       <key>I</key>
       <integer>48</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>48</integer>
+      <integer>10</integer>
       <key>L</key>
       <integer>39</integer>
-      <key>M</key>
-      <integer>64</integer>
       <key>N</key>
       <integer>-14</integer>
       <key>O</key>
@@ -5059,12 +4395,8 @@
       <integer>-53</integer>
       <key>W</key>
       <integer>-47</integer>
-      <key>X</key>
-      <integer>23</integer>
       <key>Y</key>
       <integer>-64</integer>
-      <key>Z</key>
-      <integer>20</integer>
       <key>a</key>
       <integer>-43</integer>
       <key>b</key>
@@ -5089,8 +4421,6 @@
       <integer>-6</integer>
       <key>j</key>
       <integer>-7</integer>
-      <key>k</key>
-      <integer>42</integer>
       <key>m</key>
       <integer>5</integer>
       <key>nine</key>
@@ -5119,16 +4449,8 @@
       <integer>14</integer>
       <key>u</key>
       <integer>-12</integer>
-      <key>v</key>
-      <integer>8</integer>
-      <key>w</key>
-      <integer>8</integer>
-      <key>x</key>
-      <integer>24</integer>
       <key>y</key>
       <integer>-12</integer>
-      <key>z</key>
-      <integer>18</integer>
       <key>zero</key>
       <integer>-14</integer>
     </dict>
@@ -5144,12 +4466,8 @@
       <integer>6</integer>
       <key>G</key>
       <integer>-15</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>L</key>
       <integer>-5</integer>
-      <key>M</key>
-      <integer>20</integer>
       <key>N</key>
       <integer>-22</integer>
       <key>O</key>
@@ -5280,7 +4598,7 @@
       <key>I</key>
       <integer>-8</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>9</integer>
       <key>K</key>
       <integer>-8</integer>
       <key>L</key>
@@ -5321,18 +4639,6 @@
       <integer>23</integer>
       <key>U</key>
       <integer>-7</integer>
-      <key>V</key>
-      <integer>23</integer>
-      <key>W</key>
-      <integer>21</integer>
-      <key>Wcircumflex</key>
-      <integer>21</integer>
-      <key>X</key>
-      <integer>10</integer>
-      <key>Y</key>
-      <integer>22</integer>
-      <key>Ydieresis</key>
-      <integer>22</integer>
       <key>Z</key>
       <integer>-5</integer>
       <key>a</key>
@@ -5571,7 +4877,7 @@
       <key>G</key>
       <integer>-14</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>14</integer>
       <key>M</key>
       <integer>-12</integer>
       <key>O</key>
@@ -5673,8 +4979,6 @@
       <integer>-81</integer>
       <key>Atilde</key>
       <integer>-81</integer>
-      <key>B</key>
-      <integer>7</integer>
       <key>C</key>
       <integer>-59</integer>
       <key>Cacute</key>
@@ -5699,8 +5003,6 @@
       <integer>-59</integer>
       <key>H</key>
       <integer>-8</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>L</key>
       <integer>-9</integer>
       <key>M</key>
@@ -5733,20 +5035,6 @@
       <integer>-59</integer>
       <key>S</key>
       <integer>-59</integer>
-      <key>T</key>
-      <integer>31</integer>
-      <key>V</key>
-      <integer>31</integer>
-      <key>W</key>
-      <integer>30</integer>
-      <key>Wcircumflex</key>
-      <integer>30</integer>
-      <key>X</key>
-      <integer>18</integer>
-      <key>Y</key>
-      <integer>31</integer>
-      <key>Ydieresis</key>
-      <integer>31</integer>
       <key>a</key>
       <integer>-92</integer>
       <key>at</key>
@@ -5811,8 +5099,6 @@
       <integer>-7</integer>
       <key>j</key>
       <integer>-7</integer>
-      <key>l</key>
-      <integer>10</integer>
       <key>m</key>
       <integer>-78</integer>
       <key>n</key>
@@ -5859,8 +5145,6 @@
       <integer>-88</integer>
       <key>s</key>
       <integer>-91</integer>
-      <key>seven</key>
-      <integer>16</integer>
       <key>six</key>
       <integer>-79</integer>
       <key>slash</key>
@@ -5982,8 +5266,6 @@
       <integer>-81</integer>
       <key>Atilde</key>
       <integer>-81</integer>
-      <key>B</key>
-      <integer>5</integer>
       <key>C</key>
       <integer>-53</integer>
       <key>Cacute</key>
@@ -6008,8 +5290,6 @@
       <integer>-53</integer>
       <key>H</key>
       <integer>-10</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>L</key>
       <integer>-11</integer>
       <key>M</key>
@@ -6042,20 +5322,6 @@
       <integer>-53</integer>
       <key>S</key>
       <integer>-56</integer>
-      <key>T</key>
-      <integer>29</integer>
-      <key>V</key>
-      <integer>29</integer>
-      <key>W</key>
-      <integer>27</integer>
-      <key>Wcircumflex</key>
-      <integer>27</integer>
-      <key>X</key>
-      <integer>16</integer>
-      <key>Y</key>
-      <integer>28</integer>
-      <key>Ydieresis</key>
-      <integer>28</integer>
       <key>a</key>
       <integer>-87</integer>
       <key>at</key>
@@ -6120,8 +5386,6 @@
       <integer>-7</integer>
       <key>j</key>
       <integer>-7</integer>
-      <key>l</key>
-      <integer>8</integer>
       <key>m</key>
       <integer>-64</integer>
       <key>n</key>
@@ -6168,8 +5432,6 @@
       <integer>-74</integer>
       <key>s</key>
       <integer>-87</integer>
-      <key>seven</key>
-      <integer>14</integer>
       <key>six</key>
       <integer>-74</integer>
       <key>slash</key>
@@ -6333,18 +5595,6 @@
       <integer>-52</integer>
       <key>Q</key>
       <integer>-53</integer>
-      <key>T</key>
-      <integer>29</integer>
-      <key>V</key>
-      <integer>29</integer>
-      <key>W</key>
-      <integer>27</integer>
-      <key>Wcircumflex</key>
-      <integer>27</integer>
-      <key>Y</key>
-      <integer>28</integer>
-      <key>Ydieresis</key>
-      <integer>28</integer>
       <key>at</key>
       <integer>-11</integer>
       <key>c</key>
@@ -6518,10 +5768,6 @@
     </dict>
     <key>X</key>
     <dict>
-      <key>A</key>
-      <integer>9</integer>
-      <key>B</key>
-      <integer>39</integer>
       <key>C</key>
       <integer>-70</integer>
       <key>Cacute</key>
@@ -6534,12 +5780,6 @@
       <integer>-70</integer>
       <key>Cdotaccent</key>
       <integer>-70</integer>
-      <key>D</key>
-      <integer>34</integer>
-      <key>E</key>
-      <integer>31</integer>
-      <key>F</key>
-      <integer>25</integer>
       <key>G</key>
       <integer>-68</integer>
       <key>Gbreve</key>
@@ -6548,18 +5788,8 @@
       <integer>-68</integer>
       <key>Gdotaccent</key>
       <integer>-68</integer>
-      <key>H</key>
-      <integer>24</integer>
-      <key>I</key>
-      <integer>32</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>32</integer>
-      <key>L</key>
-      <integer>23</integer>
-      <key>M</key>
-      <integer>48</integer>
+      <integer>-5</integer>
       <key>N</key>
       <integer>-29</integer>
       <key>O</key>
@@ -6582,26 +5812,16 @@
       <integer>-38</integer>
       <key>Otilde</key>
       <integer>-68</integer>
-      <key>P</key>
-      <integer>27</integer>
       <key>Q</key>
       <integer>-69</integer>
-      <key>R</key>
-      <integer>32</integer>
       <key>S</key>
       <integer>-65</integer>
       <key>U</key>
       <integer>-28</integer>
-      <key>X</key>
-      <integer>7</integer>
-      <key>Z</key>
-      <integer>5</integer>
       <key>a</key>
       <integer>-70</integer>
       <key>at</key>
       <integer>-38</integer>
-      <key>b</key>
-      <integer>28</integer>
       <key>c</key>
       <integer>-71</integer>
       <key>cacute</key>
@@ -6660,8 +5880,6 @@
       <integer>-21</integer>
       <key>j</key>
       <integer>-22</integer>
-      <key>k</key>
-      <integer>26</integer>
       <key>l</key>
       <integer>-12</integer>
       <key>m</key>
@@ -6730,16 +5948,12 @@
       <integer>-95</integer>
       <key>uni0444</key>
       <integer>-22</integer>
-      <key>uni0445</key>
-      <integer>8</integer>
       <key>uni0451</key>
       <integer>-22</integer>
       <key>v</key>
       <integer>-94</integer>
       <key>w</key>
       <integer>-94</integer>
-      <key>x</key>
-      <integer>8</integer>
       <key>y</key>
       <integer>-95</integer>
       <key>yacute</key>
@@ -6752,27 +5966,27 @@
     <key>Y</key>
     <dict>
       <key>A</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>AE</key>
       <integer>-75</integer>
       <key>Aacute</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Abreve</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Acircumflex</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Adieresis</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Agrave</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Amacron</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aogonek</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aring</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Atilde</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>C</key>
       <integer>-31</integer>
       <key>Cacute</key>
@@ -6797,12 +6011,8 @@
       <integer>-30</integer>
       <key>H</key>
       <integer>-11</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>L</key>
       <integer>-12</integer>
-      <key>M</key>
-      <integer>13</integer>
       <key>N</key>
       <integer>-14</integer>
       <key>O</key>
@@ -6831,22 +6041,8 @@
       <integer>-30</integer>
       <key>S</key>
       <integer>-45</integer>
-      <key>T</key>
-      <integer>21</integer>
       <key>U</key>
       <integer>-9</integer>
-      <key>V</key>
-      <integer>22</integer>
-      <key>W</key>
-      <integer>20</integer>
-      <key>Wcircumflex</key>
-      <integer>20</integer>
-      <key>X</key>
-      <integer>8</integer>
-      <key>Y</key>
-      <integer>21</integer>
-      <key>Ydieresis</key>
-      <integer>21</integer>
       <key>Z</key>
       <integer>-7</integer>
       <key>a</key>
@@ -6962,9 +6158,7 @@
       <key>rcaron</key>
       <integer>-49</integer>
       <key>s</key>
-      <integer>-40</integer>
-      <key>seven</key>
-      <integer>6</integer>
+      <integer>-85</integer>
       <key>six</key>
       <integer>-44</integer>
       <key>slash</key>
@@ -7075,27 +6269,27 @@
     <key>Yacute</key>
     <dict>
       <key>A</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>AE</key>
       <integer>-75</integer>
       <key>Aacute</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Abreve</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Acircumflex</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Adieresis</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Agrave</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Amacron</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aogonek</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aring</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Atilde</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>C</key>
       <integer>-31</integer>
       <key>Cacute</key>
@@ -7138,20 +6332,6 @@
       <integer>-29</integer>
       <key>Q</key>
       <integer>-30</integer>
-      <key>T</key>
-      <integer>21</integer>
-      <key>V</key>
-      <integer>22</integer>
-      <key>W</key>
-      <integer>20</integer>
-      <key>Wcircumflex</key>
-      <integer>20</integer>
-      <key>X</key>
-      <integer>8</integer>
-      <key>Y</key>
-      <integer>21</integer>
-      <key>Ydieresis</key>
-      <integer>21</integer>
       <key>Z</key>
       <integer>-7</integer>
       <key>at</key>
@@ -7241,9 +6421,7 @@
       <key>rcaron</key>
       <integer>-49</integer>
       <key>s</key>
-      <integer>-40</integer>
-      <key>seven</key>
-      <integer>6</integer>
+      <integer>-85</integer>
       <key>slash</key>
       <integer>-75</integer>
       <key>u</key>
@@ -7344,27 +6522,27 @@
     <key>Ydieresis</key>
     <dict>
       <key>A</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>AE</key>
       <integer>-75</integer>
       <key>Aacute</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Abreve</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Acircumflex</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Adieresis</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Agrave</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Amacron</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aogonek</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Aring</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>Atilde</key>
-      <integer>-26</integer>
+      <integer>-71</integer>
       <key>C</key>
       <integer>-31</integer>
       <key>Cacute</key>
@@ -7407,20 +6585,6 @@
       <integer>-29</integer>
       <key>Q</key>
       <integer>-30</integer>
-      <key>T</key>
-      <integer>21</integer>
-      <key>V</key>
-      <integer>22</integer>
-      <key>W</key>
-      <integer>20</integer>
-      <key>Wcircumflex</key>
-      <integer>20</integer>
-      <key>X</key>
-      <integer>8</integer>
-      <key>Y</key>
-      <integer>21</integer>
-      <key>Ydieresis</key>
-      <integer>21</integer>
       <key>Z</key>
       <integer>-7</integer>
       <key>at</key>
@@ -7510,9 +6674,7 @@
       <key>rcaron</key>
       <integer>-49</integer>
       <key>s</key>
-      <integer>-40</integer>
-      <key>seven</key>
-      <integer>6</integer>
+      <integer>-85</integer>
       <key>slash</key>
       <integer>-75</integer>
       <key>u</key>
@@ -7612,10 +6774,6 @@
     </dict>
     <key>Z</key>
     <dict>
-      <key>A</key>
-      <integer>8</integer>
-      <key>B</key>
-      <integer>39</integer>
       <key>C</key>
       <integer>-48</integer>
       <key>Cacute</key>
@@ -7628,12 +6786,6 @@
       <integer>-48</integer>
       <key>Cdotaccent</key>
       <integer>-48</integer>
-      <key>D</key>
-      <integer>34</integer>
-      <key>E</key>
-      <integer>31</integer>
-      <key>F</key>
-      <integer>25</integer>
       <key>G</key>
       <integer>-45</integer>
       <key>Gbreve</key>
@@ -7642,18 +6794,6 @@
       <integer>-45</integer>
       <key>Gdotaccent</key>
       <integer>-45</integer>
-      <key>H</key>
-      <integer>24</integer>
-      <key>I</key>
-      <integer>32</integer>
-      <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>32</integer>
-      <key>L</key>
-      <integer>23</integer>
-      <key>M</key>
-      <integer>48</integer>
       <key>N</key>
       <integer>-14</integer>
       <key>O</key>
@@ -7676,36 +6816,16 @@
       <integer>-38</integer>
       <key>Otilde</key>
       <integer>-43</integer>
-      <key>P</key>
-      <integer>27</integer>
       <key>Q</key>
       <integer>-45</integer>
-      <key>R</key>
-      <integer>32</integer>
       <key>S</key>
       <integer>-35</integer>
-      <key>T</key>
-      <integer>24</integer>
       <key>U</key>
       <integer>-6</integer>
-      <key>V</key>
-      <integer>24</integer>
-      <key>W</key>
-      <integer>22</integer>
-      <key>Wcircumflex</key>
-      <integer>22</integer>
-      <key>X</key>
-      <integer>11</integer>
-      <key>Y</key>
-      <integer>23</integer>
-      <key>Ydieresis</key>
-      <integer>23</integer>
       <key>a</key>
       <integer>-13</integer>
       <key>at</key>
       <integer>-38</integer>
-      <key>b</key>
-      <integer>28</integer>
       <key>c</key>
       <integer>-11</integer>
       <key>cacute</key>
@@ -7762,8 +6882,6 @@
       <integer>-17</integer>
       <key>j</key>
       <integer>-17</integer>
-      <key>k</key>
-      <integer>26</integer>
       <key>m</key>
       <integer>-11</integer>
       <key>n</key>
@@ -7798,8 +6916,6 @@
       <integer>-21</integer>
       <key>s</key>
       <integer>-6</integer>
-      <key>seven</key>
-      <integer>9</integer>
       <key>six</key>
       <integer>-26</integer>
       <key>t</key>
@@ -7830,16 +6946,12 @@
       <integer>-92</integer>
       <key>uni0444</key>
       <integer>-22</integer>
-      <key>uni0445</key>
-      <integer>7</integer>
       <key>uni0451</key>
       <integer>-22</integer>
       <key>v</key>
       <integer>-85</integer>
       <key>w</key>
       <integer>-85</integer>
-      <key>x</key>
-      <integer>7</integer>
       <key>y</key>
       <integer>-92</integer>
       <key>yacute</key>
@@ -7851,8 +6963,6 @@
     </dict>
     <key>a</key>
     <dict>
-      <key>A</key>
-      <integer>60</integer>
       <key>B</key>
       <integer>90</integer>
       <key>D</key>
@@ -7866,13 +6976,9 @@
       <key>I</key>
       <integer>83</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>83</integer>
+      <integer>45</integer>
       <key>L</key>
       <integer>74</integer>
-      <key>M</key>
-      <integer>99</integer>
       <key>N</key>
       <integer>22</integer>
       <key>P</key>
@@ -7889,12 +6995,8 @@
       <integer>-75</integer>
       <key>W</key>
       <integer>-62</integer>
-      <key>X</key>
-      <integer>58</integer>
       <key>Y</key>
       <integer>-93</integer>
-      <key>Z</key>
-      <integer>55</integer>
       <key>b</key>
       <integer>79</integer>
       <key>f</key>
@@ -7909,8 +7011,6 @@
       <integer>30</integer>
       <key>j</key>
       <integer>29</integer>
-      <key>k</key>
-      <integer>77</integer>
       <key>l</key>
       <integer>39</integer>
       <key>m</key>
@@ -7941,16 +7041,8 @@
       <integer>49</integer>
       <key>u</key>
       <integer>17</integer>
-      <key>v</key>
-      <integer>11</integer>
-      <key>w</key>
-      <integer>11</integer>
-      <key>x</key>
-      <integer>59</integer>
       <key>y</key>
       <integer>-9</integer>
-      <key>z</key>
-      <integer>53</integer>
       <key>zero</key>
       <integer>-5</integer>
     </dict>
@@ -8291,11 +7383,7 @@
       <key>I</key>
       <integer>6</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>6</integer>
-      <key>M</key>
-      <integer>22</integer>
+      <integer>11</integer>
       <key>N</key>
       <integer>-13</integer>
       <key>O</key>
@@ -8422,11 +7510,9 @@
       <key>H</key>
       <integer>-8</integer>
       <key>J</key>
-      <integer>-95</integer>
+      <integer>13</integer>
       <key>L</key>
       <integer>-9</integer>
-      <key>M</key>
-      <integer>16</integer>
       <key>N</key>
       <integer>-11</integer>
       <key>O</key>
@@ -8516,8 +7602,6 @@
     </dict>
     <key>d</key>
     <dict>
-      <key>A</key>
-      <integer>60</integer>
       <key>B</key>
       <integer>90</integer>
       <key>D</key>
@@ -8531,13 +7615,9 @@
       <key>I</key>
       <integer>83</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>83</integer>
+      <integer>45</integer>
       <key>L</key>
       <integer>74</integer>
-      <key>M</key>
-      <integer>99</integer>
       <key>N</key>
       <integer>22</integer>
       <key>P</key>
@@ -8548,16 +7628,6 @@
       <integer>-27</integer>
       <key>T</key>
       <integer>11</integer>
-      <key>V</key>
-      <integer>11</integer>
-      <key>W</key>
-      <integer>10</integer>
-      <key>X</key>
-      <integer>58</integer>
-      <key>Y</key>
-      <integer>11</integer>
-      <key>Z</key>
-      <integer>55</integer>
       <key>b</key>
       <integer>79</integer>
       <key>f</key>
@@ -8572,8 +7642,6 @@
       <integer>30</integer>
       <key>j</key>
       <integer>29</integer>
-      <key>k</key>
-      <integer>77</integer>
       <key>l</key>
       <integer>39</integer>
       <key>m</key>
@@ -8604,16 +7672,8 @@
       <integer>49</integer>
       <key>u</key>
       <integer>17</integer>
-      <key>v</key>
-      <integer>11</integer>
-      <key>w</key>
-      <integer>11</integer>
-      <key>x</key>
-      <integer>59</integer>
       <key>y</key>
       <integer>-9</integer>
-      <key>z</key>
-      <integer>53</integer>
       <key>zero</key>
       <integer>-5</integer>
     </dict>
@@ -8902,11 +7962,9 @@
       <key>H</key>
       <integer>-8</integer>
       <key>J</key>
-      <integer>-95</integer>
+      <integer>17</integer>
       <key>L</key>
       <integer>-9</integer>
-      <key>M</key>
-      <integer>16</integer>
       <key>N</key>
       <integer>-7</integer>
       <key>O</key>
@@ -9283,14 +8341,10 @@
       <integer>-13</integer>
       <key>I</key>
       <integer>-7</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>K</key>
       <integer>-7</integer>
       <key>L</key>
       <integer>-14</integer>
-      <key>M</key>
-      <integer>7</integer>
       <key>N</key>
       <integer>-16</integer>
       <key>O</key>
@@ -9575,13 +8629,9 @@
       <key>I</key>
       <integer>25</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>25</integer>
+      <integer>18</integer>
       <key>L</key>
       <integer>16</integer>
-      <key>M</key>
-      <integer>41</integer>
       <key>N</key>
       <integer>-6</integer>
       <key>O</key>
@@ -9595,14 +8645,6 @@
       <key>S</key>
       <integer>-8</integer>
       <key>T</key>
-      <integer>28</integer>
-      <key>V</key>
-      <integer>28</integer>
-      <key>W</key>
-      <integer>27</integer>
-      <key>X</key>
-      <integer>15</integer>
-      <key>Y</key>
       <integer>28</integer>
       <key>a</key>
       <integer>6</integer>
@@ -9628,8 +8670,6 @@
       <integer>7</integer>
       <key>j</key>
       <integer>7</integer>
-      <key>k</key>
-      <integer>18</integer>
       <key>l</key>
       <integer>11</integer>
       <key>m</key>
@@ -9658,16 +8698,6 @@
       <integer>9</integer>
       <key>u</key>
       <integer>12</integer>
-      <key>v</key>
-      <integer>32</integer>
-      <key>w</key>
-      <integer>32</integer>
-      <key>x</key>
-      <integer>27</integer>
-      <key>y</key>
-      <integer>12</integer>
-      <key>z</key>
-      <integer>9</integer>
       <key>zero</key>
       <integer>16</integer>
     </dict>
@@ -9691,8 +8721,6 @@
       <integer>-15</integer>
       <key>I</key>
       <integer>-10</integer>
-      <key>J</key>
-      <integer>-81</integer>
       <key>K</key>
       <integer>-10</integer>
       <key>L</key>
@@ -9795,13 +8823,11 @@
       <key>I</key>
       <integer>-11</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>-21</integer>
       <key>K</key>
       <integer>-11</integer>
       <key>L</key>
       <integer>-20</integer>
-      <key>M</key>
-      <integer>5</integer>
       <key>N</key>
       <integer>-43</integer>
       <key>O</key>
@@ -9903,8 +8929,6 @@
     </dict>
     <key>g</key>
     <dict>
-      <key>A</key>
-      <integer>22</integer>
       <key>B</key>
       <integer>52</integer>
       <key>C</key>
@@ -9922,13 +8946,9 @@
       <key>I</key>
       <integer>45</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>45</integer>
+      <integer>8</integer>
       <key>L</key>
       <integer>36</integer>
-      <key>M</key>
-      <integer>61</integer>
       <key>N</key>
       <integer>-16</integer>
       <key>O</key>
@@ -9951,14 +8971,10 @@
       <integer>-55</integer>
       <key>Wcircumflex</key>
       <integer>-55</integer>
-      <key>X</key>
-      <integer>20</integer>
       <key>Y</key>
       <integer>-92</integer>
       <key>Ydieresis</key>
       <integer>-92</integer>
-      <key>Z</key>
-      <integer>17</integer>
       <key>a</key>
       <integer>8</integer>
       <key>asterisk</key>
@@ -9983,8 +8999,6 @@
       <integer>-6</integer>
       <key>jcircumflex</key>
       <integer>-6</integer>
-      <key>k</key>
-      <integer>39</integer>
       <key>o</key>
       <integer>12</integer>
       <key>one</key>
@@ -10007,14 +9021,6 @@
       <integer>11</integer>
       <key>uni0422</key>
       <integer>-60</integer>
-      <key>v</key>
-      <integer>22</integer>
-      <key>w</key>
-      <integer>22</integer>
-      <key>x</key>
-      <integer>21</integer>
-      <key>z</key>
-      <integer>15</integer>
       <key>zero</key>
       <integer>6</integer>
     </dict>
@@ -10083,8 +9089,6 @@
     </dict>
     <key>h</key>
     <dict>
-      <key>A</key>
-      <integer>60</integer>
       <key>B</key>
       <integer>91</integer>
       <key>D</key>
@@ -10098,13 +9102,9 @@
       <key>I</key>
       <integer>84</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>84</integer>
+      <integer>46</integer>
       <key>L</key>
       <integer>75</integer>
-      <key>M</key>
-      <integer>100</integer>
       <key>N</key>
       <integer>22</integer>
       <key>P</key>
@@ -10121,12 +9121,8 @@
       <integer>-89</integer>
       <key>W</key>
       <integer>-84</integer>
-      <key>X</key>
-      <integer>59</integer>
       <key>Y</key>
       <integer>-95</integer>
-      <key>Z</key>
-      <integer>56</integer>
       <key>b</key>
       <integer>79</integer>
       <key>f</key>
@@ -10141,8 +9137,6 @@
       <integer>30</integer>
       <key>j</key>
       <integer>29</integer>
-      <key>k</key>
-      <integer>77</integer>
       <key>l</key>
       <integer>39</integer>
       <key>m</key>
@@ -10177,19 +9171,13 @@
       <integer>-21</integer>
       <key>w</key>
       <integer>-19</integer>
-      <key>x</key>
-      <integer>59</integer>
       <key>y</key>
       <integer>-39</integer>
-      <key>z</key>
-      <integer>53</integer>
       <key>zero</key>
       <integer>-5</integer>
     </dict>
     <key>i</key>
     <dict>
-      <key>A</key>
-      <integer>69</integer>
       <key>B</key>
       <integer>99</integer>
       <key>C</key>
@@ -10207,13 +9195,9 @@
       <key>I</key>
       <integer>92</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>92</integer>
+      <integer>55</integer>
       <key>L</key>
       <integer>83</integer>
-      <key>M</key>
-      <integer>108</integer>
       <key>N</key>
       <integer>31</integer>
       <key>O</key>
@@ -10228,16 +9212,6 @@
       <integer>-18</integer>
       <key>T</key>
       <integer>29</integer>
-      <key>V</key>
-      <integer>13</integer>
-      <key>W</key>
-      <integer>13</integer>
-      <key>X</key>
-      <integer>67</integer>
-      <key>Y</key>
-      <integer>9</integer>
-      <key>Z</key>
-      <integer>64</integer>
       <key>a</key>
       <integer>11</integer>
       <key>b</key>
@@ -10264,8 +9238,6 @@
       <integer>39</integer>
       <key>j</key>
       <integer>38</integer>
-      <key>k</key>
-      <integer>86</integer>
       <key>l</key>
       <integer>48</integer>
       <key>m</key>
@@ -10292,19 +9264,9 @@
       <integer>58</integer>
       <key>u</key>
       <integer>26</integer>
-      <key>v</key>
-      <integer>21</integer>
-      <key>w</key>
-      <integer>21</integer>
-      <key>x</key>
-      <integer>68</integer>
-      <key>z</key>
-      <integer>62</integer>
     </dict>
     <key>j</key>
     <dict>
-      <key>A</key>
-      <integer>21</integer>
       <key>B</key>
       <integer>52</integer>
       <key>C</key>
@@ -10322,13 +9284,9 @@
       <key>I</key>
       <integer>45</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>45</integer>
+      <integer>14</integer>
       <key>L</key>
       <integer>36</integer>
-      <key>M</key>
-      <integer>61</integer>
       <key>N</key>
       <integer>-8</integer>
       <key>O</key>
@@ -10343,16 +9301,6 @@
       <integer>-17</integer>
       <key>T</key>
       <integer>28</integer>
-      <key>V</key>
-      <integer>12</integer>
-      <key>W</key>
-      <integer>12</integer>
-      <key>X</key>
-      <integer>20</integer>
-      <key>Y</key>
-      <integer>8</integer>
-      <key>Z</key>
-      <integer>17</integer>
       <key>a</key>
       <integer>7</integer>
       <key>b</key>
@@ -10375,8 +9323,6 @@
       <integer>7</integer>
       <key>jcircumflex</key>
       <integer>7</integer>
-      <key>k</key>
-      <integer>39</integer>
       <key>l</key>
       <integer>7</integer>
       <key>o</key>
@@ -10397,21 +9343,13 @@
       <integer>20</integer>
       <key>two</key>
       <integer>11</integer>
-      <key>v</key>
-      <integer>21</integer>
-      <key>w</key>
-      <integer>21</integer>
-      <key>x</key>
-      <integer>20</integer>
-      <key>z</key>
-      <integer>14</integer>
       <key>zero</key>
       <integer>5</integer>
     </dict>
     <key>jcircumflex</key>
     <dict>
       <key>J</key>
-      <integer>-95</integer>
+      <integer>14</integer>
       <key>j</key>
       <integer>7</integer>
       <key>jcircumflex</key>
@@ -10421,40 +9359,18 @@
     <dict>
       <key>AE</key>
       <integer>22</integer>
-      <key>B</key>
-      <integer>35</integer>
       <key>C</key>
       <integer>-32</integer>
-      <key>D</key>
-      <integer>30</integer>
-      <key>E</key>
-      <integer>27</integer>
-      <key>F</key>
-      <integer>21</integer>
       <key>G</key>
       <integer>-31</integer>
-      <key>H</key>
-      <integer>20</integer>
-      <key>I</key>
-      <integer>28</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>28</integer>
-      <key>L</key>
-      <integer>19</integer>
-      <key>M</key>
-      <integer>44</integer>
+      <integer>-10</integer>
       <key>N</key>
       <integer>-34</integer>
       <key>O</key>
       <integer>-30</integer>
-      <key>P</key>
-      <integer>23</integer>
       <key>Q</key>
       <integer>-31</integer>
-      <key>R</key>
-      <integer>28</integer>
       <key>S</key>
       <integer>-47</integer>
       <key>T</key>
@@ -10473,8 +9389,6 @@
       <integer>-95</integer>
       <key>a</key>
       <integer>-78</integer>
-      <key>b</key>
-      <integer>24</integer>
       <key>c</key>
       <integer>-80</integer>
       <key>cacute</key>
@@ -10535,8 +9449,6 @@
       <integer>-26</integer>
       <key>j</key>
       <integer>-27</integer>
-      <key>k</key>
-      <integer>22</integer>
       <key>l</key>
       <integer>-17</integer>
       <key>m</key>
@@ -10565,8 +9477,6 @@
       <integer>-94</integer>
       <key>otilde</key>
       <integer>-80</integer>
-      <key>p</key>
-      <integer>15</integer>
       <key>period</key>
       <integer>22</integer>
       <key>q</key>
@@ -10626,8 +9536,6 @@
     </dict>
     <key>l</key>
     <dict>
-      <key>A</key>
-      <integer>69</integer>
       <key>B</key>
       <integer>100</integer>
       <key>C</key>
@@ -10645,13 +9553,9 @@
       <key>I</key>
       <integer>93</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>93</integer>
+      <integer>55</integer>
       <key>L</key>
       <integer>84</integer>
-      <key>M</key>
-      <integer>109</integer>
       <key>N</key>
       <integer>31</integer>
       <key>O</key>
@@ -10668,16 +9572,6 @@
       <integer>21</integer>
       <key>U</key>
       <integer>6</integer>
-      <key>V</key>
-      <integer>21</integer>
-      <key>W</key>
-      <integer>19</integer>
-      <key>X</key>
-      <integer>68</integer>
-      <key>Y</key>
-      <integer>20</integer>
-      <key>Z</key>
-      <integer>65</integer>
       <key>a</key>
       <integer>11</integer>
       <key>b</key>
@@ -10704,8 +9598,6 @@
       <integer>39</integer>
       <key>j</key>
       <integer>38</integer>
-      <key>k</key>
-      <integer>86</integer>
       <key>l</key>
       <integer>48</integer>
       <key>m</key>
@@ -10732,21 +9624,11 @@
       <integer>59</integer>
       <key>u</key>
       <integer>27</integer>
-      <key>v</key>
-      <integer>21</integer>
-      <key>w</key>
-      <integer>21</integer>
-      <key>x</key>
-      <integer>68</integer>
-      <key>z</key>
-      <integer>62</integer>
       <key>zero</key>
       <integer>5</integer>
     </dict>
     <key>m</key>
     <dict>
-      <key>A</key>
-      <integer>73</integer>
       <key>B</key>
       <integer>103</integer>
       <key>C</key>
@@ -10764,13 +9646,9 @@
       <key>I</key>
       <integer>96</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>96</integer>
+      <integer>58</integer>
       <key>L</key>
       <integer>87</integer>
-      <key>M</key>
-      <integer>112</integer>
       <key>N</key>
       <integer>35</integer>
       <key>O</key>
@@ -10791,12 +9669,8 @@
       <integer>-87</integer>
       <key>W</key>
       <integer>-80</integer>
-      <key>X</key>
-      <integer>71</integer>
       <key>Y</key>
       <integer>-94</integer>
-      <key>Z</key>
-      <integer>68</integer>
       <key>a</key>
       <integer>15</integer>
       <key>b</key>
@@ -10823,8 +9697,6 @@
       <integer>43</integer>
       <key>j</key>
       <integer>42</integer>
-      <key>k</key>
-      <integer>90</integer>
       <key>l</key>
       <integer>52</integer>
       <key>m</key>
@@ -10855,19 +9727,13 @@
       <integer>-12</integer>
       <key>w</key>
       <integer>-10</integer>
-      <key>x</key>
-      <integer>72</integer>
       <key>y</key>
       <integer>-30</integer>
-      <key>z</key>
-      <integer>66</integer>
       <key>zero</key>
       <integer>7</integer>
     </dict>
     <key>n</key>
     <dict>
-      <key>A</key>
-      <integer>68</integer>
       <key>B</key>
       <integer>98</integer>
       <key>D</key>
@@ -10881,13 +9747,9 @@
       <key>I</key>
       <integer>91</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>91</integer>
+      <integer>53</integer>
       <key>L</key>
       <integer>82</integer>
-      <key>M</key>
-      <integer>107</integer>
       <key>N</key>
       <integer>30</integer>
       <key>O</key>
@@ -10906,12 +9768,8 @@
       <integer>-89</integer>
       <key>W</key>
       <integer>-83</integer>
-      <key>X</key>
-      <integer>66</integer>
       <key>Y</key>
       <integer>-95</integer>
-      <key>Z</key>
-      <integer>63</integer>
       <key>a</key>
       <integer>10</integer>
       <key>b</key>
@@ -10938,8 +9796,6 @@
       <integer>38</integer>
       <key>j</key>
       <integer>37</integer>
-      <key>k</key>
-      <integer>85</integer>
       <key>l</key>
       <integer>47</integer>
       <key>m</key>
@@ -10970,12 +9826,8 @@
       <integer>-22</integer>
       <key>w</key>
       <integer>-19</integer>
-      <key>x</key>
-      <integer>67</integer>
       <key>y</key>
       <integer>-39</integer>
-      <key>z</key>
-      <integer>61</integer>
     </dict>
     <key>nine</key>
     <dict>
@@ -11018,7 +9870,7 @@
       <key>I</key>
       <integer>-30</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>-13</integer>
       <key>K</key>
       <integer>-30</integer>
       <key>L</key>
@@ -11289,11 +10141,9 @@
       <key>H</key>
       <integer>-8</integer>
       <key>J</key>
-      <integer>-95</integer>
+      <integer>17</integer>
       <key>L</key>
       <integer>-9</integer>
-      <key>M</key>
-      <integer>16</integer>
       <key>N</key>
       <integer>-7</integer>
       <key>O</key>
@@ -11953,13 +10803,9 @@
       <key>I</key>
       <integer>28</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>28</integer>
+      <integer>6</integer>
       <key>L</key>
       <integer>19</integer>
-      <key>M</key>
-      <integer>44</integer>
       <key>N</key>
       <integer>-12</integer>
       <key>O</key>
@@ -12008,8 +10854,6 @@
       <integer>-26</integer>
       <key>j</key>
       <integer>-27</integer>
-      <key>k</key>
-      <integer>22</integer>
       <key>l</key>
       <integer>-13</integer>
       <key>m</key>
@@ -12238,11 +11082,7 @@
       <key>I</key>
       <integer>10</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>10</integer>
-      <key>M</key>
-      <integer>26</integer>
+      <integer>13</integer>
       <key>N</key>
       <integer>-11</integer>
       <key>O</key>
@@ -12377,13 +11217,9 @@
       <key>I</key>
       <integer>25</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>25</integer>
+      <integer>35</integer>
       <key>L</key>
       <integer>16</integer>
-      <key>M</key>
-      <integer>41</integer>
       <key>N</key>
       <integer>12</integer>
       <key>O</key>
@@ -12436,8 +11272,6 @@
       <integer>19</integer>
       <key>jcircumflex</key>
       <integer>19</integer>
-      <key>k</key>
-      <integer>19</integer>
       <key>l</key>
       <integer>29</integer>
       <key>m</key>
@@ -12474,16 +11308,6 @@
       <integer>30</integer>
       <key>uni0422</key>
       <integer>-60</integer>
-      <key>v</key>
-      <integer>50</integer>
-      <key>w</key>
-      <integer>50</integer>
-      <key>x</key>
-      <integer>45</integer>
-      <key>y</key>
-      <integer>29</integer>
-      <key>z</key>
-      <integer>27</integer>
       <key>zero</key>
       <integer>32</integer>
     </dict>
@@ -13172,8 +11996,6 @@
       <integer>-28</integer>
       <key>I</key>
       <integer>-20</integer>
-      <key>J</key>
-      <integer>-95</integer>
       <key>K</key>
       <integer>-20</integer>
       <key>L</key>
@@ -13302,10 +12124,6 @@
       <integer>-11</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>5</integer>
-      <key>w</key>
-      <integer>6</integer>
       <key>y</key>
       <integer>-14</integer>
       <key>yacute</key>
@@ -13405,10 +12223,6 @@
       <integer>-11</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>5</integer>
-      <key>w</key>
-      <integer>6</integer>
       <key>y</key>
       <integer>-14</integer>
       <key>yacute</key>
@@ -13506,10 +12320,6 @@
       <integer>-11</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>5</integer>
-      <key>w</key>
-      <integer>6</integer>
       <key>y</key>
       <integer>-14</integer>
       <key>yacute</key>
@@ -13536,13 +12346,9 @@
       <key>I</key>
       <integer>18</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>18</integer>
+      <integer>5</integer>
       <key>L</key>
       <integer>9</integer>
-      <key>M</key>
-      <integer>34</integer>
       <key>N</key>
       <integer>-18</integer>
       <key>P</key>
@@ -13579,8 +12385,6 @@
       <integer>-10</integer>
       <key>j</key>
       <integer>-11</integer>
-      <key>k</key>
-      <integer>12</integer>
       <key>nine</key>
       <integer>-24</integer>
       <key>one</key>
@@ -13663,7 +12467,7 @@
       <key>H</key>
       <integer>-10</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>15</integer>
       <key>L</key>
       <integer>-11</integer>
       <key>M</key>
@@ -13698,18 +12502,6 @@
       <integer>-60</integer>
       <key>T</key>
       <integer>29</integer>
-      <key>V</key>
-      <integer>29</integer>
-      <key>W</key>
-      <integer>27</integer>
-      <key>Wcircumflex</key>
-      <integer>27</integer>
-      <key>X</key>
-      <integer>15</integer>
-      <key>Y</key>
-      <integer>28</integer>
-      <key>Ydieresis</key>
-      <integer>28</integer>
       <key>a</key>
       <integer>-85</integer>
       <key>at</key>
@@ -13942,7 +12734,7 @@
       <key>I</key>
       <integer>-29</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>-13</integer>
       <key>K</key>
       <integer>-29</integer>
       <key>L</key>
@@ -14299,8 +13091,6 @@
     </dict>
     <key>t</key>
     <dict>
-      <key>A</key>
-      <integer>26</integer>
       <key>B</key>
       <integer>56</integer>
       <key>C</key>
@@ -14318,13 +13108,9 @@
       <key>I</key>
       <integer>49</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>49</integer>
+      <integer>14</integer>
       <key>L</key>
       <integer>40</integer>
-      <key>M</key>
-      <integer>65</integer>
       <key>N</key>
       <integer>-10</integer>
       <key>O</key>
@@ -14343,12 +13129,8 @@
       <integer>-53</integer>
       <key>W</key>
       <integer>-48</integer>
-      <key>X</key>
-      <integer>24</integer>
       <key>Y</key>
       <integer>-64</integer>
-      <key>Z</key>
-      <integer>21</integer>
       <key>b</key>
       <integer>45</integer>
       <key>eight</key>
@@ -14361,8 +13143,6 @@
       <integer>-29</integer>
       <key>g</key>
       <integer>8</integer>
-      <key>k</key>
-      <integer>43</integer>
       <key>l</key>
       <integer>7</integer>
       <key>m</key>
@@ -14389,16 +13169,6 @@
       <integer>15</integer>
       <key>u</key>
       <integer>8</integer>
-      <key>v</key>
-      <integer>28</integer>
-      <key>w</key>
-      <integer>28</integer>
-      <key>x</key>
-      <integer>25</integer>
-      <key>y</key>
-      <integer>8</integer>
-      <key>z</key>
-      <integer>19</integer>
       <key>zero</key>
       <integer>12</integer>
     </dict>
@@ -14437,11 +13207,9 @@
       <key>H</key>
       <integer>-7</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>8</integer>
       <key>L</key>
       <integer>-8</integer>
-      <key>M</key>
-      <integer>14</integer>
       <key>N</key>
       <integer>-10</integer>
       <key>O</key>
@@ -14543,8 +13311,6 @@
     </dict>
     <key>two</key>
     <dict>
-      <key>A</key>
-      <integer>8</integer>
       <key>B</key>
       <integer>39</integer>
       <key>C</key>
@@ -14562,13 +13328,9 @@
       <key>I</key>
       <integer>32</integer>
       <key>J</key>
-      <integer>-81</integer>
-      <key>K</key>
-      <integer>32</integer>
+      <integer>-6</integer>
       <key>L</key>
       <integer>23</integer>
-      <key>M</key>
-      <integer>48</integer>
       <key>N</key>
       <integer>-25</integer>
       <key>O</key>
@@ -14589,8 +13351,6 @@
       <integer>-60</integer>
       <key>W</key>
       <integer>-56</integer>
-      <key>X</key>
-      <integer>7</integer>
       <key>Y</key>
       <integer>-66</integer>
       <key>a</key>
@@ -14617,8 +13377,6 @@
       <integer>-22</integer>
       <key>j</key>
       <integer>-23</integer>
-      <key>k</key>
-      <integer>26</integer>
       <key>l</key>
       <integer>-13</integer>
       <key>m</key>
@@ -14653,8 +13411,6 @@
       <integer>-5</integer>
       <key>w</key>
       <integer>-5</integer>
-      <key>x</key>
-      <integer>7</integer>
       <key>y</key>
       <integer>-25</integer>
       <key>zero</key>
@@ -14662,8 +13418,6 @@
     </dict>
     <key>u</key>
     <dict>
-      <key>A</key>
-      <integer>68</integer>
       <key>B</key>
       <integer>98</integer>
       <key>D</key>
@@ -14679,13 +13433,9 @@
       <key>I</key>
       <integer>91</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>91</integer>
+      <integer>53</integer>
       <key>L</key>
       <integer>82</integer>
-      <key>M</key>
-      <integer>107</integer>
       <key>N</key>
       <integer>30</integer>
       <key>O</key>
@@ -14708,14 +13458,10 @@
       <integer>-57</integer>
       <key>Wcircumflex</key>
       <integer>-57</integer>
-      <key>X</key>
-      <integer>66</integer>
       <key>Y</key>
       <integer>-92</integer>
       <key>Ydieresis</key>
       <integer>-92</integer>
-      <key>Z</key>
-      <integer>63</integer>
       <key>a</key>
       <integer>10</integer>
       <key>asterisk</key>
@@ -14744,8 +13490,6 @@
       <integer>38</integer>
       <key>j</key>
       <integer>37</integer>
-      <key>k</key>
-      <integer>85</integer>
       <key>l</key>
       <integer>47</integer>
       <key>m</key>
@@ -14778,14 +13522,6 @@
       <integer>25</integer>
       <key>uni0422</key>
       <integer>-60</integer>
-      <key>v</key>
-      <integer>19</integer>
-      <key>w</key>
-      <integer>19</integer>
-      <key>x</key>
-      <integer>67</integer>
-      <key>z</key>
-      <integer>61</integer>
     </dict>
     <key>uni0122</key>
     <dict>
@@ -14977,28 +13713,8 @@
     </dict>
     <key>uni013B</key>
     <dict>
-      <key>A</key>
-      <integer>30</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>30</integer>
-      <key>Abreve</key>
-      <integer>30</integer>
-      <key>Acircumflex</key>
-      <integer>30</integer>
-      <key>Adieresis</key>
-      <integer>30</integer>
-      <key>Agrave</key>
-      <integer>30</integer>
-      <key>Amacron</key>
-      <integer>30</integer>
-      <key>Aogonek</key>
-      <integer>30</integer>
-      <key>Aring</key>
-      <integer>30</integer>
-      <key>Atilde</key>
-      <integer>30</integer>
       <key>C</key>
       <integer>-27</integer>
       <key>Cacute</key>
@@ -15089,22 +13805,16 @@
       <integer>38</integer>
       <key>uni0443</key>
       <integer>-91</integer>
-      <key>uni0445</key>
-      <integer>29</integer>
       <key>v</key>
       <integer>-90</integer>
       <key>w</key>
       <integer>-81</integer>
-      <key>x</key>
-      <integer>29</integer>
       <key>y</key>
       <integer>-91</integer>
       <key>yacute</key>
       <integer>-91</integer>
       <key>ydieresis</key>
       <integer>-91</integer>
-      <key>z</key>
-      <integer>23</integer>
     </dict>
     <key>uni0157</key>
     <dict>
@@ -15194,10 +13904,6 @@
       <integer>-11</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>5</integer>
-      <key>w</key>
-      <integer>6</integer>
       <key>y</key>
       <integer>-14</integer>
       <key>yacute</key>
@@ -19038,28 +17744,8 @@
     </dict>
     <key>uni0445</key>
     <dict>
-      <key>A</key>
-      <integer>17</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>17</integer>
-      <key>Abreve</key>
-      <integer>17</integer>
-      <key>Acircumflex</key>
-      <integer>17</integer>
-      <key>Adieresis</key>
-      <integer>17</integer>
-      <key>Agrave</key>
-      <integer>17</integer>
-      <key>Amacron</key>
-      <integer>17</integer>
-      <key>Aogonek</key>
-      <integer>17</integer>
-      <key>Aring</key>
-      <integer>17</integer>
-      <key>Atilde</key>
-      <integer>17</integer>
       <key>T</key>
       <integer>-91</integer>
       <key>V</key>
@@ -19162,24 +17848,14 @@
       <integer>-8</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>16</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>12</integer>
-      <key>w</key>
-      <integer>12</integer>
-      <key>x</key>
-      <integer>16</integer>
       <key>y</key>
       <integer>-8</integer>
       <key>yacute</key>
       <integer>-8</integer>
       <key>ydieresis</key>
       <integer>-8</integer>
-      <key>z</key>
-      <integer>10</integer>
     </dict>
     <key>uni0447</key>
     <dict>
@@ -19459,8 +18135,6 @@
       <integer>-13</integer>
       <key>I</key>
       <integer>-5</integer>
-      <key>J</key>
-      <integer>-95</integer>
       <key>K</key>
       <integer>-5</integer>
       <key>L</key>
@@ -19539,8 +18213,6 @@
       <integer>-45</integer>
       <key>eogonek</key>
       <integer>-45</integer>
-      <key>f</key>
-      <integer>20</integer>
       <key>five</key>
       <integer>-43</integer>
       <key>four</key>
@@ -19557,12 +18229,6 @@
       <integer>-5</integer>
       <key>k</key>
       <integer>-5</integer>
-      <key>l</key>
-      <integer>5</integer>
-      <key>m</key>
-      <integer>7</integer>
-      <key>n</key>
-      <integer>6</integer>
       <key>o</key>
       <integer>-45</integer>
       <key>oacute</key>
@@ -19583,8 +18249,6 @@
       <integer>-94</integer>
       <key>otilde</key>
       <integer>-45</integer>
-      <key>p</key>
-      <integer>48</integer>
       <key>period</key>
       <integer>-45</integer>
       <key>q</key>
@@ -19597,12 +18261,8 @@
       <integer>-51</integer>
       <key>slash</key>
       <integer>-45</integer>
-      <key>t</key>
-      <integer>25</integer>
       <key>three</key>
       <integer>-85</integer>
-      <key>u</key>
-      <integer>6</integer>
       <key>uni0410</key>
       <integer>-45</integer>
       <key>uni0414</key>
@@ -19631,26 +18291,10 @@
       <integer>-45</integer>
       <key>uni0441</key>
       <integer>-45</integer>
-      <key>uni0443</key>
-      <integer>6</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>21</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>26</integer>
-      <key>w</key>
-      <integer>26</integer>
-      <key>x</key>
-      <integer>21</integer>
-      <key>y</key>
-      <integer>6</integer>
-      <key>yacute</key>
-      <integer>6</integer>
-      <key>ydieresis</key>
-      <integer>6</integer>
     </dict>
     <key>w</key>
     <dict>
@@ -19676,64 +18320,22 @@
       <integer>-88</integer>
       <key>Atilde</key>
       <integer>-88</integer>
-      <key>B</key>
-      <integer>5</integer>
-      <key>C</key>
-      <integer>5</integer>
-      <key>Cacute</key>
-      <integer>5</integer>
-      <key>Ccaron</key>
-      <integer>5</integer>
-      <key>Ccedilla</key>
-      <integer>5</integer>
-      <key>Ccircumflex</key>
-      <integer>5</integer>
-      <key>Cdotaccent</key>
-      <integer>5</integer>
       <key>F</key>
       <integer>-9</integer>
-      <key>G</key>
-      <integer>6</integer>
-      <key>Gbreve</key>
-      <integer>6</integer>
-      <key>Gcircumflex</key>
-      <integer>6</integer>
-      <key>Gdotaccent</key>
-      <integer>6</integer>
       <key>H</key>
       <integer>-10</integer>
-      <key>J</key>
-      <integer>-95</integer>
       <key>L</key>
       <integer>-11</integer>
       <key>M</key>
       <integer>-41</integer>
       <key>N</key>
       <integer>-9</integer>
-      <key>O</key>
-      <integer>7</integer>
       <key>OE</key>
       <integer>11</integer>
-      <key>Oacute</key>
-      <integer>7</integer>
-      <key>Obreve</key>
-      <integer>7</integer>
-      <key>Ocircumflex</key>
-      <integer>7</integer>
-      <key>Odieresis</key>
-      <integer>7</integer>
-      <key>Ograve</key>
-      <integer>7</integer>
-      <key>Omacron</key>
-      <integer>7</integer>
       <key>Oslash</key>
       <integer>11</integer>
-      <key>Otilde</key>
-      <integer>7</integer>
       <key>P</key>
       <integer>-7</integer>
-      <key>Q</key>
-      <integer>6</integer>
       <key>S</key>
       <integer>-11</integer>
       <key>T</key>
@@ -19796,8 +18398,6 @@
       <integer>-39</integer>
       <key>eogonek</key>
       <integer>-39</integer>
-      <key>f</key>
-      <integer>23</integer>
       <key>five</key>
       <integer>-40</integer>
       <key>four</key>
@@ -19810,14 +18410,6 @@
       <integer>-33</integer>
       <key>gdotaccent</key>
       <integer>-33</integer>
-      <key>l</key>
-      <integer>8</integer>
-      <key>m</key>
-      <integer>10</integer>
-      <key>n</key>
-      <integer>9</integer>
-      <key>nine</key>
-      <integer>6</integer>
       <key>o</key>
       <integer>-39</integer>
       <key>oacute</key>
@@ -19838,8 +18430,6 @@
       <integer>-94</integer>
       <key>otilde</key>
       <integer>-39</integer>
-      <key>p</key>
-      <integer>51</integer>
       <key>period</key>
       <integer>-45</integer>
       <key>q</key>
@@ -19852,16 +18442,8 @@
       <integer>-45</integer>
       <key>slash</key>
       <integer>-45</integer>
-      <key>t</key>
-      <integer>28</integer>
       <key>three</key>
       <integer>-74</integer>
-      <key>two</key>
-      <integer>5</integer>
-      <key>u</key>
-      <integer>9</integer>
-      <key>uni0122</key>
-      <integer>6</integer>
       <key>uni0410</key>
       <integer>-45</integer>
       <key>uni0414</key>
@@ -19890,89 +18472,25 @@
       <integer>-39</integer>
       <key>uni0441</key>
       <integer>-39</integer>
-      <key>uni0443</key>
-      <integer>9</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>24</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>29</integer>
-      <key>w</key>
-      <integer>29</integer>
-      <key>x</key>
-      <integer>24</integer>
-      <key>y</key>
-      <integer>9</integer>
-      <key>yacute</key>
-      <integer>9</integer>
-      <key>ydieresis</key>
-      <integer>9</integer>
-      <key>z</key>
-      <integer>6</integer>
-      <key>zero</key>
-      <integer>6</integer>
     </dict>
     <key>x</key>
     <dict>
-      <key>A</key>
-      <integer>17</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>17</integer>
-      <key>Abreve</key>
-      <integer>17</integer>
-      <key>Acircumflex</key>
-      <integer>17</integer>
-      <key>Adieresis</key>
-      <integer>17</integer>
-      <key>Agrave</key>
-      <integer>17</integer>
-      <key>Amacron</key>
-      <integer>17</integer>
-      <key>Aogonek</key>
-      <integer>17</integer>
-      <key>Aring</key>
-      <integer>17</integer>
-      <key>Atilde</key>
-      <integer>17</integer>
-      <key>B</key>
-      <integer>48</integer>
       <key>C</key>
       <integer>-12</integer>
-      <key>D</key>
-      <integer>43</integer>
-      <key>E</key>
-      <integer>40</integer>
-      <key>F</key>
-      <integer>34</integer>
       <key>G</key>
       <integer>-11</integer>
-      <key>H</key>
-      <integer>33</integer>
-      <key>I</key>
-      <integer>41</integer>
-      <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>41</integer>
-      <key>L</key>
-      <integer>32</integer>
-      <key>M</key>
-      <integer>57</integer>
       <key>N</key>
       <integer>-21</integer>
       <key>O</key>
       <integer>-10</integer>
-      <key>P</key>
-      <integer>36</integer>
       <key>Q</key>
       <integer>-11</integer>
-      <key>R</key>
-      <integer>41</integer>
       <key>S</key>
       <integer>-28</integer>
       <key>T</key>
@@ -19985,18 +18503,12 @@
       <integer>-64</integer>
       <key>Wcircumflex</key>
       <integer>-64</integer>
-      <key>X</key>
-      <integer>16</integer>
       <key>Y</key>
       <integer>-94</integer>
       <key>Ydieresis</key>
       <integer>-94</integer>
-      <key>Z</key>
-      <integer>13</integer>
       <key>a</key>
       <integer>-64</integer>
-      <key>b</key>
-      <integer>36</integer>
       <key>c</key>
       <integer>-66</integer>
       <key>cacute</key>
@@ -20037,8 +18549,6 @@
       <integer>-66</integer>
       <key>eogonek</key>
       <integer>-66</integer>
-      <key>f</key>
-      <integer>6</integer>
       <key>five</key>
       <integer>-39</integer>
       <key>four</key>
@@ -20057,8 +18567,6 @@
       <integer>-13</integer>
       <key>j</key>
       <integer>-14</integer>
-      <key>k</key>
-      <integer>34</integer>
       <key>nine</key>
       <integer>-11</integer>
       <key>o</key>
@@ -20081,8 +18589,6 @@
       <integer>-93</integer>
       <key>otilde</key>
       <integer>-66</integer>
-      <key>p</key>
-      <integer>34</integer>
       <key>period</key>
       <integer>22</integer>
       <key>q</key>
@@ -20097,12 +18603,8 @@
       <integer>-70</integer>
       <key>slash</key>
       <integer>22</integer>
-      <key>t</key>
-      <integer>11</integer>
       <key>three</key>
       <integer>-79</integer>
-      <key>two</key>
-      <integer>7</integer>
       <key>u</key>
       <integer>-8</integer>
       <key>uni0410</key>
@@ -20125,24 +18627,14 @@
       <integer>-8</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>16</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>12</integer>
-      <key>w</key>
-      <integer>12</integer>
-      <key>x</key>
-      <integer>16</integer>
       <key>y</key>
       <integer>-8</integer>
       <key>yacute</key>
       <integer>-8</integer>
       <key>ydieresis</key>
       <integer>-8</integer>
-      <key>z</key>
-      <integer>10</integer>
       <key>zero</key>
       <integer>-10</integer>
     </dict>
@@ -20170,8 +18662,6 @@
       <integer>-11</integer>
       <key>Atilde</key>
       <integer>-11</integer>
-      <key>B</key>
-      <integer>20</integer>
       <key>C</key>
       <integer>-26</integer>
       <key>Cacute</key>
@@ -20184,12 +18674,6 @@
       <integer>-26</integer>
       <key>Cdotaccent</key>
       <integer>-26</integer>
-      <key>D</key>
-      <integer>15</integer>
-      <key>E</key>
-      <integer>12</integer>
-      <key>F</key>
-      <integer>6</integer>
       <key>G</key>
       <integer>-25</integer>
       <key>Gbreve</key>
@@ -20198,16 +18682,8 @@
       <integer>-25</integer>
       <key>Gdotaccent</key>
       <integer>-25</integer>
-      <key>H</key>
-      <integer>5</integer>
-      <key>I</key>
-      <integer>13</integer>
       <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>13</integer>
-      <key>M</key>
-      <integer>29</integer>
+      <integer>-25</integer>
       <key>N</key>
       <integer>-45</integer>
       <key>O</key>
@@ -20230,12 +18706,8 @@
       <integer>11</integer>
       <key>Otilde</key>
       <integer>-24</integer>
-      <key>P</key>
-      <integer>8</integer>
       <key>Q</key>
       <integer>-25</integer>
-      <key>R</key>
-      <integer>13</integer>
       <key>S</key>
       <integer>-49</integer>
       <key>T</key>
@@ -20260,8 +18732,6 @@
       <integer>-25</integer>
       <key>at</key>
       <integer>11</integer>
-      <key>b</key>
-      <integer>8</integer>
       <key>c</key>
       <integer>-21</integer>
       <key>cacute</key>
@@ -20322,8 +18792,6 @@
       <integer>-29</integer>
       <key>j</key>
       <integer>-30</integer>
-      <key>k</key>
-      <integer>6</integer>
       <key>l</key>
       <integer>-22</integer>
       <key>m</key>
@@ -20352,8 +18820,6 @@
       <integer>-94</integer>
       <key>otilde</key>
       <integer>-21</integer>
-      <key>p</key>
-      <integer>11</integer>
       <key>period</key>
       <integer>-45</integer>
       <key>q</key>
@@ -20433,60 +18899,10 @@
     </dict>
     <key>z</key>
     <dict>
-      <key>A</key>
-      <integer>16</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>16</integer>
-      <key>Abreve</key>
-      <integer>16</integer>
-      <key>Acircumflex</key>
-      <integer>16</integer>
-      <key>Adieresis</key>
-      <integer>16</integer>
-      <key>Agrave</key>
-      <integer>16</integer>
-      <key>Amacron</key>
-      <integer>16</integer>
-      <key>Aogonek</key>
-      <integer>16</integer>
-      <key>Aring</key>
-      <integer>16</integer>
-      <key>Atilde</key>
-      <integer>16</integer>
-      <key>B</key>
-      <integer>47</integer>
-      <key>D</key>
-      <integer>42</integer>
-      <key>E</key>
-      <integer>39</integer>
-      <key>F</key>
-      <integer>33</integer>
-      <key>G</key>
-      <integer>5</integer>
-      <key>H</key>
-      <integer>32</integer>
-      <key>I</key>
-      <integer>40</integer>
-      <key>J</key>
-      <integer>-95</integer>
-      <key>K</key>
-      <integer>40</integer>
-      <key>L</key>
-      <integer>31</integer>
-      <key>M</key>
-      <integer>56</integer>
       <key>N</key>
       <integer>-10</integer>
-      <key>O</key>
-      <integer>6</integer>
-      <key>P</key>
-      <integer>35</integer>
-      <key>Q</key>
-      <integer>5</integer>
-      <key>R</key>
-      <integer>40</integer>
       <key>S</key>
       <integer>-11</integer>
       <key>T</key>
@@ -20497,18 +18913,12 @@
       <integer>-48</integer>
       <key>Wcircumflex</key>
       <integer>-48</integer>
-      <key>X</key>
-      <integer>15</integer>
       <key>Y</key>
       <integer>-93</integer>
       <key>Ydieresis</key>
       <integer>-93</integer>
-      <key>Z</key>
-      <integer>12</integer>
       <key>a</key>
       <integer>-6</integer>
-      <key>b</key>
-      <integer>35</integer>
       <key>comma</key>
       <integer>22</integer>
       <key>d</key>
@@ -20517,26 +18927,10 @@
       <integer>-6</integer>
       <key>eight</key>
       <integer>-7</integer>
-      <key>f</key>
-      <integer>22</integer>
-      <key>four</key>
-      <integer>9</integer>
-      <key>k</key>
-      <integer>33</integer>
-      <key>l</key>
-      <integer>7</integer>
-      <key>m</key>
-      <integer>9</integer>
-      <key>n</key>
-      <integer>8</integer>
-      <key>nine</key>
-      <integer>5</integer>
       <key>oe</key>
       <integer>-11</integer>
       <key>one</key>
       <integer>-91</integer>
-      <key>p</key>
-      <integer>51</integer>
       <key>period</key>
       <integer>22</integer>
       <key>seven</key>
@@ -20545,14 +18939,8 @@
       <integer>-19</integer>
       <key>slash</key>
       <integer>22</integer>
-      <key>t</key>
-      <integer>27</integer>
       <key>three</key>
       <integer>-14</integer>
-      <key>two</key>
-      <integer>6</integer>
-      <key>u</key>
-      <integer>8</integer>
       <key>uni0410</key>
       <integer>22</integer>
       <key>uni0414</key>
@@ -20563,55 +18951,15 @@
       <integer>22</integer>
       <key>uni0436</key>
       <integer>22</integer>
-      <key>uni0443</key>
-      <integer>8</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>23</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>28</integer>
-      <key>w</key>
-      <integer>29</integer>
-      <key>x</key>
-      <integer>23</integer>
-      <key>y</key>
-      <integer>8</integer>
-      <key>yacute</key>
-      <integer>8</integer>
-      <key>ydieresis</key>
-      <integer>8</integer>
-      <key>z</key>
-      <integer>9</integer>
-      <key>zero</key>
-      <integer>6</integer>
     </dict>
     <key>zcaron</key>
     <dict>
-      <key>A</key>
-      <integer>16</integer>
       <key>AE</key>
       <integer>22</integer>
-      <key>Aacute</key>
-      <integer>16</integer>
-      <key>Abreve</key>
-      <integer>16</integer>
-      <key>Acircumflex</key>
-      <integer>16</integer>
-      <key>Adieresis</key>
-      <integer>16</integer>
-      <key>Agrave</key>
-      <integer>16</integer>
-      <key>Amacron</key>
-      <integer>16</integer>
-      <key>Aogonek</key>
-      <integer>16</integer>
-      <key>Aring</key>
-      <integer>16</integer>
-      <key>Atilde</key>
-      <integer>16</integer>
       <key>T</key>
       <integer>-85</integer>
       <key>V</key>
@@ -20634,8 +18982,6 @@
       <integer>22</integer>
       <key>slash</key>
       <integer>22</integer>
-      <key>u</key>
-      <integer>8</integer>
       <key>uni0410</key>
       <integer>22</integer>
       <key>uni0414</key>
@@ -20646,28 +18992,10 @@
       <integer>22</integer>
       <key>uni0436</key>
       <integer>22</integer>
-      <key>uni0443</key>
-      <integer>8</integer>
       <key>uni0444</key>
       <integer>-11</integer>
-      <key>uni0445</key>
-      <integer>23</integer>
       <key>uni0451</key>
       <integer>-11</integer>
-      <key>v</key>
-      <integer>28</integer>
-      <key>w</key>
-      <integer>29</integer>
-      <key>x</key>
-      <integer>23</integer>
-      <key>y</key>
-      <integer>8</integer>
-      <key>yacute</key>
-      <integer>8</integer>
-      <key>ydieresis</key>
-      <integer>8</integer>
-      <key>z</key>
-      <integer>9</integer>
     </dict>
     <key>zero</key>
     <dict>
@@ -20678,7 +19006,7 @@
       <key>H</key>
       <integer>-8</integer>
       <key>J</key>
-      <integer>-81</integer>
+      <integer>7</integer>
       <key>L</key>
       <integer>-8</integer>
       <key>M</key>
@@ -20743,12 +19071,6 @@
       <integer>-12</integer>
       <key>two</key>
       <integer>-10</integer>
-      <key>v</key>
-      <integer>12</integer>
-      <key>w</key>
-      <integer>12</integer>
-      <key>x</key>
-      <integer>7</integer>
       <key>y</key>
       <integer>-8</integer>
       <key>z</key>
