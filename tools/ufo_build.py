@@ -220,6 +220,17 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     # literally 'd' with a shortened stem the way this project wants it).
     font["a"] = single_story_a.build_from_d(font["d"], params.X_HEIGHT)
 
+    # Letter redraws derived from other letters' own finished outlines
+    # (see quirks.py): S rotated 180 degrees; J takes g's full descender
+    # curl; q takes j's curl mirrored; y is u with g's descender. Order
+    # matters: J and y read g/u/j as they stand now, q reads j, and none
+    # of them are read by anything later in this function.
+    quirks.rotate_180(font["S"])
+    quirks.build_J_from_g(font["J"], font["g"])
+    quirks.curl_q_from_j(font["q"], font["j"])
+    quirks.build_y_from_u_and_g(font["y"], font["u"], font["g"])
+    quirks.match_Q_tail_to_R(font["Q"], font["R"])
+
     return font
 
 

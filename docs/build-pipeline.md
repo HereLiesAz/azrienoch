@@ -57,8 +57,14 @@ In roughly build order:
 - **`quirks.py`** -- terminal-cut reorientation (true horizontal/
   vertical cuts on 'c'/'e'/'s'/'r'/'f'), canonical round-counter
   reshaping (every round counter becomes an affine-scaled copy of
-  'o's own), and a couple of micro-notch fixes to defects present in
-  Jost's own raw outline.
+  'o's own), a couple of micro-notch fixes to defects present in
+  Jost's own raw outline, and per-letter redraws derived from other
+  letters' own outlines: 'S' rotated 180 degrees; 'J' takes 'g's full
+  descender curl (and 'g's advance width); 'q' takes 'j's curl mirrored
+  (advance unchanged, the hook overhangs the sidebearing); 'y' is 'u'
+  with 'g's descender (advance is 'u's); 'Q's tail is re-angled to
+  'R's leg slope. Base letters only -- accented variants of J/j/q/y
+  keep Jost's own shapes.
 - **`accent_marks.py`** -- re-splices Jost's own diacritic marks onto
   this project's own (ring-derived/Arimo-sourced) 'c'/'e'/'s', since
   those base letters no longer carry Jost's own native shape for Jost's

@@ -414,3 +414,111 @@ def fix_six_nine_notch(glyph) -> None:
     _merge_near_duplicate(glyph.contours[1].points, 20, 21)
 
 
+# ---------------------------------------------------------------------------
+# Letter redraws derived from other letters' own outlines: S rotation, the
+# q/J curls, and y built from u + g's descender.
+# ---------------------------------------------------------------------------
+
+def _copy_points(points):
+    from ufoLib2.objects import Point
+    return [Point(p.x, p.y, p.type, p.smooth) for p in points]
+
+
+def _mirror_reversed(points, axis_sum: float):
+    """Mirrors `points` across the vertical line x = axis_sum / 2
+    (x' = axis_sum - x) and reverses the contour direction so winding is
+    preserved (a mirror flips it). In a UFO point list an on-curve
+    point's type names the segment that ENDS at it, so after reversing,
+    each on-curve point takes the type of the on-curve point that
+    followed it in the original order; off-curve points stay untyped."""
+    from ufoLib2.objects import Point
+    n = len(points)
+    on_idx = [i for i, p in enumerate(points) if p.type is not None]
+    next_type = {}
+    for pos, i in enumerate(on_idx):
+        next_type[i] = points[on_idx[(pos + 1) % len(on_idx)]].type
+    out = []
+    for i in reversed(range(n)):
+        p = points[i]
+        out.append(Point(axis_sum - p.x, p.y, next_type[i] if p.type is not None else None, p.smooth))
+    return out
+
+
+def _set_contour_points(glyph, index: int, points) -> None:
+    from ufoLib2.objects import Contour
+    glyph.contours[index] = Contour(points=points)
+
+
+def rotate_180(glyph) -> None:
+    """Rotates the whole glyph 180 degrees about its own bounding-box
+    centre. A rotation keeps contour winding, so nothing else needs
+    reordering; advance width is untouched."""
+    pts = [p for c in glyph.contours for p in c.points]
+    cx = (min(p.x for p in pts) + max(p.x for p in pts)) / 2.0
+    cy = (min(p.y for p in pts) + max(p.y for p in pts)) / 2.0
+    for p in pts:
+        p.x = 2 * cx - p.x
+        p.y = 2 * cy - p.y
+
+
+def build_J_from_g(J_glyph, g_glyph) -> None:
+    """'J' takes g's full descender curl (stem, loop, horizontal
+    terminal) verbatim, with the stem's top raised from x-height to J's
+    own cap-height. Advance width becomes g's, since the curl needs g's
+    horizontal room. g contour 0 is the stem+tail outline; points 9 and
+    10 are its top-right and top-left stem corners."""
+    top_y = J_glyph.contours[0].points[11].y  # J's own stem-top corner (cap height)
+    pts = _copy_points(g_glyph.contours[0].points)
+    pts[9].y = top_y
+    pts[10].y = top_y
+    _set_contour_points(J_glyph, 0, pts)
+    J_glyph.width = g_glyph.width
+
+
+def curl_q_from_j(q_glyph, j_glyph) -> None:
+    """'q' swaps its plain rectangular stem (contour 0) for j's stem and
+    curl mirrored left-to-right, so the tail hooks right where j's hooks
+    left. j contour 1 is the stem+tail (contour 0 is the dot); points 10
+    and 11 are its stem-top right/left corners. The mirror axis maps j's
+    stem onto q's stem (q contour 0, points 0/1 = stem bottom-left/
+    bottom-right). Advance width is unchanged: like j's own curl, the
+    hook overhangs the sidebearing."""
+    j_pts = j_glyph.contours[1].points
+    q_stem = q_glyph.contours[0].points
+    axis_sum = q_stem[0].x + j_pts[10].x  # j stem right edge -> q stem left edge
+    _set_contour_points(q_glyph, 0, _mirror_reversed(_copy_points(j_pts), axis_sum))
+
+
+def build_y_from_u_and_g(y_glyph, u_glyph, g_glyph) -> None:
+    """'y' becomes 'u' with its right stem run down into g's descender
+    curl: u points 0-9 (left stem, bowl, up to where the bowl meets the
+    right stem), then g's stem-left edge, curl and terminal (g points
+    11-19 then 0-8, shifted so g's stem sits on u's right stem), then
+    u points 12-20 (right stem up and back round). Replaces u points
+    10-11, the flat foot. Advance width is u's."""
+    u_pts = u_glyph.contours[0].points
+    g_pts = g_glyph.contours[0].points
+    dx = u_pts[12].x - g_pts[9].x  # g stem right edge -> u stem right edge
+    tail = _copy_points(g_pts[11:20] + g_pts[0:9])
+    for p in tail:
+        p.x += dx
+    pts = _copy_points(u_pts[0:10]) + tail + _copy_points(u_pts[12:21])
+    _set_contour_points(y_glyph, 0, pts)
+    y_glyph.width = u_glyph.width
+
+
+def match_Q_tail_to_R(Q_glyph, R_glyph) -> None:
+    """Re-angles 'Q's diagonal tail (contour 2, a four-point
+    parallelogram: 0 top-left, 1 bottom-left, 2 bottom-right, 3
+    top-right) to the same slope as 'R's leg (contour 0, same point
+    order). The tail's bottom points and height stay put; each top
+    point's x moves so its edge runs at R's own run-per-rise ratio
+    (measured on this master's own R, so it holds at every weight and
+    width)."""
+    r = R_glyph.contours[0].points
+    ratio_left = (r[1].x - r[0].x) / (r[0].y - r[1].y)
+    ratio_right = (r[2].x - r[3].x) / (r[3].y - r[2].y)
+    q = Q_glyph.contours[2].points
+    q[0].x = q[1].x - ratio_left * (q[0].y - q[1].y)
+    q[3].x = q[2].x - ratio_right * (q[3].y - q[2].y)
+
