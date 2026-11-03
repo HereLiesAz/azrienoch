@@ -43,7 +43,8 @@ right angle) -- and there is exactly ONE serif per glyph:
 - '1' is exempt (`detect_feet`/`apply_feet` keep its original
   behavior: a lone stem flares both ways at the baseline).
 - '7' gets a crossbar "dash" through the middle of its diagonal
-  instead (see `apply_seven_dash`), growing with SERF like a foot.
+  instead (see `apply_seven_dash`), growing with SERF like a foot, sized
+  exactly like 'f's crossbar.
 
 Diagonal-only strokes (v/w/x, A/V/W/X/K's legs) and curved terminals
 (g's own descender hook) have no flat stem run to grow a foot from at
@@ -464,15 +465,29 @@ def guides_for(ch: str, glyph_min_y: float) -> dict[str, float]:
     return {name: y for name, y in all_guides.items() if name in allowed}
 
 
-def apply_seven_dash(glyph, serif_amount: float) -> None:
+def crossbar_size(f_glyph) -> tuple[float, float]:
+    """(length, thickness) of 'f's crossbar at this master: the two flat
+    runs of equal x extent between y=200 and y=700, one over the other."""
+    runs = [(round(x0, 1), round(x1, 1), y) for _c, x0, x1, y, _t, _l, _r in _runs(f_glyph, 3.0, 2000.0) if 200 < y < 700]
+    best = None
+    for i, (a0, a1, ay) in enumerate(runs):
+        for b0, b1, by in runs[i + 1:]:
+            if abs(a0 - b0) <= 1 and abs(a1 - b1) <= 1 and by != ay:
+                best = (a1 - a0, abs(ay - by))
+    return best
+
+
+def apply_seven_dash(glyph, serif_amount: float, bar: tuple[float, float] | None = None) -> None:
     """A horizontal dash through the middle of '7's diagonal (like a
     backwards f's crossbar). Always appends one rectangle -- at SERF=0 a
     1-unit hairline inset inside the diagonal's own band (invisible), at
-    SERF=100 as thick as 7's own top bar and reaching that same
-    thickness past both sides of the diagonal -- so every master keeps
-    identical topology. Uses seven's own 6-point contour: points 0/1 the
-    top bar's underside, 2/3 the diagonal's bottom-left/bottom-right, 4
-    the top-right tip (checked at wght 100/400/900)."""
+    SERF=100 exactly the size of 'f's crossbar at the same master
+    (`bar` = `crossbar_size(f)`: its length and thickness), centred on
+    the diagonal -- so every master keeps identical topology. Without
+    `bar` the old sizing (top-bar thickness, that far past each side) is
+    used. Uses seven's own 6-point contour: points 0/1 the top bar's
+    underside, 2/3 the diagonal's bottom-left/bottom-right, 4 the
+    top-right tip (checked at wght 100/400/900)."""
     pts = glyph.contours[0].points
     top_bar_bottom = pts[0].y
     thickness = pts[5].y - top_bar_bottom
@@ -482,10 +497,17 @@ def apply_seven_dash(glyph, serif_amount: float) -> None:
     left = pts[2].x + (pts[1].x - pts[2].x) * (yc - pts[2].y) / (pts[1].y - pts[2].y)
     right = pts[3].x + (pts[4].x - pts[3].x) * (yc - pts[3].y) / (pts[4].y - pts[3].y)
     t = serif_amount / 100.0
-    ext = thickness * t
     inset = 1.0 * (1 - t)
-    h = MIN_FOOT_H * (1 - t) + thickness * t
-    x0, x1 = left - ext + inset, right + ext - inset
+    if bar is None:
+        ext = thickness * t
+        h = MIN_FOOT_H * (1 - t) + thickness * t
+        x0, x1 = left - ext + inset, right + ext - inset
+    else:
+        length, bar_h = bar
+        cx = (left + right) / 2.0
+        h = MIN_FOOT_H * (1 - t) + bar_h * t
+        x0 = (left + inset) * (1 - t) + (cx - length / 2.0) * t
+        x1 = (right - inset) * (1 - t) + (cx + length / 2.0) * t
     y0, y1 = yc - h / 2.0, yc + h / 2.0
     pen = glyph.getPointPen()
     pen.beginPath()

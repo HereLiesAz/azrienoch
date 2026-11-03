@@ -309,7 +309,7 @@ def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
         stem_w = stem_upper if params.base_letter(ch).isupper() else stem_lower
         serifs.apply_feet(font[_glyph_name(ch)], specs, guides, serf, stem_w)
         if ch == "7":
-            serifs.apply_seven_dash(font[_glyph_name(ch)], serf)
+            serifs.apply_seven_dash(font[_glyph_name(ch)], serf, serifs.crossbar_size(font["f"]))
 
     for (left, right), value in kerning.pairs_for(wdth).items():
         font.kerning[(left, right)] = value
