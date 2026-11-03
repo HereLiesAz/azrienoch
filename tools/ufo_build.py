@@ -235,6 +235,8 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     quirks.build_J_from_g(font["J"], font["g"])
     quirks.curl_q_from_j(font["q"], font["j"])
     quirks.build_y_from_u_and_g(font["y"], font["u"], font["g"])
+    quirks.hang_y_from_v(font["y"], font["v"])
+    quirks.hang_Y_from_V(font["Y"])
     quirks.match_Q_tail_to_R(font["Q"], font["R"])
 
     return font

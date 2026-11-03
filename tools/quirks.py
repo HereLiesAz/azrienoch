@@ -553,3 +553,91 @@ def match_Q_tail_to_R(Q_glyph, R_glyph) -> None:
     q[0].x = q[1].x - ratio_left * (q[0].y - q[1].y)
     q[3].x = q[2].x - ratio_right * (q[3].y - q[2].y)
 
+
+
+# ---------------------------------------------------------------------------
+# Y and y hung from the right terminal of their V (narrowed), not from its
+# crotch. The stem (Y) or g's descender curl (y) drops from the V's right
+# outer edge.
+# ---------------------------------------------------------------------------
+
+V_NARROW = 0.9   # V half-width scale about its centre line; arm horizontal width kept
+Y_ATTACH = 0.8   # Y stem attaches this fraction of the way up the V's right side
+
+
+def _signed_area_xy(pts) -> float:
+    n = len(pts)
+    return sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n)) / 2.0
+
+
+def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: float, tip_y: float):
+    """Pointed V polygon (outer-left, inner-left, crotch, inner-right,
+    outer-right, tip) narrowed about x = cx by V_NARROW with the arms'
+    horizontal width kept. Returns (points, slope) where slope is the
+    right edge's dx/dy."""
+    lo = cx - V_NARROW * (cx - outer_l)
+    ro = cx + V_NARROW * (outer_r - cx)
+    slope = (cx - lo) / (top - tip_y)
+    crotch_y = top - (cx - (lo + arm_w)) / slope
+    return [(lo, top), (lo + arm_w, top), (cx, crotch_y), (ro - arm_w, top), (ro, top), (cx, tip_y)], slope
+
+
+def _set_xy_contour(glyph, index: int, pts_xy, template_points, ccw_like) -> None:
+    from ufoLib2.objects import Contour, Point
+    if (_signed_area_xy(pts_xy) > 0) != ccw_like:
+        pts_xy = pts_xy[::-1]
+    pts = [Point(x, y, "line", False) for x, y in pts_xy]
+    c = Contour(points=pts)
+    if index < len(glyph.contours):
+        glyph.contours[index] = c
+    else:
+        glyph.contours.append(c)
+
+
+def hang_Y_from_V(Y_glyph) -> None:
+    """Y = pointed V (tip kept at the original junction height) plus a
+    rectangular stem hanging from the V's right outer edge Y_ATTACH of
+    the way up. Reads Jost's own 9-point Y: 0 inner-right top, 1 crotch,
+    2 inner-left top, 3 outer-left top, 4/7 stem-top corners at the
+    junction, 5/6 stem foot, 8 outer-right top."""
+    P = [(p.x, p.y) for p in Y_glyph.contours[0].points]
+    if len(P) != 9:
+        raise ValueError(f"Y: expected 9 points, got {len(P)}")
+    ccw = _signed_area_xy(P) > 0
+    stem_w = P[6][0] - P[5][0]
+    top = P[0][1]
+    cx = (P[4][0] + P[7][0]) / 2.0
+    tip_y = (P[4][1] + P[7][1]) / 2.0
+    v, slope = _narrow_v(P[3][0], P[8][0], P[2][0] - P[3][0], top, cx, tip_y)
+    ym = tip_y + Y_ATTACH * (top - tip_y)
+    xm = cx + (ym - tip_y) * slope
+    # A Y stem is a rectangle from the baseline to the attach height, with
+    # its right edge on the V's right outer edge.
+    stem = [(xm - stem_w, P[5][1]), (xm, P[5][1]), (xm, ym), (xm - stem_w, ym)]
+    _set_xy_contour(Y_glyph, 0, v, None, ccw)
+    _set_xy_contour(Y_glyph, 1, stem, None, ccw)
+
+
+def hang_y_from_v(y_glyph, v_glyph) -> None:
+    """y = v narrowed (same V as Y) plus the descender curl built by
+    build_y_from_u_and_g, re-hung so its stem's right edge sits on the
+    V's right terminal at x-height. Run after build_y_from_u_and_g: y
+    contour 0 points 10-29 are then the stem-and-curl outline, with
+    points 28/29 the stem-top right/left corners."""
+    Q = [(p.x, p.y) for p in v_glyph.contours[0].points]
+    if len(Q) != 6:
+        raise ValueError(f"v: expected 6 points, got {len(Q)}")
+    top = Q[0][1]
+    cx, tip_y = Q[1]
+    ccw = _signed_area_xy(Q) > 0
+    v, _ = _narrow_v(Q[0][0], Q[2][0], Q[5][0] - Q[0][0], top, cx, tip_y)
+    pts = y_glyph.contours[0].points
+    dx = v[4][0] - pts[28].x
+    tail = _copy_points([pts[10]] + pts[11:30])
+    for p in tail:
+        p.x += dx
+        if p.y == pts[28].y:
+            p.y = top
+    _set_xy_contour(y_glyph, 0, v, None, ccw)
+    from ufoLib2.objects import Contour
+    y_glyph.contours.append(Contour(points=tail))

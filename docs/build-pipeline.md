@@ -67,8 +67,12 @@ In roughly build order:
   Jost's own raw outline, and per-letter redraws derived from other
   letters' own outlines: 'S' rotated 180 degrees; 'J' takes 'g's full
   descender curl (and 'g's advance width); 'q' takes 'j's curl mirrored
-  (advance unchanged, the hook overhangs the sidebearing); 'y' is 'u'
-  with 'g's descender (advance is 'u's); 'Q's tail is re-angled to
+  (advance unchanged, the hook overhangs the sidebearing); 'y' is a narrowed 'v' (V_NARROW 0.9, arm
+  width kept) with 'g's descender curl hung from the V's right terminal
+  at x-height, and 'Y' is the same narrowed V (tip at the original
+  junction height) with a rectangular stem hanging from the V's right
+  outer edge Y_ATTACH (0.8) of the way up (`hang_y_from_v`,
+  `hang_Y_from_V`; advances unchanged); 'Q's tail is re-angled to
   'R's leg slope. Base letters only -- accented variants of J/j/q/y
   keep Jost's own shapes.
 - **`accent_marks.py`** -- re-splices Jost's own diacritic marks onto
@@ -92,8 +96,8 @@ In roughly build order:
   all at one size taken from that master's `I` stem. Other lowercase
   and digits: the rightmost stem's bottom-right corner, flaring right
   (a d f h i l m n r t u ...). p and q get one serif at the x-height
-  top of the stem, flaring outward (p and y upper-left, q upper-right); T alone flares lower-right. None
-  on N Q g j (M is the one exception: a serif at each foot), on ascender/cap tops, or on diagonal terminals
+  top of the stem, flaring outward (p upper-left, q upper-right); T alone flares lower-right. None
+  on N Q g j y (M is the one exception: a serif at each foot), on ascender/cap tops, or on diagonal terminals
   (A, X, x, v, w, z, K/R legs). `1` keeps its original both-ways
   baseline foot. `7` gets a `SERF`-driven dash through its diagonal
   (`serifs.apply_seven_dash`). Each foot is anchored at the stem corner
