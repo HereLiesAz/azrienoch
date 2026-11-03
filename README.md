@@ -1,13 +1,8 @@
 # Azrienoch
 
-A variable font built on [Jost](https://github.com/indestructible-type/Jost)
-(SIL OFL 1.1), a real, professionally drawn geometric sans -- not drawn
-from scratch. Azrienoch takes Jost's own outlines and adds a `SERF`
-axis that grows a slab foot from nothing, a `GRAD` axis for optical
-compensation, and a handful of Helvetica-inspired terminal/counter
-adjustments on top.
 
-339 glyphs -- basic Latin, digits, punctuation, Latin-1 Supplement,
+
+A 339-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
 Latin Extended-A, and Cyrillic.
 
 ## Axes
@@ -43,8 +38,7 @@ Pages on every change to `specimen/**` on `master` (see
 
 ## Known limitations
 
-- No Greek. Jost itself has almost none of it (4 codepoints total); a
-  second donor font was tried and dropped -- see
+- No Greek. A donor font was tried and dropped -- see
   [`docs/design.md`](docs/design.md#status).
 - `wdth` is an ink-density weighted compression, not a true optically
   condensed redraw (no counter is actually reshaped).
@@ -60,7 +54,7 @@ versioning, and tracked follow-up work.
 
 ## License
 
-Azrienoch's outline data is a Modified Version of Jost, under the SIL
+Azrienoch's outline data is a heavily-modified version of Jost, under the SIL
 Open Font License, Version 1.1 (`OFL.txt`; Jost's own license and
 authors at `third_party/jost/OFL.txt`). `c`/`e`/`s` are additionally a
 Modified Version of [Arimo](https://github.com/googlefonts/arimo),
