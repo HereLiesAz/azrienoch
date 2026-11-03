@@ -572,7 +572,7 @@ def _signed_area_xy(pts) -> float:
     return sum(pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1] for i in range(n)) / 2.0
 
 
-def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: float, tip_y: float, narrow: float = V_NARROW):
+def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: float, tip_y: float, narrow: float = V_NARROW, stem_w: float | None = None):
     """Pointed V polygon (outer-left, inner-left, crotch, inner-right,
     outer-right, tip) narrowed about x = cx by V_NARROW with the arms'
     horizontal width kept. Returns (points, slope) where slope is the
@@ -580,6 +580,9 @@ def _narrow_v(outer_l: float, outer_r: float, arm_w: float, top: float, cx: floa
     lo = cx - narrow * (cx - outer_l)
     ro = cx + narrow * (outer_r - cx)
     slope = (cx - lo) / (top - tip_y)
+    if stem_w is not None:
+        # arms as thick (perpendicular) as the stem/tail they carry
+        arm_w = stem_w * math.sqrt(1.0 + slope * slope)
     crotch_y = top - (cx - (lo + arm_w)) / slope
     return [(lo, top), (lo + arm_w, top), (cx, crotch_y), (ro - arm_w, top), (ro, top), (cx, tip_y)], slope
 
@@ -610,7 +613,7 @@ def hang_Y_from_V(Y_glyph) -> None:
     top = P[0][1]
     cx = (P[4][0] + P[7][0]) / 2.0
     tip_y = (P[4][1] + P[7][1]) / 2.0 * Y_TIP_DEPTH
-    v, slope = _narrow_v(P[3][0], P[8][0], P[2][0] - P[3][0], top, cx, tip_y, Y_V_NARROW)
+    v, slope = _narrow_v(P[3][0], P[8][0], P[2][0] - P[3][0], top, cx, tip_y, Y_V_NARROW, stem_w)
     ym = tip_y + Y_ATTACH * (top - tip_y)
     xm = cx + (ym - tip_y) * slope
     # A Y stem is a rectangle from the baseline to the attach height, with
@@ -632,8 +635,8 @@ def hang_y_from_v(y_glyph, v_glyph) -> None:
     top = Q[0][1]
     cx, tip_y = Q[1]
     ccw = _signed_area_xy(Q) > 0
-    v, _ = _narrow_v(Q[0][0], Q[2][0], Q[5][0] - Q[0][0], top, cx, tip_y)
     pts = y_glyph.contours[0].points
+    v, _ = _narrow_v(Q[0][0], Q[2][0], Q[5][0] - Q[0][0], top, cx, tip_y, V_NARROW, pts[28].x - pts[29].x)
     dx = v[4][0] - pts[28].x
     tail = _copy_points([pts[10]] + pts[11:30])
     for p in tail:
