@@ -1,0 +1,59 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="uni0424" format="2">
+  <advance width="620"/>
+  <unicode hex="0424"/>
+  <outline>
+    <contour>
+      <point x="260" y="700" type="line"/>
+      <point x="260" y="0" type="line"/>
+      <point x="360" y="0" type="line"/>
+      <point x="360" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="488" y="350" type="qcurve" smooth="yes"/>
+      <point x="488" y="297"/>
+      <point x="452" y="230"/>
+      <point x="392" y="199"/>
+      <point x="350" y="199" type="qcurve" smooth="yes"/>
+      <point x="271" y="199" type="line" smooth="yes"/>
+      <point x="228" y="199"/>
+      <point x="169" y="230"/>
+      <point x="133" y="297"/>
+      <point x="133" y="350" type="qcurve" smooth="yes"/>
+      <point x="133" y="404"/>
+      <point x="169" y="470"/>
+      <point x="228" y="501"/>
+      <point x="271" y="501" type="qcurve" smooth="yes"/>
+      <point x="350" y="501" type="line" smooth="yes"/>
+      <point x="392" y="501"/>
+      <point x="452" y="470"/>
+      <point x="488" y="404"/>
+    </contour>
+    <contour>
+      <point x="580" y="350" type="qcurve" smooth="yes"/>
+      <point x="580" y="435"/>
+      <point x="524" y="555"/>
+      <point x="423" y="620"/>
+      <point x="362" y="620" type="qcurve" smooth="yes"/>
+      <point x="258" y="620" type="line" smooth="yes"/>
+      <point x="197" y="620"/>
+      <point x="96" y="555"/>
+      <point x="40" y="435"/>
+      <point x="40" y="350" type="qcurve" smooth="yes"/>
+      <point x="40" y="266"/>
+      <point x="96" y="145"/>
+      <point x="197" y="80"/>
+      <point x="258" y="80" type="qcurve" smooth="yes"/>
+      <point x="362" y="80" type="line" smooth="yes"/>
+      <point x="423" y="80"/>
+      <point x="524" y="145"/>
+      <point x="580" y="266"/>
+    </contour>
+    <contour>
+      <point x="225" y="0.0" type="line"/>
+      <point x="360" y="0.0" type="line"/>
+      <point x="360" y="46.2" type="line"/>
+      <point x="225" y="46.2" type="line"/>
+    </contour>
+  </outline>
+</glyph>

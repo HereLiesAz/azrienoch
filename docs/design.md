@@ -76,8 +76,8 @@ anything.
 ## Axes
 
 See [`axes.md`](./axes.md) for the full table. In short: `wght`
-(100-900) and `wdth` (75-100) sample Jost's own outlines (plus
-`condense.py`'s compression for `wdth`); `SERF` (0-100) grows a slab
+(100-900) and `wdth` (0-100) sample Jost's own outlines (plus
+`condense.py`'s compression for `wdth`, and a fixed-cell fit at `wdth` 0); `SERF` (0-100) grows a slab
 foot from nothing (see "Serif feet" below); `GRAD` (-50 to 50)
 approximates a grade axis Jost has no native equivalent for, by
 sampling a nearby `wght` for shape while holding the requested
@@ -90,25 +90,30 @@ fake the effect), but the specific property `GRAD` exists for -- text
 reads bolder/lighter without reflowing a layout measured against the
 un-graded widths -- holds exactly, by construction.
 
-Every master in the grid (`tools/params.py::MASTER_GRID`, 36 points:
-3 `wght` samples x 2 `wdth` x 2 `SERF` x 3 `GRAD`) is also an `fvar`
+Every master in the grid (`tools/params.py::MASTER_GRID`, 54 points:
+3 `wght` samples x 3 `wdth` x 2 `SERF` x 3 `GRAD`) is also an `fvar`
 named instance, with a proper STAT table axis-value label per stop, so
 a style picker lists every named style instead of only the implicit
 default.
 
 ## Status
 
-339 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`), digits
-(`0`-`9`), punctuation, Latin-1 Supplement, Latin Extended-A, and
-Cyrillic. All of it is copied from Jost across all 36 masters (except
-`c`/`e`, built from this project's own `o`, and `s`, sourced from
-Arimo), with Azrienoch-specific modifications (`tools/quirks.py`) on
-top for the original 62 ASCII letters/digits, extended to accented
-Latin and select Cyrillic letters too (see below). No Greek: Jost
-itself has almost none of it (4 codepoints total, confirmed directly
-against its own cmap), and no second donor font is used: its outlines
-wouldn't share Jost's point topology for this project's per-letter-class
-refinement to act on.
+915 glyphs -- the basic Latin alphabet (`A`-`Z`, `a`-`z`), digits
+(`0`-`9`), punctuation, Latin-1 Supplement, Latin Extended-A, Cyrillic,
+and every other codepoint Jost has (Latin Extended-B/Additional letters,
+spacing and combining marks, currency, fractions, super/subscripts, math
+symbols, four Greek letters: Δ Ω μ π). On top of Jost's set the build
+adds 391 characters Jost lacks: 309 precomposed Latin letters
+(Vietnamese, Pinyin, Welsh, Maltese ...), 20 barred letters, 12
+digraphs and 50 logic and set-theory symbols (see "Composed letters" and
+"Logic symbols" below). Jost's own glyphs are copied across all 54
+masters (except `c`/`e`, built from this project's own `o`, `s`,
+sourced from Arimo, and `Y`/`y`, hand-drawn), with Azrienoch-specific
+modifications (`tools/quirks.py`) on top for the original 62 ASCII
+letters/digits, extended to accented Latin and select Cyrillic letters
+too (see below). Greek is limited to what Jost has: no second donor
+font is used, since its outlines wouldn't share Jost's point topology
+for this project's per-letter-class refinement to act on.
 
 Jost's own accented glyphs that are TrueType composites (a base letter
 plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
@@ -200,7 +205,7 @@ reference.
   anymore. Each arc is emitted as a fixed number of tangent-matched
   quadratics sampled on `o`'s actual ring, so point count is identical
   at every master wherever the cuts land. `c` and `e` have no self-intersection at
-  any of the 36 masters (checked by flattening every contour).
+  any of the 54 masters (checked by flattening every contour).
   Consequence of taking Jost's own `e` levels: at Black, Jost's bar sits
   low and `o`'s counter is small, so `e`'s aperture narrows to a slit.
 
@@ -310,6 +315,54 @@ In order:
   Regular-to-Bold straight line. Not fixed; a real, if narrow and
   currently invisible, residual.
 
+## Composed letters
+
+Latin letters Jost does not carry are built per master from this
+build's own finished glyphs (`tools/composites.py`), so an `ọ` has this
+project's `o`, not Jost's.
+
+- **Marked letters.** Every precomposed Latin Extended-B/Additional
+  letter whose Unicode decomposition is an ASCII letter plus marks the
+  build can draw. The base glyph's contours are copied; each mark is
+  centered on the base's bounding box and lifted by `top - X_HEIGHT`
+  (top = x-height, cap height or ascender), which reproduces Jost's own
+  mark-to-letter gap. A second mark stacks above the first. Below-marks
+  hang under the baseline, or under a descender. `i`/`j` become
+  dotless under any mark above. Marks come from Jost at the master's
+  own weight, width and grade. Marks Jost lacks are derived: dot,
+  diaeresis, ring, tilde and macron below are the above-marks moved
+  under the baseline; circumflex and breve below and the inverted breve
+  are the above-marks flipped; the double grave is two graves. Hook
+  above and the horn (Vietnamese `ơ`, `ư`) are stroked
+  (`tools/strokes.py`).
+- **Barred letters** (`ƀ Ƀ Ȼ ȼ Ɇ ɇ Ɉ ɉ Ɍ ɍ Ɏ ɏ Ƶ ƶ Ɨ ɨ Ƚ ƚ Ǥ ǥ`): the
+  base letter plus a horizontal bar as thick as the master's minus sign.
+- **Digraphs** (`Ǆ ǅ ǆ Ǉ ǈ ǉ Ǌ ǋ ǌ Ǳ ǲ ǳ`): the two letters side by side.
+
+Kerning and serif feet follow the base letter (`params.base_letter`).
+Not covered: the hooked, African and IPA letters of Latin Extended-B
+and the IPA block.
+
+## Logic symbols
+
+`tools/symbols.py` draws the symbols per master from three of Jost's
+own glyphs at that master: `=` (math axis and bar spacing), the minus
+sign (stroke weight, width) and `<` (height). Everything is stroked
+(`tools/strokes.py`), so a bar is as thick as the minus next to it and a
+symbol is as wide as the minus; symbols that stack several strokes
+(`≡ ⊆ ⊨ ⊕ ⊗ ⊼ ⊽ ⊻` and the double arrows) use a stroke capped at 40% of the
+symbol's half height so they stay open at Black. `∀` is `A` rotated,
+`∃` is `E` mirrored, `⊤` is `T`, `⊥` is `T` rotated and the dots of
+`∴ ∵` are Jost's own `·`. Set: `∀ ∃ ∄ ∧ ∨ ⊻ ⊼ ⊽ ⊕ ⊗ ⊢ ⊣ ⊤ ⊥ ⊨ ⊬ ⊭ ∴ ∵
+≡ ≢ ∈ ∉ ∋ ∌ ⊂ ⊃ ⊄ ⊅ ⊆ ⊇ ⊈ ⊉ ∪ ∩ ∖ ∘ ← → ↔ ↦ ⇐ ⇒ ⇔ ⟸ ⟹ ⟺ □ ◇ ∎`
+(`¬`, `∅`, `≠`, `≤`, `≥` and the rest of Jost's own math set were
+already present). They carry no serif feet and no kerning.
+
+## Mono
+
+`wdth` 0 is a monospaced setting: every glyph has one advance (620
+units). See [`axes.md`](./axes.md#width-stops).
+
 ## Drawn glyphs
 
 `Y` and `y` are drawn by hand, not derived from Jost: one cubic outline
@@ -321,7 +374,7 @@ master: weight blends linearly between the drawn weights (shifted by `GRAD`
 as for every other glyph, with the advance following the requested `wght`),
 `wdth` runs through the same `condense.py` compression, and `SERF` feet go
 on afterwards as for any glyph. The three drawings have identical points in
-identical order, so all 36 masters stay interpolation-compatible.
+identical order, so all 54 masters stay interpolation-compatible.
 
 ## Serif feet
 
@@ -421,9 +474,9 @@ and `SERF`.
 Jost's `S` cuts both terminals on the diagonal; `s` (Arimo) is cut
 horizontal. `quirks._HORIZONTAL_TERMINALS` now lists `S` (contour 0,
 points 0-1 lower-left, 26-27 upper-right) so both letters match.
-Verified: every one of the 36 masters has both cuts at identical Y.
+Verified: every one of the 54 masters has both cuts at identical Y.
 The rigid re-spread of a steeply diagonal cut overhung the bowl (x = -12.8
 at wght 900, wdth 75), so the letter read as tipping over.
 `quirks._TERMINAL_X_LIMITS` slides each cut inward, length kept, until it
 sits inside the upper bowl's leftmost / lower bowl's rightmost point.
-Verified: min x over all 36 masters is 34.7.
+Verified: min x over all 54 masters is 34.7.

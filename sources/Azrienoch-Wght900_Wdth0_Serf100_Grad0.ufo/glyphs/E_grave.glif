@@ -1,0 +1,43 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Egrave" format="2">
+  <advance width="620"/>
+  <unicode hex="00C8"/>
+  <outline>
+    <contour>
+      <point x="271" y="0" type="line"/>
+      <point x="547" y="0" type="line"/>
+      <point x="547" y="175" type="line"/>
+      <point x="271" y="175" type="line"/>
+    </contour>
+    <contour>
+      <point x="271" y="525" type="line"/>
+      <point x="547" y="525" type="line"/>
+      <point x="547" y="700" type="line"/>
+      <point x="271" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="271" y="275" type="line"/>
+      <point x="534" y="275" type="line"/>
+      <point x="534" y="445" type="line"/>
+      <point x="271" y="445" type="line"/>
+    </contour>
+    <contour>
+      <point x="140" y="700" type="line"/>
+      <point x="140" y="0" type="line"/>
+      <point x="311" y="0" type="line"/>
+      <point x="311" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="201" y="940" type="line"/>
+      <point x="347" y="790" type="line"/>
+      <point x="438" y="840" type="line"/>
+      <point x="313" y="1000" type="line"/>
+    </contour>
+    <contour>
+      <point x="73" y="0.0" type="line"/>
+      <point x="311" y="0.0" type="line"/>
+      <point x="311" y="78.75" type="line"/>
+      <point x="73" y="78.75" type="line"/>
+    </contour>
+  </outline>
+</glyph>

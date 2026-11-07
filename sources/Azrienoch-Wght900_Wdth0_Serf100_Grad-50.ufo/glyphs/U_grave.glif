@@ -1,0 +1,37 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Ugrave" format="2">
+  <advance width="620"/>
+  <unicode hex="00D9"/>
+  <outline>
+    <contour>
+      <point x="83" y="700" type="line"/>
+      <point x="83" y="230" type="line" smooth="yes"/>
+      <point x="83" y="162"/>
+      <point x="117" y="63"/>
+      <point x="185" y="0"/>
+      <point x="269" y="-31"/>
+      <point x="311" y="-31" type="qcurve" smooth="yes"/>
+      <point x="353" y="-31"/>
+      <point x="435" y="0"/>
+      <point x="502" y="63"/>
+      <point x="537" y="162"/>
+      <point x="537" y="230" type="qcurve" smooth="yes"/>
+      <point x="537" y="700" type="line"/>
+      <point x="385" y="700" type="line"/>
+      <point x="385" y="244" type="line" smooth="yes"/>
+      <point x="385" y="194"/>
+      <point x="349" y="131"/>
+      <point x="311" y="131" type="qcurve" smooth="yes"/>
+      <point x="273" y="131"/>
+      <point x="235" y="194"/>
+      <point x="235" y="244" type="qcurve" smooth="yes"/>
+      <point x="235" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="183" y="927" type="line"/>
+      <point x="321" y="777" type="line"/>
+      <point x="385" y="821" type="line"/>
+      <point x="280" y="981" type="line"/>
+    </contour>
+  </outline>
+</glyph>

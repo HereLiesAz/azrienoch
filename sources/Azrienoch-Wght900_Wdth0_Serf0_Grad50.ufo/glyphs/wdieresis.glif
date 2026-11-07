@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="wdieresis" format="2">
+  <advance width="620"/>
+  <unicode hex="1E85"/>
+  <outline>
+    <contour>
+      <point x="327" y="653" type="qcurve" smooth="yes"/>
+      <point x="327" y="609"/>
+      <point x="372" y="555"/>
+      <point x="406" y="555" type="qcurve" smooth="yes"/>
+      <point x="443" y="555"/>
+      <point x="491" y="609"/>
+      <point x="491" y="653" type="qcurve" smooth="yes"/>
+      <point x="491" y="697"/>
+      <point x="443" y="751"/>
+      <point x="406" y="751" type="qcurve" smooth="yes"/>
+      <point x="372" y="751"/>
+      <point x="327" y="697"/>
+    </contour>
+    <contour>
+      <point x="129" y="653" type="qcurve" smooth="yes"/>
+      <point x="129" y="609"/>
+      <point x="178" y="555"/>
+      <point x="214" y="555" type="qcurve" smooth="yes"/>
+      <point x="248" y="555"/>
+      <point x="293" y="609"/>
+      <point x="293" y="653" type="qcurve" smooth="yes"/>
+      <point x="293" y="697"/>
+      <point x="248" y="751"/>
+      <point x="214" y="751" type="qcurve" smooth="yes"/>
+      <point x="178" y="751"/>
+      <point x="129" y="697"/>
+    </contour>
+    <contour>
+      <point x="40" y="460" type="line"/>
+      <point x="194" y="-25" type="line"/>
+      <point x="310" y="211" type="line"/>
+      <point x="426" y="-25" type="line"/>
+      <point x="580" y="460" type="line"/>
+      <point x="475" y="460" type="line"/>
+      <point x="407" y="263" type="line"/>
+      <point x="310" y="495" type="line"/>
+      <point x="213" y="263" type="line"/>
+      <point x="145" y="460" type="line"/>
+    </contour>
+  </outline>
+</glyph>

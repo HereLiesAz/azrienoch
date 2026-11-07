@@ -6,7 +6,7 @@
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
 fonts/variable/Azrienoch-VF.woff2 same font, WOFF2 container (build output)
 sources/drawn/*.morphont.json    hand-drawn Y and y (Thin, Regular, Black), drawn in Morphont
-sources/*.ufo                     the 36 (wght x wdth x SERF x GRAD) UFO masters (build output)
+sources/*.ufo                     the 54 (wght x wdth x SERF x GRAD) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
 third_party/jost/                 vendored Jost source font + its own OFL.txt
 third_party/arimo/                vendored Arimo Regular/Bold + its own OFL.txt
@@ -58,6 +58,20 @@ In roughly build order:
   `sources/drawn/` at each master (weight blended between the drawn
   weights, `wdth` through `condense.py`), replacing what the steps above
   derived for them. See [`design.md`](./design.md#drawn-glyphs).
+- **`composites.py`** -- Latin letters Jost does not have, composed from
+  this master's own finished letters: base letter plus combining marks
+  (taken from Jost, or derived/drawn where Jost has none), barred
+  letters, digraphs. See [`design.md`](./design.md#composed-letters).
+- **`strokes.py`** -- centerline-to-outline stroker (lines and cubic
+  arcs, mitered corners, one fixed structure per shape) used by the
+  hook-above and horn marks and by the symbols.
+- **`symbols.py`** -- the logic and set-theory symbols, measured from
+  each master's own `=`, minus and `<`. See
+  [`design.md`](./design.md#logic-symbols).
+- **`non_jost.py`** -- builds everything above for one master, after
+  every Jost-derived glyph is final.
+- **`monospace.py`** -- fits a Condensed master into the fixed Mono
+  cell (`wdth` 0). See [`axes.md`](./axes.md#width-stops).
 - **`stroke_balance.py`** -- one perpendicular stroke thickness for
   V/W/M/v/w (and Ŵ/ŵ/Cyrillic М): outer silhouette kept, inner points
   recomputed; 'M''s middle vertex overshoots the baseline to 'V''s own
@@ -84,9 +98,8 @@ In roughly build order:
   this project's own (ring-derived/Arimo-sourced) 'c'/'e'/'s', since
   those base letters no longer carry Jost's own native shape for Jost's
   own accented glyphs to build on.
-- **`package_ufo.py`** -- zips `sources/` into `fonts/ufo/` (all 36 masters
-  plus the designspace, and the Regular master alone) at the end of every
-  build; the proof page's UFO downloads fetch these from master.
+- **`package_ufo.py`** -- zips `sources/` into `fonts/ufo/` (all 54 masters
+  plus the designspace) at the end of every build; the proof page's UFO downloads fetch these from master.
 - **`serifs.py`** -- the `SERF` axis: detects candidate stem feet once
   from a reference instance, then adds the *same* foot contours (by
   fractional position, but sized off each master's own actual stem
@@ -115,7 +128,7 @@ In roughly build order:
   outlines of the 62 base letters/digits (optical gap over height,
   closest-approach floor); accented/Cyrillic glyphs inherit their base
   letter's pairs. Parameters and calibration: `docs/design.md` Kerning.
-- **`ufo_build.py`** -- assembles the 36 master UFOs: extracts every
+- **`ufo_build.py`** -- assembles the 54 master UFOs: extracts every
   glyph (routing 's' to Arimo, 'c'/'e' to `ring_derived.py`, 'a' to
   `single_story_a.py`, everything else to Jost), applies `quirks.py`'s
   terminal cuts and round-counter reshaping, splices accent marks, then
@@ -128,7 +141,7 @@ In roughly build order:
 - **`validate_build.py`** -- sanity-checks the build: `fvar`
   axes/instances match `params.py`, every master has the same glyph
   set, and every glyph has identical contour/point topology across all
-  36 masters. Runnable on its own: `python3 -m tools.validate_build`.
+  54 masters. Runnable on its own: `python3 -m tools.validate_build`.
 - **`preview.py`** -- a matplotlib-based text renderer (from the
   compiled variable font, at any axis location) used for visual QA
   during development.
@@ -148,16 +161,16 @@ build or validation never gets released). It checks:
 
 - `fvar` axes and named instances match `params.py`.
 - Every master UFO has the same glyph set.
-- Every glyph has identical contour/point topology across all 36
+- Every glyph has identical contour/point topology across all 54
   masters (the invariant gvar interpolation, and specifically the
   `SERF` axis, depends on).
 
 ## Specimen
 
-`specimen/index.html` is the "Azrienoch V2 Proof": a self-contained
-(font embedded) interactive page with named instances, a character set
-at three weights, an axis fader (`wght`/`wdth`/`SERF` sliders, presets,
-editable sample text), a kerning proof, a correction log, and a
+`specimen/index.html` is a self-contained (font embedded) interactive
+page with the named instances, the character set across weight and
+width, the accented and logic sets, an axis fader (`wght`/`wdth`/`SERF`/
+`GRAD` sliders, presets, editable sample text), a kerning comparison, and a
 TTF/WOFF2 download control that always fetches the current
 `fonts/variable/` build from `master`. Open it directly in a browser --
 no server needed. `.github/workflows/pages.yml`

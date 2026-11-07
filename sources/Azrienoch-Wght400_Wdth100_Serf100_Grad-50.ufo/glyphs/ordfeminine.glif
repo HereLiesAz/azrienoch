@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="ordfeminine" format="2">
+  <advance width="238"/>
+  <unicode hex="00AA"/>
+  <outline>
+    <contour>
+      <point x="44" y="530" type="qcurve" smooth="yes"/>
+      <point x="44" y="559"/>
+      <point x="89" y="590"/>
+      <point x="118" y="590" type="qcurve" smooth="yes"/>
+      <point x="142" y="590"/>
+      <point x="176" y="576"/>
+      <point x="188" y="566" type="qcurve"/>
+      <point x="188" y="580" type="line"/>
+      <point x="182" y="587"/>
+      <point x="148" y="606"/>
+      <point x="117" y="606" type="qcurve" smooth="yes"/>
+      <point x="82" y="606"/>
+      <point x="23" y="566"/>
+      <point x="23" y="530" type="qcurve" smooth="yes"/>
+      <point x="23" y="492"/>
+      <point x="72" y="455"/>
+      <point x="101" y="455" type="qcurve" smooth="yes"/>
+      <point x="138" y="455"/>
+      <point x="186" y="500"/>
+      <point x="186" y="533" type="qcurve"/>
+      <point x="181" y="544" type="line"/>
+      <point x="181" y="512"/>
+      <point x="136" y="474"/>
+      <point x="106" y="474" type="qcurve" smooth="yes"/>
+      <point x="79" y="474"/>
+      <point x="44" y="502"/>
+    </contour>
+    <contour>
+      <point x="54" y="655" type="line"/>
+      <point x="65" y="665"/>
+      <point x="101" y="684"/>
+      <point x="126" y="684" type="qcurve" smooth="yes"/>
+      <point x="152" y="684"/>
+      <point x="181" y="655"/>
+      <point x="181" y="629" type="qcurve" smooth="yes"/>
+      <point x="181" y="460" type="line"/>
+      <point x="201" y="460" type="line"/>
+      <point x="201" y="629" type="line" smooth="yes"/>
+      <point x="201" y="662"/>
+      <point x="162" y="702"/>
+      <point x="126" y="702" type="qcurve" smooth="yes"/>
+      <point x="97" y="702"/>
+      <point x="56" y="682"/>
+      <point x="43" y="671" type="qcurve"/>
+    </contour>
+  </outline>
+</glyph>

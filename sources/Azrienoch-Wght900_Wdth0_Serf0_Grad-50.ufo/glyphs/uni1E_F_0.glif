@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="uni1EF0" format="2">
+  <advance width="620"/>
+  <unicode hex="1EF0"/>
+  <outline>
+    <contour>
+      <point x="59" y="700" type="line"/>
+      <point x="59" y="230" type="line" smooth="yes"/>
+      <point x="59" y="162"/>
+      <point x="96" y="63"/>
+      <point x="172" y="0"/>
+      <point x="258" y="-31"/>
+      <point x="294" y="-31" type="qcurve" smooth="yes"/>
+      <point x="329" y="-31"/>
+      <point x="416" y="0"/>
+      <point x="491" y="63"/>
+      <point x="529" y="162"/>
+      <point x="529" y="230" type="qcurve" smooth="yes"/>
+      <point x="529" y="700" type="line"/>
+      <point x="359" y="700" type="line"/>
+      <point x="359" y="244" type="line" smooth="yes"/>
+      <point x="359" y="194"/>
+      <point x="326" y="131"/>
+      <point x="294" y="131" type="qcurve" smooth="yes"/>
+      <point x="262" y="131"/>
+      <point x="228" y="194"/>
+      <point x="228" y="244" type="qcurve" smooth="yes"/>
+      <point x="228" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="402" y="616.5916422860251" type="curve"/>
+      <point x="495" y="578.7283577139748" type="line"/>
+      <point x="511" y="618.627851329358"/>
+      <point x="534" y="632.66"/>
+      <point x="561" y="632.66" type="curve"/>
+      <point x="561" y="732.66" type="line"/>
+      <point x="506" y="732.66"/>
+      <point x="431" y="686.6921486706419"/>
+    </contour>
+    <contour>
+      <point x="294" y="-237.0" type="qcurve" smooth="yes"/>
+      <point x="334" y="-237.0"/>
+      <point x="387" y="-187.0"/>
+      <point x="387" y="-151.0" type="qcurve" smooth="yes"/>
+      <point x="387" y="-114.0"/>
+      <point x="334" y="-65.0"/>
+      <point x="294" y="-65.0" type="qcurve" smooth="yes"/>
+      <point x="255" y="-65.0"/>
+      <point x="201" y="-114.0"/>
+      <point x="201" y="-151.0" type="qcurve" smooth="yes"/>
+      <point x="201" y="-187.0"/>
+      <point x="255" y="-237.0"/>
+    </contour>
+  </outline>
+</glyph>

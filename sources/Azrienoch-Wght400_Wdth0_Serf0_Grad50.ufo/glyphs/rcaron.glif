@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="rcaron" format="2">
+  <advance width="620"/>
+  <unicode hex="0159"/>
+  <outline>
+    <contour>
+      <point x="302" y="460" type="line"/>
+      <point x="196" y="460" type="line"/>
+      <point x="196" y="0" type="line"/>
+      <point x="302" y="0" type="line"/>
+    </contour>
+    <contour>
+      <point x="418" y="331.5116835187347" type="qcurve"/>
+      <point x="418" y="438.4883164812653" type="line"/>
+      <point x="414" y="453.43110389496906"/>
+      <point x="392" y="469.1981561865405"/>
+      <point x="378" y="471" type="qcurve" smooth="yes"/>
+      <point x="352" y="471"/>
+      <point x="306" y="420"/>
+      <point x="270" y="335"/>
+      <point x="270" y="280" type="qcurve"/>
+      <point x="302" y="251" type="line"/>
+      <point x="302" y="284"/>
+      <point x="314" y="333"/>
+      <point x="338" y="359"/>
+      <point x="356" y="359" type="qcurve" smooth="yes"/>
+      <point x="375" y="360.68598608580436"/>
+      <point x="403" y="346.7009726900568"/>
+    </contour>
+    <contour>
+      <point x="328" y="638" type="line"/>
+      <point x="246" y="728" type="line"/>
+      <point x="180" y="671" type="line"/>
+      <point x="328" y="531" type="line"/>
+      <point x="440" y="671" type="line"/>
+      <point x="400" y="728" type="line"/>
+    </contour>
+    <contour>
+      <point x="196" y="0.0" type="line"/>
+      <point x="302" y="0.0" type="line"/>
+      <point x="302" y="1.0" type="line"/>
+      <point x="196" y="1.0" type="line"/>
+    </contour>
+  </outline>
+</glyph>

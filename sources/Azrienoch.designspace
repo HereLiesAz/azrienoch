@@ -9,11 +9,12 @@
         <label uservalue="900" name="Black"/>
       </labels>
     </axis>
-    <axis tag="wdth" name="wdth" minimum="75" maximum="100" default="100">
+    <axis tag="wdth" name="wdth" minimum="0" maximum="100" default="100">
       <labelname xml:lang="en">Width</labelname>
       <labels>
         <label uservalue="100" name="Normal" elidable="true"/>
         <label uservalue="75" name="Condensed"/>
+        <label uservalue="0" name="Mono"/>
       </labels>
     </axis>
     <axis tag="SERF" name="SERF" minimum="0" maximum="100" default="0">
@@ -32,6 +33,54 @@
     </axis>
   </axes>
   <sources>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf0_Grad-50.ufo" name="Wght100_Wdth0_Serf0_Grad-50" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf0_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf0_Grad0.ufo" name="Wght100_Wdth0_Serf0_Grad0" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf0_Grad0">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf0_Grad50.ufo" name="Wght100_Wdth0_Serf0_Grad50" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf0_Grad50">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf100_Grad-50.ufo" name="Wght100_Wdth0_Serf100_Grad-50" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf100_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf100_Grad0.ufo" name="Wght100_Wdth0_Serf100_Grad0" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf100_Grad0">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght100_Wdth0_Serf100_Grad50.ufo" name="Wght100_Wdth0_Serf100_Grad50" familyname="Azrienoch" stylename="Wght100_Wdth0_Serf100_Grad50">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
     <source filename="Azrienoch-Wght100_Wdth75_Serf0_Grad-50.ufo" name="Wght100_Wdth75_Serf0_Grad-50" familyname="Azrienoch" stylename="Wght100_Wdth75_Serf0_Grad-50">
       <location>
         <dimension name="wght" xvalue="100"/>
@@ -124,6 +173,54 @@
       <location>
         <dimension name="wght" xvalue="100"/>
         <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf0_Grad-50.ufo" name="Wght400_Wdth0_Serf0_Grad-50" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf0_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf0_Grad0.ufo" name="Wght400_Wdth0_Serf0_Grad0" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf0_Grad0">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf0_Grad50.ufo" name="Wght400_Wdth0_Serf0_Grad50" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf0_Grad50">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf100_Grad-50.ufo" name="Wght400_Wdth0_Serf100_Grad-50" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf100_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf100_Grad0.ufo" name="Wght400_Wdth0_Serf100_Grad0" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf100_Grad0">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght400_Wdth0_Serf100_Grad50.ufo" name="Wght400_Wdth0_Serf100_Grad50" familyname="Azrienoch" stylename="Wght400_Wdth0_Serf100_Grad50">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>
       </location>
@@ -228,6 +325,54 @@
         <dimension name="GRAD" xvalue="50"/>
       </location>
     </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf0_Grad-50.ufo" name="Wght900_Wdth0_Serf0_Grad-50" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf0_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf0_Grad0.ufo" name="Wght900_Wdth0_Serf0_Grad0" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf0_Grad0">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf0_Grad50.ufo" name="Wght900_Wdth0_Serf0_Grad50" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf0_Grad50">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf100_Grad-50.ufo" name="Wght900_Wdth0_Serf100_Grad-50" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf100_Grad-50">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf100_Grad0.ufo" name="Wght900_Wdth0_Serf100_Grad0" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf100_Grad0">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </source>
+    <source filename="Azrienoch-Wght900_Wdth0_Serf100_Grad50.ufo" name="Wght900_Wdth0_Serf100_Grad50" familyname="Azrienoch" stylename="Wght900_Wdth0_Serf100_Grad50">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </source>
     <source filename="Azrienoch-Wght900_Wdth75_Serf0_Grad-50.ufo" name="Wght900_Wdth75_Serf0_Grad-50" familyname="Azrienoch" stylename="Wght900_Wdth75_Serf0_Grad-50">
       <location>
         <dimension name="wght" xvalue="900"/>
@@ -326,6 +471,54 @@
     </source>
   </sources>
   <instances>
+    <instance familyname="Azrienoch" stylename="Mono Thin GradeLow">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Thin GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Thin GradeLow">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Thin">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Thin GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="100"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
     <instance familyname="Azrienoch" stylename="Condensed Thin GradeLow">
       <location>
         <dimension name="wght" xvalue="100"/>
@@ -422,6 +615,54 @@
         <dimension name="GRAD" xvalue="50"/>
       </location>
     </instance>
+    <instance familyname="Azrienoch" stylename="Mono Regular GradeLow">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Regular GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Regular GradeLow">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Regular">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Regular GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="400"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
     <instance familyname="Azrienoch" stylename="Condensed Regular GradeLow">
       <location>
         <dimension name="wght" xvalue="400"/>
@@ -514,6 +755,54 @@
       <location>
         <dimension name="wght" xvalue="400"/>
         <dimension name="wdth" xvalue="100"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Black GradeLow">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Black GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="0"/>
+        <dimension name="GRAD" xvalue="50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Black GradeLow">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="-50"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Black">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
+        <dimension name="SERF" xvalue="100"/>
+        <dimension name="GRAD" xvalue="0"/>
+      </location>
+    </instance>
+    <instance familyname="Azrienoch" stylename="Mono Slab Black GradeHigh">
+      <location>
+        <dimension name="wght" xvalue="900"/>
+        <dimension name="wdth" xvalue="0"/>
         <dimension name="SERF" xvalue="100"/>
         <dimension name="GRAD" xvalue="50"/>
       </location>

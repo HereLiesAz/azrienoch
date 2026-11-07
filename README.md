@@ -1,14 +1,16 @@
 # Azrienoch
 
-Version 1.0.0. A 339-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
-Latin Extended-A, and Cyrillic.
+Version 1.0.0. A 915-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
+Latin Extended-A/B and Additional (including Vietnamese), Cyrillic, spacing and combining marks,
+currency and math symbols, four Greek letters, and a set of logic and set-theory symbols.
+The width axis runs down to a monospaced setting.
 
 ## Axes
 
 | Axis | Tag | Range | Default |
 |---|---|---|---|
 | Weight | `wght` | 100-900 | 400 |
-| Width | `wdth` | 75-100 | 100 |
+| Width | `wdth` | 0-100 (0 = Mono, 75 = Condensed) | 100 |
 | Serif | `SERF` | 0-100 | 0 |
 | Grade | `GRAD` | -50-50 | 0 |
 
@@ -36,9 +38,10 @@ Pages on every change to `specimen/**` on `master` (see
 
 ## Known limitations
 
-- No Greek -- see [`docs/design.md`](docs/design.md#status).
+- Greek is only the four letters Jost has (Δ Ω μ π) -- see [`docs/design.md`](docs/design.md#status).
 - `wdth` is an ink-density weighted compression, not a true optically
-  condensed redraw (no counter is actually reshaped).
+  condensed redraw (no counter is actually reshaped); at `wdth` 0 the
+  Condensed shapes are fitted into one fixed cell.
 - No italic.
 - A handful of narrow, documented letterform residuals -- see
   [`docs/design.md`](docs/design.md#not-yet-done).
