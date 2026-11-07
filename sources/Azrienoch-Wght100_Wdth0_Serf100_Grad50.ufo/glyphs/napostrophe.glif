@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="napostrophe" format="2">
+  <advance width="620"/>
+  <unicode hex="0149"/>
+  <outline>
+    <contour>
+      <point x="250" y="460" type="line"/>
+      <point x="213" y="460" type="line"/>
+      <point x="213" y="0" type="line"/>
+      <point x="250" y="0" type="line"/>
+    </contour>
+    <contour>
+      <point x="436" y="302" type="qcurve" smooth="yes"/>
+      <point x="436" y="0" type="line"/>
+      <point x="472" y="0" type="line"/>
+      <point x="472" y="307" type="line" smooth="yes"/>
+      <point x="472" y="383"/>
+      <point x="412" y="470"/>
+      <point x="360" y="470" type="qcurve" smooth="yes"/>
+      <point x="326" y="470"/>
+      <point x="270" y="420"/>
+      <point x="233" y="335"/>
+      <point x="233" y="280" type="qcurve"/>
+      <point x="250" y="280" type="line"/>
+      <point x="250" y="321"/>
+      <point x="277" y="390"/>
+      <point x="324" y="431"/>
+      <point x="353" y="431" type="qcurve" smooth="yes"/>
+      <point x="397" y="431"/>
+      <point x="436" y="361"/>
+    </contour>
+    <contour>
+      <point x="194" y="700" type="line"/>
+      <point x="136" y="470" type="line"/>
+      <point x="158" y="470" type="line"/>
+      <point x="234" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="436" y="0.0" type="line"/>
+      <point x="484" y="0.0" type="line"/>
+      <point x="484" y="14.7" type="line"/>
+      <point x="436" y="14.7" type="line"/>
+    </contour>
+  </outline>
+</glyph>

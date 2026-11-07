@@ -1,7 +1,7 @@
 """Zips the UFO sources for download (the proof page's UFO options fetch
 these from master), so they are always the current build.
 
-- `fonts/ufo/Azrienoch-UFO-masters.zip`: all 36 master UFOs plus
+- `fonts/ufo/Azrienoch-UFO-masters.zip`: all 54 master UFOs plus
   `Azrienoch.designspace`, i.e. the whole `sources/` directory.
 
     python3 -m tools.package_ufo

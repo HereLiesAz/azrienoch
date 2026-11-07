@@ -55,7 +55,7 @@ from fontTools.varLib.instancer import instantiateVariableFont
 from . import jost_source, params
 
 JOST_PATH = jost_source.JOST_PATH
-CHARS = params.CHARS
+CHARS = params.JOST_CHARS  # Jost's own characters only: donor kerning exists for no others
 _DIGIT_NAMES = {
     "0": "zero", "1": "one", "2": "two", "3": "three", "4": "four",
     "5": "five", "6": "six", "7": "seven", "8": "eight", "9": "nine",
@@ -76,6 +76,8 @@ def _glyph_name(ch: str) -> str:
         return _SPACE_NAME
     if ch in _DIGIT_NAMES:
         return _DIGIT_NAMES[ch]
+    if ch in params.NON_JOST:
+        return f"uni{ord(ch):04X}"
     global _jost_name_map
     if _jost_name_map is None:
         _jost_name_map = jost_source.glyph_names_for_chars(CHARS)

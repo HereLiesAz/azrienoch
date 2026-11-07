@@ -1,0 +1,47 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Wdieresis" format="2">
+  <advance width="712.5"/>
+  <unicode hex="1E84"/>
+  <outline>
+    <contour>
+      <point x="423" y="786" type="qcurve" smooth="yes"/>
+      <point x="423" y="781"/>
+      <point x="428" y="775"/>
+      <point x="432" y="775" type="qcurve" smooth="yes"/>
+      <point x="435" y="775"/>
+      <point x="440" y="781"/>
+      <point x="440" y="786" type="qcurve" smooth="yes"/>
+      <point x="440" y="791"/>
+      <point x="435" y="797"/>
+      <point x="432" y="797" type="qcurve" smooth="yes"/>
+      <point x="428" y="797"/>
+      <point x="423" y="791"/>
+    </contour>
+    <contour>
+      <point x="273" y="786" type="qcurve" smooth="yes"/>
+      <point x="273" y="781"/>
+      <point x="278" y="775"/>
+      <point x="281" y="775" type="qcurve" smooth="yes"/>
+      <point x="285" y="775"/>
+      <point x="289" y="781"/>
+      <point x="289" y="786" type="qcurve" smooth="yes"/>
+      <point x="289" y="791"/>
+      <point x="285" y="797"/>
+      <point x="281" y="797" type="qcurve" smooth="yes"/>
+      <point x="278" y="797"/>
+      <point x="273" y="791"/>
+    </contour>
+    <contour>
+      <point x="521" y="26" type="line"/>
+      <point x="356" y="715" type="line"/>
+      <point x="191" y="26" type="line"/>
+      <point x="23" y="700" type="line"/>
+      <point x="15" y="700" type="line"/>
+      <point x="191" y="-15" type="line"/>
+      <point x="356" y="677" type="line"/>
+      <point x="521" y="-15" type="line"/>
+      <point x="698" y="700" type="line"/>
+      <point x="689" y="700" type="line"/>
+    </contour>
+  </outline>
+</glyph>

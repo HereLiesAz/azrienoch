@@ -136,13 +136,21 @@ def condense_x(pen_value, width: float, wf: float, x_buckets: int = 48, y_sample
     `space`) or nothing to redistribute the change into."""
     if wf == 1.0 or width <= 0:
         return pen_value, width
+    warp, new_width = condense_map(pen_value, width, wf, x_buckets, y_samples)
+    new_pen_value = [
+        (cmd, tuple(None if pt is None else (warp(pt[0]), pt[1]) for pt in args))
+        for cmd, args in pen_value
+    ]
+    return new_pen_value, new_width
+
+
+def condense_map(pen_value, width: float, wf: float, x_buckets: int = 48, y_samples: int = 20):
+    """Returns (warp, new_width): the x mapping `condense_x` applies, as a
+    function, so a caller can move a glyph's points in place (keeping every
+    point and its order) instead of replaying the outline."""
 
     def uniform():
-        scaled = [
-            (cmd, tuple(None if pt is None else (pt[0] * wf, pt[1]) for pt in args))
-            for cmd, args in pen_value
-        ]
-        return scaled, width * wf
+        return (lambda x: x * wf), width * wf
 
     contours = _flatten(pen_value)
     all_points = [p for c in contours for p in c]
@@ -187,8 +195,4 @@ def condense_x(pen_value, width: float, wf: float, x_buckets: int = 48, y_sample
         frac = (x - idx * bucket_w) / bucket_w
         return cum[idx] + frac * f[idx] * bucket_w
 
-    new_pen_value = [
-        (cmd, tuple(None if pt is None else (warp(pt[0]), pt[1]) for pt in args))
-        for cmd, args in pen_value
-    ]
-    return new_pen_value, cum[-1]
+    return warp, cum[-1]

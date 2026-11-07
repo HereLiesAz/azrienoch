@@ -1,0 +1,53 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Dcaron" format="2">
+  <advance width="620"/>
+  <unicode hex="010E"/>
+  <outline>
+    <contour>
+      <point x="117" y="700" type="line"/>
+      <point x="117" y="0" type="line"/>
+      <point x="156" y="0" type="line"/>
+      <point x="156" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="258" y="0" type="line" smooth="yes"/>
+      <point x="334" y="0"/>
+      <point x="449" y="88"/>
+      <point x="515" y="245"/>
+      <point x="515" y="350" type="qcurve" smooth="yes"/>
+      <point x="515" y="455"/>
+      <point x="449" y="612"/>
+      <point x="334" y="700"/>
+      <point x="258" y="700" type="qcurve" smooth="yes"/>
+      <point x="139" y="700" type="line"/>
+      <point x="139" y="656" type="line"/>
+      <point x="258" y="656" type="line" smooth="yes"/>
+      <point x="309" y="656"/>
+      <point x="391" y="613"/>
+      <point x="449" y="532"/>
+      <point x="481" y="419"/>
+      <point x="481" y="350" type="qcurve" smooth="yes"/>
+      <point x="481" y="281"/>
+      <point x="449" y="168"/>
+      <point x="391" y="87"/>
+      <point x="309" y="44"/>
+      <point x="258" y="44" type="qcurve" smooth="yes"/>
+      <point x="139" y="44" type="line"/>
+      <point x="139" y="0" type="line"/>
+    </contour>
+    <contour>
+      <point x="300" y="830" type="line"/>
+      <point x="200" y="948" type="line"/>
+      <point x="180" y="925" type="line"/>
+      <point x="300" y="785" type="line"/>
+      <point x="419" y="925" type="line"/>
+      <point x="399" y="948" type="line"/>
+    </contour>
+    <contour>
+      <point x="105" y="0.0" type="line"/>
+      <point x="156" y="0.0" type="line"/>
+      <point x="156" y="15.05" type="line"/>
+      <point x="105" y="15.05" type="line"/>
+    </contour>
+  </outline>
+</glyph>

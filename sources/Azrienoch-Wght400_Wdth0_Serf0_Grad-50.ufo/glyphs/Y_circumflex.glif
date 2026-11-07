@@ -1,0 +1,32 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Ycircumflex" format="2">
+  <advance width="620"/>
+  <unicode hex="0176"/>
+  <outline>
+    <contour>
+      <point x="466" y="700" type="line"/>
+      <point x="306" y="323" type="line"/>
+      <point x="154" y="700" type="line"/>
+      <point x="118" y="700" type="line"/>
+      <point x="290" y="282" type="line"/>
+      <point x="290" y="0" type="line"/>
+      <point x="326" y="0" type="line"/>
+      <point x="326" y="283" type="line"/>
+      <point x="502" y="700" type="line"/>
+    </contour>
+    <contour>
+      <point x="310" y="886" type="line"/>
+      <point x="412" y="769" type="line"/>
+      <point x="432" y="791" type="line"/>
+      <point x="310" y="931" type="line"/>
+      <point x="188" y="791" type="line"/>
+      <point x="208" y="769" type="line"/>
+    </contour>
+    <contour>
+      <point x="290" y="0.0" type="line"/>
+      <point x="326" y="0.0" type="line"/>
+      <point x="326" y="1.0" type="line"/>
+      <point x="290" y="1.0" type="line"/>
+    </contour>
+  </outline>
+</glyph>

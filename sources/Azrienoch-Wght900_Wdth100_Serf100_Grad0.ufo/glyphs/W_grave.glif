@@ -1,0 +1,25 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<glyph name="Wgrave" format="2">
+  <advance width="1110"/>
+  <unicode hex="1E80"/>
+  <outline>
+    <contour>
+      <point x="555" y="795" type="line"/>
+      <point x="665" y="845" type="line"/>
+      <point x="515" y="1005" type="line"/>
+      <point x="375" y="945" type="line"/>
+    </contour>
+    <contour>
+      <point x="737" y="371" type="line"/>
+      <point x="555" y="735" type="line"/>
+      <point x="373" y="371" type="line"/>
+      <point x="265" y="700" type="line"/>
+      <point x="0" y="700" type="line"/>
+      <point x="320" y="-45" type="line"/>
+      <point x="555" y="303" type="line"/>
+      <point x="790" y="-45" type="line"/>
+      <point x="1110" y="700" type="line"/>
+      <point x="845" y="700" type="line"/>
+    </contour>
+  </outline>
+</glyph>

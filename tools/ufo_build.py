@@ -49,7 +49,7 @@ from pathlib import Path
 import ufoLib2
 from fontTools.pens.recordingPen import RecordingPen
 
-from . import accent_marks, arimo_source, drawn_glyphs, jost_source, kern_derive, kerning, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
+from . import accent_marks, arimo_source, drawn_glyphs, jost_source, kern_derive, kerning, monospace, non_jost, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
@@ -122,9 +122,11 @@ def _glyph_name(ch: str) -> str:
         return _SPACE_NAME
     if ch in _DIGIT_NAMES:
         return _DIGIT_NAMES[ch]
+    if ch in params.NON_JOST:
+        return f"uni{ord(ch):04X}"
     global _jost_name_map
     if _jost_name_map is None:
-        _jost_name_map = jost_source.glyph_names_for_chars(CHARS)
+        _jost_name_map = jost_source.glyph_names_for_chars(params.JOST_CHARS)
     return _jost_name_map[ch]
 
 
@@ -159,8 +161,8 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     (`stroke_balance.py`) before anything else touches them.
     """
     font = ufoLib2.Font()
-    jost_names = jost_source.glyph_names_for_chars(CHARS)
-    for ch in CHARS:
+    jost_names = jost_source.glyph_names_for_chars(params.JOST_CHARS)
+    for ch in params.JOST_CHARS:
         if ch in _RING_DERIVED_CHARS:
             continue
         glyph = font.newGlyph(_glyph_name(ch))
@@ -173,7 +175,7 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         glyph.width = width
 
     vertex_overshoot = stroke_balance.vertex_overshoot(font["V"])
-    for ch in CHARS:
+    for ch in params.JOST_CHARS:
         if ch not in _RING_DERIVED_CHARS:
             stroke_balance.apply(font[_glyph_name(ch)], vertex_overshoot)
 
@@ -185,7 +187,7 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     quirks.fix_six_nine_notch(font["six"])
     quirks.fix_six_nine_notch(font["nine"])
 
-    for ch in CHARS:
+    for ch in params.JOST_CHARS:
         quirks.apply_terminal_cuts(font[_glyph_name(ch)])
 
     # Accented 'c'/'e'/'s' variants (see accent_marks.py): re-splice
@@ -207,7 +209,7 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         glyph.width = base_glyph.width
 
     o_inner_points = _o_inner_contour(font["o"]).points
-    for ch in CHARS:
+    for ch in params.JOST_CHARS:
         # Extends past the original 62: any accented Latin variant of
         # o/b/d/p/q/g (params.base_letter strips the diacritic) gets the
         # same counter-reshape as its base letter -- 'reshape_counter_to_o'
@@ -243,6 +245,9 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
         drawn_glyphs.apply(font, _glyph_name(ch), ch, wght, wdth, grad)
     quirks.match_Q_tail_to_R(font["Q"], font["R"])
 
+    # Everything Jost has is finished. The rest is built from it.
+    non_jost.build(font, _glyph_name, wght, wdth, grad)
+
     return font
 
 
@@ -259,7 +264,7 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
     cache = {}
     for ch in CHARS:
         glyph = reference_font[_glyph_name(ch)]
-        if not glyph.contours:
+        if not glyph.contours or ch in params.LOGIC:
             # 'space' (and any other whitespace-only glyph) has no ink
             # to grow a foot on at all.
             cache[ch] = ([], {})
@@ -273,7 +278,9 @@ def _serif_reference() -> dict[str, tuple[list[dict], dict[str, float]]]:
 
 
 def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
-    font = _build_raw_glyphs(wght, wdth, grad)
+    mono = wdth == params.WDTH_MONO
+    # The Mono master is the Condensed one, fitted into a fixed cell below.
+    font = _build_raw_glyphs(wght, params.WDTH_CONDENSED if mono else wdth, grad)
     font.info.unitsPerEm = params.UPM
     font.info.ascender = params.ASCENDER
     font.info.descender = params.DESCENDER
@@ -317,12 +324,16 @@ def build_master_ufo(wght: int, wdth: int, serf: int, grad: int = 0) -> Path:
         if ch == "7":
             serifs.apply_seven_dash(font[_glyph_name(ch)], serf, serifs.crossbar_size(font["f"]))
 
-    # Kerning: derived from this master's own finished outlines (see
-    # kern_derive.py); Jost's donor table only fills pairs outside the base
-    # letter set.
-    final = kern_derive.inherit(kern_derive.derive(font, wdth), kerning.pairs_for(wdth))
-    for (left, right), value in final.items():
-        font.kerning[(left, right)] = value
+    if mono:
+        # One fixed advance for every glyph; no kerning at this end of the axis.
+        monospace.apply(font)
+    else:
+        # Kerning: derived from this master's own finished outlines (see
+        # kern_derive.py); Jost's donor table only fills pairs outside the base
+        # letter set.
+        final = kern_derive.inherit(kern_derive.derive(font, wdth), kerning.pairs_for(wdth))
+        for (left, right), value in final.items():
+            font.kerning[(left, right)] = value
 
     path = SOURCES_DIR / f"Azrienoch-{params.style_name(wght, wdth, serf, grad)}.ufo"
     font.save(path, overwrite=True)
