@@ -5,6 +5,7 @@
 ```
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
 fonts/variable/Azrienoch-VF.woff2 same font, WOFF2 container (build output)
+sources/drawn/*.morphont.json    hand-drawn Y and y (Thin, Regular, Black), drawn in Morphont
 sources/*.ufo                     the 36 (wght x wdth x SERF x GRAD) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
 third_party/jost/                 vendored Jost source font + its own OFL.txt
@@ -53,6 +54,10 @@ In roughly build order:
   bowl/counter shape actually matches 'o's. Horizontal levels (bar
   top/bottom, lower terminal) come from Jost's own 'e' at the same
   axis location; 'c's terminals share them.
+- **`drawn_glyphs.py`** -- places the hand-drawn `Y`/`y` from
+  `sources/drawn/` at each master (weight blended between the drawn
+  weights, `wdth` through `condense.py`), replacing what the steps above
+  derived for them. See [`design.md`](./design.md#drawn-glyphs).
 - **`stroke_balance.py`** -- one perpendicular stroke thickness for
   V/W/M/v/w (and Ŵ/ŵ/Cyrillic М): outer silhouette kept, inner points
   recomputed; 'M''s middle vertex overshoots the baseline to 'V''s own

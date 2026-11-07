@@ -49,7 +49,7 @@ from __future__ import annotations
 
 
 def _flatten(pen_value, samples_per_segment: int = 6):
-    """Flattens TrueType pen commands (on/off-curve qCurveTo runs,
+    """Flattens pen commands (cubic curveTo, and TrueType on/off-curve qCurveTo runs,
     including the implied-on-curve-at-start convention marked by a
     trailing `None`) into per-contour polylines, for ink-density
     sampling only -- not for final glyph output."""
@@ -65,6 +65,17 @@ def _flatten(pen_value, samples_per_segment: int = 6):
         elif cmd == "lineTo":
             current.append(args[0])
             current_point = args[0]
+        elif cmd == "curveTo":
+            c1, c2, on = args
+            p0 = current_point
+            for step in range(1, samples_per_segment + 1):
+                t = step / samples_per_segment
+                u = 1 - t
+                current.append((
+                    u ** 3 * p0[0] + 3 * u * u * t * c1[0] + 3 * u * t * t * c2[0] + t ** 3 * on[0],
+                    u ** 3 * p0[1] + 3 * u * u * t * c1[1] + 3 * u * t * t * c2[1] + t ** 3 * on[1],
+                ))
+            current_point = on
         elif cmd == "qCurveTo":
             *offs, on = args
             if on is None:

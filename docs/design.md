@@ -13,15 +13,7 @@ instances the vendored font at a given `wght` via
 advance width; `tools/ufo_build.py` copies that data into Azrienoch's
 own UFO masters, then layers Azrienoch's own modifications on top.
 
-An earlier version tried building every letterform from scratch out of
-two primitives (a straight polygon, a pair of concentric ovals) instead
-of starting from a real drawn typeface. It compiled and interpolated
-correctly, but the letterforms it produced (particularly `n`'s arch and
-`v`'s diagonal join) didn't hold up -- real type design encodes a lot
-of judgment calls (a counter's exact curvature, where a diagonal's
-thick/thin sides fall) that a from-scratch geometric formula kept
-getting wrong in ways that were each individually fixable but never
-added up to a typeface. Starting from Jost's actual outlines and
+Starting from Jost's actual outlines and
 modifying them from there is the current approach.
 
 Jost only exposes a `wght` axis (100-900); it has no `wdth` axis to
@@ -45,8 +37,7 @@ Helvetica-derived. Real Helvetica outline data is proprietary
 (Linotype/Monotype) and was never traced or extracted here; Arimo is a
 freely licensed font used and modified exactly as its license permits,
 the same legal basis this project uses Jost on. See
-`tools/arimo_source.py`. `c`/`e` used to be sourced from Arimo the same
-way, but are now built directly from this project's own `o` instead
+`tools/arimo_source.py`. `c`/`e` are built directly from this project's own `o`
 (`tools/ring_derived.py` -- see below).
 
 ## Design references
@@ -115,11 +106,9 @@ Arimo), with Azrienoch-specific modifications (`tools/quirks.py`) on
 top for the original 62 ASCII letters/digits, extended to accented
 Latin and select Cyrillic letters too (see below). No Greek: Jost
 itself has almost none of it (4 codepoints total, confirmed directly
-against its own cmap), and sourcing it from a second donor font was
-tried and then dropped by direct decision -- a structurally different
-donor's outlines don't share Jost's point topology for any of this
-project's own per-letter-class refinement to find anything, so Greek
-would have carried none of it anyway.
+against its own cmap), and no second donor font is used: its outlines
+wouldn't share Jost's point topology for this project's per-letter-class
+refinement to act on.
 
 Jost's own accented glyphs that are TrueType composites (a base letter
 plus a separately drawn diacritic component, e.g. `Ohungarumlaut`) are
@@ -136,14 +125,8 @@ reference.
   exactly the same classification its plain base letter does: `ō`'s
   counter is reshaped to match `o`'s own, and every accented letter
   grows serif feet at the guide lines and flare directions its base
-  letter's own letter-class dictates -- including a real, previously
-  wrong case this surfaced directly: accented `n` (`ń ň ñ ņ`) used to
-  fall through to the generic uppercase/digit "baseline-only, no flare
-  restriction" bucket (its literal, non-ASCII character not matching
-  any of `serifs.py`'s ASCII-keyed class sets), keeping a foot on BOTH
-  of its stems -- `n` itself is declared `SINGLE_STORY` (documented as
-  "gets exactly two feet"), so its accented variants now correctly
-  drop the left stem's foot the same way plain `n` always has.
+  letter's own letter-class dictates -- accented `n` (`ń ň ñ ņ`) drops the left stem's foot the same way
+  plain `n`, which is `SINGLE_STORY`, does.
   `quirks.py`'s terminal-cut treatment covers the 18 c/e/s-based
   accented letters (via mark-splicing, below) plus 3 r-based ones
   directly, described next.
@@ -202,9 +185,7 @@ reference.
 - **`c`/`e` are built directly from this master's own `o`**
   (`tools/ring_derived.py`), not from a separate donor font, so their
   bowl/counter proportions agree with `o`'s BY CONSTRUCTION at every
-  weight, width and serif setting. (An earlier approach sourced them
-  from Arimo, like `s` still is, and spent two rescale attempts trying
-  to width-match them -- see git history.) Three horizontal levels are
+  weight, width and serif setting. Three horizontal levels are
   read off Jost's own `e` at the same axis location: its crossbar's top
   and bottom edges, and the vertical midpoint of its lower-terminal
   cut. `e` is `o`'s ring with an upper bowl closed at the bar top (a
@@ -218,11 +199,7 @@ reference.
   so neither letter goes through `quirks.py::apply_terminal_cuts`
   anymore. Each arc is emitted as a fixed number of tangent-matched
   quadratics sampled on `o`'s actual ring, so point count is identical
-  at every master wherever the cuts land. This replaced a version that
-  cut the ring at fixed angles and then rotated the cuts flat via
-  hardcoded point indices: `e` rendered with no visible crossbar and a
-  broken aperture at every weight, and folded into a self-intersecting
-  spike at Thin Condensed. The rebuilt pair has no self-intersection at
+  at every master wherever the cuts land. `c` and `e` have no self-intersection at
   any of the 36 masters (checked by flattening every contour).
   Consequence of taking Jost's own `e` levels: at Black, Jost's bar sits
   low and `o`'s counter is small, so `e`'s aperture narrows to a slit.
@@ -267,17 +244,12 @@ reference.
   only width-matched by whatever Arimo's own Regular-Bold blend happens
   to produce.
 
-- **A stability audit's self-intersection sweep across the full
-  `wght`x`wdth`x`SERF` grid** caught genuine defects inherited
-  byte-for-byte from the vendored Jost outlines (none introduced by
-  this project's own extraction or modification code): `y` had a
-  visible hole at its crotch (its two diagonal strokes' inner edges
-  terminated a few units past their actual crossing point instead of
-  meeting it exactly); `six`/`nine` each had a small notch where the
-  bowl meets the ascender/descender stroke. Both fixed in `quirks.py`
-  (`fix_y_crotch`/`fix_six_nine_notch`) by moving the offending points
-  to where the geometry actually intends them to meet. Two further
-  findings, digit `4`'s technically self-intersecting crossbar/stem
+- **`six`/`nine` carry a small notch where the bowl meets the
+  ascender/descender stroke in Jost's own outlines**, found by a
+  self-intersection sweep across the full `wght`x`wdth`x`SERF` grid;
+  `quirks.fix_six_nine_notch` moves the offending points to where the
+  geometry meets. Two further findings, digit `4`'s technically
+  self-intersecting crossbar/stem
   junction and capital `B`'s technically self-intersecting waist (two
   overlapping, collinear spine segments in its single-contour
   "keyhole" construction), were both confirmed by direct rendering --
@@ -337,6 +309,19 @@ In order:
   `wght`=100 alpha still moves points along each one's own
   Regular-to-Bold straight line. Not fixed; a real, if narrow and
   currently invisible, residual.
+
+## Drawn glyphs
+
+`Y` and `y` are drawn by hand, not derived from Jost: one cubic outline
+each at Thin (`wght` 100), Regular (400) and Black (900), kept as
+Morphont projects in `sources/drawn/` (`Y.morphont.json`,
+`y.morphont.json`). The sweep of the diagonal into the stem or the
+descender curl is the design. `tools/drawn_glyphs.py` places them at every
+master: weight blends linearly between the drawn weights (shifted by `GRAD`
+as for every other glyph, with the advance following the requested `wght`),
+`wdth` runs through the same `condense.py` compression, and `SERF` feet go
+on afterwards as for any glyph. The three drawings have identical points in
+identical order, so all 36 masters stay interpolation-compatible.
 
 ## Serif feet
 
@@ -398,10 +383,7 @@ Condensed stem is only ~8 units wide, and the detection floor used to
 filter it out, silently dropping every Thin Condensed foot onto a
 fallback width several times the real stem and off-center.
 
-One real bug caught by rendering before this landed: a first version
-grew a spurious extra foot on `n` where its left stem's short (~70-unit)
-run-up into the arch happens to end flat and close enough to the
-x-height ballpark to look like a genuine terminal. A length threshold
+`n`'s short (~70-unit) run-up into the arch ends flat near the x-height, which could read as a terminal and grow a spurious extra foot. A length threshold
 on the adjacent stem segment (must run at least ~150 units to count as
 a real stem side) rejects that short run cleanly, the same guard that
 already keeps a foot from notching into an arch letter's own counter.
