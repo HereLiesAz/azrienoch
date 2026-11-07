@@ -20,6 +20,3 @@ slant axis to begin with -- there's nothing to trim or fix at a
 default, unlike a donor that ships them natively. A genuine italic
 would need redrawn letterforms (different 'a'/'e'/'f' constructions,
 not just a shear), which is out of scope here. Azrienoch has no italic.
-
-See [`IDEAS.md`](./IDEAS.md) for axes that have come up as possible
-future directions without being decided on.

@@ -1,17 +1,10 @@
 # Versioning and releases
 
 Azrienoch follows [Semantic Versioning](https://semver.org/)
-(`MAJOR.MINOR.PATCH`) and is currently pre-1.0 (`0.x.y`) -- the font is
-still under active development, so per semver's own convention, a
-`MINOR` bump can still include breaking changes; nothing before
-`1.0.0` should be treated as stable.
+(`MAJOR.MINOR.PATCH`). The current version is **1.0.0**.
 
-`.github/workflows/release.yml` runs on every push to `master` (the
-default branch): it computes the release version, rebuilds the font
-with that version embedded, runs `tools/validate_build` as a gate (a
-failed build or validation never gets released), and publishes a
-GitHub Release tagged `v<version>` with the compiled
-`Azrienoch-VF.ttf` (and a WOFF2 of the same font) attached.
+`tools/next_version.py` decides the version; `tools/ufo_build.py` embeds it
+in the built font.
 
 ## How the version is computed
 
@@ -38,13 +31,3 @@ release's tag and its binary's own version (`head.fontRevision`, and
 the human-readable `Version X.Y.Z` string in its `name` table) always
 agree. A local build outside CI (no `AZRIENOCH_VERSION` set) just
 embeds whatever `VERSION` currently says.
-
-## Not yet automated
-
-Detecting a breaking change (a removed glyph, a narrowed axis range, a
-metric/kerning change that could shift an existing layout, a changed
-glyph outline) straight from the diff, independent of the commit
-message. Given the font isn't finished yet, codifying that now would
-be premature -- it's a natural next step once the letterform work
-settles down and the font has real consumers to protect. Tracked in
-[`IDEAS.md`](./IDEAS.md).

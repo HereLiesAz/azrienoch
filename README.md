@@ -1,8 +1,6 @@
 # Azrienoch
 
-
-
-A 339-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
+Version 1.0.0. A 339-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
 Latin Extended-A, and Cyrillic.
 
 ## Axes
@@ -38,8 +36,7 @@ Pages on every change to `specimen/**` on `master` (see
 
 ## Known limitations
 
-- No Greek. A donor font was tried and dropped -- see
-  [`docs/design.md`](docs/design.md#status).
+- No Greek -- see [`docs/design.md`](docs/design.md#status).
 - `wdth` is an ink-density weighted compression, not a true optically
   condensed redraw (no counter is actually reshaped).
 - No italic.
@@ -50,7 +47,7 @@ Pages on every change to `specimen/**` on `master` (see
 
 Full reference documentation lives in [`docs/`](docs/README.md):
 design rationale, axis details, the build pipeline module by module,
-versioning, and tracked follow-up work.
+and versioning.
 
 ## License
 
