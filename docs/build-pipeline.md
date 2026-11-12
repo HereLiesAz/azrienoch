@@ -5,7 +5,6 @@
 ```
 fonts/variable/Azrienoch-VF.ttf   compiled variable font (build output)
 fonts/variable/Azrienoch-VF.woff2 same font, WOFF2 container (build output)
-sources/drawn/*.morphont.json    hand-drawn Y and y (Thin, Regular, Black), drawn in Morphont
 sources/*.ufo                     the 54 (wght x wdth x SERF x GRAD) UFO masters (build output)
 sources/Azrienoch.designspace     the designspace tying the masters together (build output)
 third_party/jost/                 vendored Jost source font + its own OFL.txt
@@ -54,10 +53,6 @@ In roughly build order:
   bowl/counter shape actually matches 'o's. Horizontal levels (bar
   top/bottom, lower terminal) come from Jost's own 'e' at the same
   axis location; 'c's terminals share them.
-- **`drawn_glyphs.py`** -- places the hand-drawn `Y`/`y` from
-  `sources/drawn/` at each master (weight blended between the drawn
-  weights, `wdth` through `condense.py`), replacing what the steps above
-  derived for them. See [`design.md`](./design.md#drawn-glyphs).
 - **`composites.py`** -- Latin letters Jost does not have, composed from
   this master's own finished letters: base letter plus combining marks
   (taken from Jost, or derived/drawn where Jost has none), barred
@@ -86,12 +81,7 @@ In roughly build order:
   Jost's own raw outline, and per-letter redraws derived from other
   letters' own outlines: 'S' rotated 180 degrees; 'J' takes 'g's full
   descender curl (and 'g's advance width); 'q' takes 'j's curl mirrored
-  (advance unchanged, the hook overhangs the sidebearing); 'y' is a narrowed 'v' (V_NARROW 0.9, arm
-  width kept) with 'g's descender curl hung from the V's right terminal
-  at x-height (V outer width = curl width, so the y's top-left and bottom-left corners align at every master), and 'Y' is a full-width V (Y_V_NARROW 1.0) with its tip
-  at Y_TIP_DEPTH 0.70 of Jost's junction height with a rectangular stem hanging from the V's right
-  outer edge Y_ATTACH (0.8) of the way up (arms as thick, perpendicular, as the stem/tail they carry; `hang_y_from_v`,
-  `hang_Y_from_V`; advances unchanged); 'Q's tail is re-angled to
+  (advance unchanged, the hook overhangs the sidebearing); 'y' is 'u' with 'g's descender (advance is 'u's); 'Y' stays Jost's own; 'Q's tail is re-angled to
   'R's leg slope. Base letters only -- accented variants of J/j/q/y
   keep Jost's own shapes.
 - **`accent_marks.py`** -- re-splices Jost's own diacritic marks onto

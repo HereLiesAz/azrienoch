@@ -49,7 +49,7 @@ from pathlib import Path
 import ufoLib2
 from fontTools.pens.recordingPen import RecordingPen
 
-from . import accent_marks, arimo_source, drawn_glyphs, jost_source, kern_derive, kerning, monospace, non_jost, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
+from . import accent_marks, arimo_source, jost_source, kern_derive, kerning, monospace, non_jost, params, quirks, ring_derived, serifs, single_story_a, stroke_balance
 
 _ARIMO_CHARS = {"s"}
 _RING_DERIVED_CHARS = {"c", "e"}
@@ -232,17 +232,11 @@ def _build_raw_glyphs(wght: int, wdth: int, grad: int = 0) -> ufoLib2.Font:
     # (see quirks.py): S rotated 180 degrees; J takes g's full descender
     # curl; q takes j's curl mirrored; y is u with g's descender. Order
     # matters: J and y read g/u/j as they stand now, q reads j, and none
-    # of them are read by anything later in this function.
+    # of them are read by anything later in this function. Y stays Jost's.
     quirks.rotate_180(font["S"])
     quirks.build_J_from_g(font["J"], font["g"])
     quirks.curl_q_from_j(font["q"], font["j"])
     quirks.build_y_from_u_and_g(font["y"], font["u"], font["g"])
-    quirks.hang_y_from_v(font["y"], font["v"])
-    quirks.hang_Y_from_V(font["Y"])
-    # Y and y are hand-drawn (sources/drawn/): they replace everything the
-    # steps above derived for them.
-    for ch in drawn_glyphs.DRAWN_CHARS:
-        drawn_glyphs.apply(font, _glyph_name(ch), ch, wght, wdth, grad)
     quirks.match_Q_tail_to_R(font["Q"], font["R"])
 
     # Everything Jost has is finished. The rest is built from it.
