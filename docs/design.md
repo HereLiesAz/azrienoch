@@ -108,7 +108,7 @@ adds 391 characters Jost lacks: 309 precomposed Latin letters
 digraphs and 50 logic and set-theory symbols (see "Composed letters" and
 "Logic symbols" below). Jost's own glyphs are copied across all 54
 masters (except `c`/`e`, built from this project's own `o`, `s`,
-sourced from Arimo, and `Y`/`y`, hand-drawn), with Azrienoch-specific
+sourced from Arimo), with Azrienoch-specific
 modifications (`tools/quirks.py`) on top for the original 62 ASCII
 letters/digits, extended to accented Latin and select Cyrillic letters
 too (see below). Greek is limited to what Jost has: no second donor
@@ -362,19 +362,6 @@ already present). They carry no serif feet and no kerning.
 
 `wdth` 0 is a monospaced setting: every glyph has one advance (620
 units). See [`axes.md`](./axes.md#width-stops).
-
-## Drawn glyphs
-
-`Y` and `y` are drawn by hand, not derived from Jost: one cubic outline
-each at Thin (`wght` 100), Regular (400) and Black (900), kept as
-Morphont projects in `sources/drawn/` (`Y.morphont.json`,
-`y.morphont.json`). The sweep of the diagonal into the stem or the
-descender curl is the design. `tools/drawn_glyphs.py` places them at every
-master: weight blends linearly between the drawn weights (shifted by `GRAD`
-as for every other glyph, with the advance following the requested `wght`),
-`wdth` runs through the same `condense.py` compression, and `SERF` feet go
-on afterwards as for any glyph. The three drawings have identical points in
-identical order, so all 54 masters stay interpolation-compatible.
 
 ## Serif feet
 
