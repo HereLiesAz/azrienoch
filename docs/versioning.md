@@ -1,7 +1,7 @@
 # Versioning and releases
 
 Azrienoch follows [Semantic Versioning](https://semver.org/)
-(`MAJOR.MINOR.PATCH`). The current version is **1.0.0**.
+(`MAJOR.MINOR.PATCH`). The current version is **1.2.0**.
 
 `tools/next_version.py` decides the version; `tools/ufo_build.py` embeds it
 in the built font.

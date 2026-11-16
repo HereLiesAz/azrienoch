@@ -1,6 +1,6 @@
 # Azrienoch
 
-Version 1.0.0. A 915-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
+Version 1.2.0. A 915-glyph variable font -- basic Latin, digits, punctuation, Latin-1 Supplement,
 Latin Extended-A/B and Additional (including Vietnamese), Cyrillic, spacing and combining marks,
 currency and math symbols, four Greek letters, and a set of logic and set-theory symbols.
 The width axis runs down to a monospaced setting.
